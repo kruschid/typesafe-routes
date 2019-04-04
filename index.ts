@@ -1,5 +1,5 @@
-export type RouteBuilder<T> = <K extends keyof T>(k?: K) =>
-  T[K] extends never ? string : RouteBuilder<T[K]>;
+export type RouteBuilder<T> = <U extends keyof T, V extends undefined, K = U | V>(k?: K) =>
+  K extends undefined ? string : RouteBuilder<T[U]>;
 
 export const routeBuilder = <T>(prefix?: string): RouteBuilder<T> => function(
   this: {cb: (x?: string) => string[]} | undefined,

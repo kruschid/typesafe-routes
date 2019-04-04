@@ -25,17 +25,18 @@ test("#routeBuilder should build absolute routes", (t) => {
 
   const route = routeBuilder<IRoute>(baseUrl);
   const appRoute = route("dashboard")("apps")(appId);
+  const appPath: string = appRoute();
 
   t.equal(
-    appRoute(),
+    appPath,
     "https://localhost:8080/dashboard/apps/5",
     "should render app route",
   );
 
-  const userSettingsRoute = appRoute("users")(userId)("settings");
+  const userSettingsPath: string = appRoute("users")(userId)("settings")();
 
   t.equal(
-    userSettingsRoute(),
+    userSettingsPath,
     "https://localhost:8080/dashboard/apps/5/users/5ab8f42e618b623ca0f25533/settings",
     "should render userSettingsRoute",
   );
@@ -46,9 +47,10 @@ test("#routeBuilder should build relative routes", (t) => {
   type IAppsRoute = IRoute["dashboard"]["apps"][""];
   const appsRoute  = routeBuilder<IAppsRoute>();
   const relativeRoute  = appsRoute("users")(userId)("settings");
+  const relativePath: string = relativeRoute();
 
   t.equal(
-    relativeRoute(),
+    relativePath,
     "users/5ab8f42e618b623ca0f25533/settings",
     "should render relative route",
   );
