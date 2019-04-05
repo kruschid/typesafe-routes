@@ -1,17 +1,17 @@
 # Typesafe Routes
 
-In big frontend projects it can be quite difficult to detect broken links automatically. This package exposes a small helper that enables typesafe route creation to trace defective routes in compilation-time and to speed up development thanks to code-autocompletion.
+In large frontend projects it can be quite difficult to detect broken links automatically. This package exposes a small helper that enables typesafe route creation to trace defective routes in compilation-time and to speed up development thanks to code-autocompletion.
 
 ## Installation
 
 ### NPM
 ```
-npm i typesafe-route
+npm i typesafe-routes
 ```
 
 ### Yarn
 ```
-yarn add typesafe-route
+yarn add typesafe-routes
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ removeUser123(); // https://localhost:8081/users/123/remove
 
 ## React Router Example
 
-Let's create an interface to define the route tree of out application.
+Let's create an interface to define the route tree of our application.
 
 ``` ts
 // routes.ts
@@ -69,7 +69,7 @@ export const route = routeBuilder<IRoute>();
 
 ```
 
-Now let's import the created `route` function and define our application paths and parameters.
+Now let's import the created `route` function and define our applications paths and parameters.
 
 ``` tsx
 import {route} from "./routes.ts"
