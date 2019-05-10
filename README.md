@@ -17,33 +17,29 @@ yarn add typesafe-routes
 ## Usage
 
 ``` ts
-// import routeBuilder
 import {routeBuilder} from "typesafe-routes";
 
 // define route tree
 export interface IRoute {
-  users: {
-    // defining params via index signature
-    [userId: "string"]: {
-      remove: {}
-      // empty object means no children
-      edit: {}
+  users: {                  // "/users"
+    [userId: "string"]: {   // "/users/{userId}"
+      remove: {}            // "/users/{userId}/remove"
+      edit: {}              // "/users/{userId}/edit"
     }
   }
 }
 
-// define baseUrl (optional)
+// baseUrl is optional
 const baseUrl = "https://localhost:8081";
 
 // create the root node
 const route = routeBuilder<IRoute>(baseUrl);
 
 // compose the route
-const users = route("users")
-const removeUser123 = users("123")("remove");
+route("users")("123")("remove")(); // "https://localhost:8081/users/123/remove"
 
-// generate string
-removeUser123(); // https://localhost:8081/users/123/remove
+// compile error since "add" is not defined
+route("users")("123")("add")();
 ```
 
 ## React Router Example
@@ -54,14 +50,14 @@ Let's create an interface to define the route tree of our application.
 // routes.ts
 
 export interface IRoute {
-  home: {}
-  users: {
-    show: {
-      [userId: "string"]: {
-        remove: {}
+  home: {}                    // "/home"
+  users: {                    // "/users"
+    show: {                   // "/users/show"
+      [userId: "string"]: {   // "/users/show/{userId}"
+        remove: {}            // "/users/show/{userId}/remove"
       }
     }
-    create: {}
+    create: {}                // "/users/create"
   }
 }
 
@@ -86,7 +82,7 @@ We can now benefit from typesafe links that allow our application to scale witho
 // with full path
 <Link to={route("home")("users")("show")(userId)("remove")()} />
 
-// or with relative path
+// define root path to avoid duplicate code
 const userRoute = route("home")("users")("show");
 ...
 <Link to={userRoute(userId)("remove")()} />
