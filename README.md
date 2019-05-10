@@ -36,10 +36,10 @@ const baseUrl = "https://localhost:8081";
 const route = routeBuilder<IRoute>(baseUrl);
 
 // compose the route
-route("users")("123")("remove")(); // "https://localhost:8081/users/123/remove"
+route("users")("123")("remove").str(); // "https://localhost:8081/users/123/remove"
 
 // compile error since "add" is not defined
-route("users")("123")("add")();
+route("users")("123")("add").str();
 ```
 
 ## React Router Example
@@ -70,9 +70,9 @@ Now let's import the created `route` function and define our applications paths 
 ``` tsx
 import {route} from "./routes.ts"
 
-<Route path={route("home")()} />
-<Route path={route("home")("users")()} />
-<Route path={route("home")("users")("show")(":userId")()} />
+<Route path={route("home").str()} />
+<Route path={route("home")("users").str()} />
+<Route path={route("home")("users")("show")(":userId").str()} />
 ...
 ```
 
@@ -80,10 +80,10 @@ We can now benefit from typesafe links that allow our application to scale witho
 
 ``` tsx
 // with full path
-<Link to={route("home")("users")("show")(userId)("remove")()} />
+<Link to={route("home")("users")("show")(userId)("remove").str()} />
 
-// define root path to avoid duplicate code
+// reuse a base path in order to avoid duplicated code:
 const userRoute = route("home")("users")("show");
 ...
-<Link to={userRoute(userId)("remove")()} />
+<Link to={userRoute(userId)("remove").str()} />
 ```

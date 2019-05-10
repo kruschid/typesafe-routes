@@ -1,5 +1,5 @@
 import * as test from "tape";
-import { routeBuilder } from ".";
+import { routeFactory } from ".";
 
 export interface IRoute {
   dashboard: {
@@ -23,9 +23,9 @@ const userId = "5ab8f42e618b623ca0f25533";
 test("#routeBuilder should build absolute routes", (t) => {
   t.plan(2);
 
-  const route = routeBuilder<IRoute>(baseUrl);
+  const route = routeFactory<IRoute>(baseUrl);
   const appRoute = route("dashboard")("apps")(appId);
-  const appPath: string = appRoute();
+  const appPath: string = appRoute.str();
 
   t.equal(
     appPath,
@@ -33,7 +33,7 @@ test("#routeBuilder should build absolute routes", (t) => {
     "should render app route",
   );
 
-  const userSettingsPath: string = appRoute("users")(userId)("settings")();
+  const userSettingsPath: string = appRoute("users")(userId)("settings").str();
 
   t.equal(
     userSettingsPath,
@@ -45,9 +45,9 @@ test("#routeBuilder should build absolute routes", (t) => {
 test("#routeBuilder should build relative routes", (t) => {
   t.plan(1);
   type IAppsRoute = IRoute["dashboard"]["apps"][""];
-  const appsRoute  = routeBuilder<IAppsRoute>();
-  const relativeRoute  = appsRoute("users")(userId)("settings");
-  const relativePath: string = relativeRoute();
+  const appsRoute = routeFactory<IAppsRoute>();
+  const relativeRoute = appsRoute("users")(userId)("settings");
+  const relativePath: string = relativeRoute.str();
 
   t.equal(
     relativePath,
