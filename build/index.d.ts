@@ -1,2 +1,5 @@
-export declare type RouteBuilder<T> = <U extends keyof T, V extends undefined, K = U | V>(k?: K) => K extends undefined ? string : RouteBuilder<T[U]>;
-export declare const routeBuilder: <T>(prefix?: string | undefined) => RouteBuilder<T>;
+export interface IRouteBuilder<T> {
+    <K extends keyof T>(k: K): IRouteBuilder<T[K]>;
+    str(): string;
+}
+export declare const routeFactory: <T>(prefix?: string | undefined) => IRouteBuilder<T>;
