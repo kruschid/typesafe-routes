@@ -3,20 +3,14 @@ export interface IRouteBuilder<T> {
   str(): string
 }
 
-export const routeFactory = <T>(prefix?: string): IRouteBuilder<T> => {
-  const subPath: any = function(this: {path: string[]}, k: string) {
-    const path = this ? this.path : [];
-    const generate = () =>
-      [prefix, ...path, k].filter(isDefined).join("/");
+export const routeFactory = <T>(prefix: string = ""): IRouteBuilder<T> => {
+  const subPath: any = function(this: {path: string}, k: string) {
+    const path = this && this.path ? `${this.path}/${k}` : k;
+    const generate = () => `${prefix}/${path}`;
 
-    return Object.assign(
-      subPath.bind({path: [...path, k]}),
-      {
-        str: generate.bind({path: [...path, k]}),
-      },
-    );
+    return Object.assign(subPath.bind({path}), {
+      str: generate.bind({path}),
+    });
   }
   return subPath;
 };
-
-const isDefined = (x?: string): boolean => x !== undefined;

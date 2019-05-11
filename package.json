@@ -1,6 +1,6 @@
 {
   "name": "typesafe-routes",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "main": "build/index.js",
   "repository": "git@github.com:kruschid/typesafe-routes.git",
   "author": "Denis Kruschinski <denis.kruschinski@gmail.com>",

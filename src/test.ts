@@ -2,6 +2,7 @@ import * as test from "tape";
 import { routeFactory } from ".";
 
 export interface IRoute {
+  "": {},
   dashboard: {
     settings: {}
     apps: {
@@ -19,6 +20,16 @@ export interface IRoute {
 const baseUrl = "https://localhost:8080";
 const appId = 5;
 const userId = "5ab8f42e618b623ca0f25533";
+
+test("#routeFactory should build empty route", (t) => {
+  t.plan(3);
+
+  t.equal(routeFactory<IRoute>()("").str(), "/");
+  
+  t.equal(routeFactory<IRoute>("#")("").str(), "#/");
+
+  t.equal(routeFactory<IRoute>(baseUrl)("").str(), "https://localhost:8080/");
+});
 
 test("#routeBuilder should build absolute routes", (t) => {
   t.plan(2);
@@ -51,7 +62,7 @@ test("#routeBuilder should build relative routes", (t) => {
 
   t.equal(
     relativePath,
-    "users/5ab8f42e618b623ca0f25533/settings",
+    "/users/5ab8f42e618b623ca0f25533/settings",
     "should render relative route",
   );
 });
