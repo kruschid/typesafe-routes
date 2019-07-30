@@ -4,6 +4,8 @@ In large frontend projects it can be quite difficult to detect broken links auto
 
 ## Installation
 
+This library utilises [higher order type inference from generic functions](https://devblogs.microsoft.com/typescript/announcing-typescript-3-4/#higher-order-type-inference-from-generic-functions) and hence requires at least TypeScript **3.4.1**.
+
 ### NPM
 ```
 npm i typesafe-routes
