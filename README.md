@@ -4,7 +4,7 @@ In large frontend projects it can be quite difficult to detect broken links auto
 
 ## Installation
 
-This library utilises [higher order type inference from generic functions](https://devblogs.microsoft.com/typescript/announcing-typescript-3-4/#higher-order-type-inference-from-generic-functions) and hence requires at least TypeScript **3.4.1**.
+This library utilises [higher order type inference from generic functions](https://devblogs.microsoft.com/typescript/announcing-typescript-3-4/#higher-order-type-inference-from-generic-functions) hence requires at least TypeScript **3.4.1**.
 
 ### NPM
 ```
@@ -34,13 +34,13 @@ export interface IRoutes {
 const baseUrl = "https://localhost:8081";
 
 // create the root node
-const route = routeFactory<IRoutes>(baseUrl);
+const r = routeFactory<IRoutes>(baseUrl);
 
 // compose the route
-route("users")("123")("remove").str(); // "https://localhost:8081/users/123/remove"
+r("users")("123")("remove").str(); // "https://localhost:8081/users/123/remove"
 
 // compile error since "add" is not defined
-route("users")("123")("add").str();
+r("users")("123")("add").str();
 ```
 
 ## Absolute Routes with React Router
