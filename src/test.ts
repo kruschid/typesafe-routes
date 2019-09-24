@@ -1,6 +1,5 @@
 import * as test from "tape";
-import { Ruth, IRouteNode } from ".";
-import {expectType, expectError} from 'tsd';
+import { Ruth, QueryParams } from ".";
 
 test("empty route", (t) => {
   interface IRoute {
@@ -86,8 +85,6 @@ test("relative routes", (t) => {
   ], "should match relative routes");
 });
 
-
-
 test("parameterized routes", (t) => {
   type Category = "all" | "active" | "inactive";
 
@@ -139,63 +136,3 @@ test("parameterized routes", (t) => {
     "should match parameterized routes",
   );
 });
-
-test("typings", (t) => {
-  type Category = "all" | "active" | "inactive";
-
-  class ISODate {
-    toString() {
-      return "2017-01-01";
-    }
-  }
-
-  interface IRoute {
-    users: {
-      show(userId: string): {
-        delete: {}
-      }
-      list(...p:
-        | [{category: Category}, {limit: number}]
-        | [{registrationDate: ISODate}]
-      ): {}
-    }
-  }
-
-  const r = Ruth<IRoute>();
-  expectType<IRouteNode<IRoute>>(r);
-
-  expectType<
-    (k: "users") => {str(): string}
-  >(r);
-
-  expectType<
-    (k: "users") => (k: "show", id: string) => {str(): string}
-  >(r);
-
-  expectType<
-    (k: "users") => (k: "show", id: string) => (k: "delete") => {str(): string}
-  >(r);
-
-  expectType<
-    (k: "users") => (k: "show", id: string) => (k: "delete") => (n: never) => IRouteNode<never>
-  >(r);
-
-  expectType<
-    (k: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => {str(): string}
-  >(r);
-
-  expectType<
-    (l: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => (n: never) => IRouteNode<never>
-  >(r);
-
-  expectType<
-    (k: "users") => (k: "list", a: {registrationDate: ISODate}) => {str(): string}
-  >(r);
-
-  expectType<
-    (l: "users") => (k: "list", a: {registrationDate: ISODate}) => (n: never) => IRouteNode<never>
-  >(r);
-
-  t.pass("should match typings");
-  t.end();
-})
