@@ -12,6 +12,20 @@ interface IObject {
   [x: string]: string
 }
 
+export class QueryParams<T extends Record<string, any>> {
+  public constructor(private params: T) {}
+
+  public toString() {
+    return Object.keys(this.params).map((key) =>
+        `${key}=${this.params[key]}`
+      )
+      .join("&");
+  }
+}
+
+const isQueryParams = (x: any): x is QueryParams<any> =>
+  x && x.constructor && x.constructor.name === "QueryParams"
+
 const isObject = (x: any): x is IObject =>
   x && typeof x === 'object' && x.constructor === Object;
 
@@ -31,7 +45,7 @@ export const Ruth = <T>(prefix: string = ""): IRouteNode<T> => {
     }
 
     for (let p of params) {
-      path += `/${isObject(p) ? getNamedParamValue(p) : p}`;
+      path += `${isQueryParams(p) ? "?" : "/"}${isObject(p) ? getNamedParamValue(p) : p}`;
     }
 
     const str = () => `${prefix}/${path}`;

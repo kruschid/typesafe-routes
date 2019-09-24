@@ -136,3 +136,22 @@ test("parameterized routes", (t) => {
     "should match parameterized routes",
   );
 });
+
+test("query paramters", (t) => {
+  
+  interface IRoute {
+    users: {
+      search(p: QueryParams<{name: string, limit: number}>): {}
+    }
+  }
+
+  t.plan(1);
+
+  const r = Ruth<IRoute>();
+
+  t.equal(
+    r("users")("search", new QueryParams({name: "ruth", limit: 100})).str(),
+    "/users/search?name=ruth&limit=100",
+    "should match query string",
+  );
+});
