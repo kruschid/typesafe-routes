@@ -3,9 +3,9 @@
     "outDir": "build",
     "strict": true,
     "sourceMap": true,
-    "declaration": true,
+    "declaration": true
   },
   "files": [
     "src/index.ts"
-  ],
+  ]
 }
