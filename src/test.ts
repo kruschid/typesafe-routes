@@ -1,68 +1,201 @@
 import * as test from "tape";
-import { routeFactory } from ".";
+import { Ruth, IRouteNode } from ".";
+import {expectType, expectError} from 'tsd';
 
-export interface IRoute {
-  "": {},
-  dashboard: {
-    settings: {}
-    apps: {
-      [appId: string]: {
-        users: {
-          [userId: string] : {
-            settings: {}
-          }
-        }
+test("empty route", (t) => {
+  interface IRoute {
+    "": {}
+  }
+
+  t.plan(3);
+
+  t.equal(
+    Ruth<IRoute>()("").str(),
+    "/",
+    "should build empty route without prefix",
+  );
+  
+  t.equal(
+    Ruth<IRoute>("#")("").str(),
+    "#/",
+    "should build empty route with hash prefix",
+  );
+
+  const baseUrl = "https://localhost:8080";
+  t.equal(
+    Ruth<IRoute>(baseUrl)("").str(),
+    "https://localhost:8080/",
+    "should build empty route with baseUrl prefix",
+  );
+});
+
+test("absolute routes", (t) => {
+  interface IRoute {
+    dashboard: {
+      apps: {
+        all: {}
       }
     }
   }
-}
 
-const baseUrl = "https://localhost:8080";
-const appId = 5;
-const userId = "5ab8f42e618b623ca0f25533";
-
-test("#routeFactory should build empty route", (t) => {
-  t.plan(3);
-
-  t.equal(routeFactory<IRoute>()("").str(), "/");
-  
-  t.equal(routeFactory<IRoute>("#")("").str(), "#/");
-
-  t.equal(routeFactory<IRoute>(baseUrl)("").str(), "https://localhost:8080/");
-});
-
-test("#routeBuilder should build absolute routes", (t) => {
-  t.plan(2);
-
-  const route = routeFactory<IRoute>(baseUrl);
-  const appRoute = route("dashboard")("apps")(appId);
-  const appPath: string = appRoute.str();
-
-  t.equal(
-    appPath,
-    "https://localhost:8080/dashboard/apps/5",
-    "should render app route",
-  );
-
-  const userSettingsPath: string = appRoute("users")(userId)("settings").str();
-
-  t.equal(
-    userSettingsPath,
-    "https://localhost:8080/dashboard/apps/5/users/5ab8f42e618b623ca0f25533/settings",
-    "should render userSettingsRoute",
-  );
-});
-
-test("#routeBuilder should build relative routes", (t) => {
   t.plan(1);
-  type IAppsRoute = IRoute["dashboard"]["apps"][""];
-  const appsRoute = routeFactory<IAppsRoute>();
-  const relativeRoute = appsRoute("users")(userId)("settings");
-  const relativePath: string = relativeRoute.str();
+
+  const baseUrl = "https://localhost:8080";
+  const r = Ruth<IRoute>(baseUrl);
 
   t.equal(
-    relativePath,
-    "/users/5ab8f42e618b623ca0f25533/settings",
-    "should render relative route",
+    r("dashboard")("apps")("all").str(),
+    "https://localhost:8080/dashboard/apps/all",
+    "should match full route",
   );
 });
+
+test("relative routes", (t) => {
+  interface IRoute {
+    dashboard: {
+      apps: {
+        all: {}
+        games: {}
+        office: {}
+      }
+    }
+  }
+
+  t.plan(1);
+
+  const baseUrl = "https://localhost:8080";
+  const r = Ruth<IRoute>(baseUrl);
+  const dashboard = r("dashboard");
+  const apps = dashboard("apps");
+  const allApps = apps("all");
+  const games = apps("games");
+  const office = apps("office");
+
+  t.deepEqual([
+    dashboard.str(),
+    apps.str(),
+    allApps.str(),
+    games.str(),
+    office.str(),
+  ], [
+    "https://localhost:8080/dashboard",
+    "https://localhost:8080/dashboard/apps",
+    "https://localhost:8080/dashboard/apps/all",
+    "https://localhost:8080/dashboard/apps/games",
+    "https://localhost:8080/dashboard/apps/office",
+  ], "should match relative routes");
+});
+
+
+
+test("parameterized routes", (t) => {
+  type Category = "all" | "active" | "inactive";
+
+  interface IRoute {
+    users: {
+      show(userId: string): {
+        delete: {}
+      }
+      list(...p:
+        | [{category: Category}, {limit: number}]
+        | [{registrationDate: ISODate}]
+      ): {}
+    }
+  }
+
+  class ISODate {
+    constructor(
+      private year: number,
+      private month: number,
+      private date: number,
+    ){ }
+  
+    toString() {
+      return [
+        String(this.year).padStart(4, "0"),
+        String(this.month).padStart(2, "0"),
+        String(this.date).padStart(2, "0"),
+      ].join("-");
+    }
+  }
+
+  t.plan(1);
+
+  const userId = "5ab8f42e618b623ca0f25533";
+  const category: Category = "active";
+  const registrationDate = new ISODate(2017, 1, 1);
+
+  const r = Ruth<IRoute>();
+
+  t.deepEqual([
+    r("users")("show", userId)("delete").str(),
+    r("users")("list", {category}, {limit: 30}).str(),
+    r("users")("list", {registrationDate}).str(),
+  ], [
+    "/users/show/5ab8f42e618b623ca0f25533/delete",
+    "/users/list/active/30",
+    "/users/list/2017-01-01",
+  ],
+    "should match parameterized routes",
+  );
+});
+
+test("typings", (t) => {
+  type Category = "all" | "active" | "inactive";
+
+  class ISODate {
+    toString() {
+      return "2017-01-01";
+    }
+  }
+
+  interface IRoute {
+    users: {
+      show(userId: string): {
+        delete: {}
+      }
+      list(...p:
+        | [{category: Category}, {limit: number}]
+        | [{registrationDate: ISODate}]
+      ): {}
+    }
+  }
+
+  const r = Ruth<IRoute>();
+  expectType<IRouteNode<IRoute>>(r);
+
+  expectType<
+    (k: "users") => {str(): string}
+  >(r);
+
+  expectType<
+    (k: "users") => (k: "show", id: string) => {str(): string}
+  >(r);
+
+  expectType<
+    (k: "users") => (k: "show", id: string) => (k: "delete") => {str(): string}
+  >(r);
+
+  expectType<
+    (k: "users") => (k: "show", id: string) => (k: "delete") => (n: never) => IRouteNode<never>
+  >(r);
+
+  expectType<
+    (k: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => {str(): string}
+  >(r);
+
+  expectType<
+    (l: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => (n: never) => IRouteNode<never>
+  >(r);
+
+  expectType<
+    (k: "users") => (k: "list", a: {registrationDate: ISODate}) => {str(): string}
+  >(r);
+
+  expectType<
+    (l: "users") => (k: "list", a: {registrationDate: ISODate}) => (n: never) => IRouteNode<never>
+  >(r);
+
+  t.pass("should match typings");
+  t.end();
+})

@@ -6,15 +6,16 @@
   "author": "Denis Kruschinski <denis.kruschinski@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "yarn tsc",
-    "test": "yarn tape -r ts-node/register src/test.ts"
+    "build": "yarn test && yarn tsc && yarn tsd",
+    "test": "yarn tape -r ts-node/register src/test.ts",
+    "tsd": "tsd build"
   },
   "devDependencies": {
     "@types/tape": "^4.2.33",
     "tape": "^4.10.1",
-    "ts-node": "8.1.0"
+    "ts-node": "8.1.0",
+    "tsd": "^0.8.0"
   },
-  "peerDependencies": {
-    "typescript": ">=3.4.1"
-  }
+  "peerDependencies": {},
+  "dependencies": {}
 }
