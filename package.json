@@ -11,11 +11,14 @@
     "tsd": "tsd build"
   },
   "devDependencies": {
+    "@types/qs": "^6.5.3",
     "@types/tape": "^4.2.33",
     "tape": "^4.10.1",
     "ts-node": "8.1.0",
     "tsd": "^0.8.0"
   },
   "peerDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "qs": "^6.9.0"
+  }
 }

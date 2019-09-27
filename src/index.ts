@@ -1,4 +1,4 @@
-type Fn = (...args: any) => any;
+import { stringify, IStringifyOptions } from "qs";
 
 export interface IRouteNode<T> {
   <K extends keyof T>(
@@ -8,23 +8,29 @@ export interface IRouteNode<T> {
   str(): string
 }
 
+type Fn = (...args: any) => any;
+
 interface IObject {
   [x: string]: string
 }
 
+export const QUERY_FORMATTER = Symbol("QUERY_FORMATTER");
+
 export class QueryParams<T extends Record<string, any>> {
-  public constructor(private params: T) {}
+  public [QUERY_FORMATTER] = true;
+
+  public constructor(private params: T, private options?: IStringifyOptions) {}
 
   public toString() {
-    return Object.keys(this.params).map((key) =>
-        `${key}=${this.params[key]}`
-      )
-      .join("&");
+    return stringify(this.params, {
+      addQueryPrefix: true,
+      ...this.options,
+    });
   }
 }
 
 const isQueryParams = (x: any): x is QueryParams<any> =>
-  x && x.constructor && x.constructor.name === "QueryParams"
+  x && x[QUERY_FORMATTER];
 
 const isObject = (x: any): x is IObject =>
   x && typeof x === 'object' && x.constructor === Object;
@@ -45,7 +51,7 @@ export const Ruth = <T>(prefix: string = ""): IRouteNode<T> => {
     }
 
     for (let p of params) {
-      path += `${isQueryParams(p) ? "?" : "/"}${isObject(p) ? getNamedParamValue(p) : p}`;
+      path += `${isQueryParams(p) ? "" : "/"}${isObject(p) ? getNamedParamValue(p) : p}`;
     }
 
     const str = () => `${prefix}/${path}`;
