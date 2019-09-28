@@ -3,11 +3,12 @@ import { stringify, IStringifyOptions } from "qs";
 export type WithParams<T> = {
   [K in keyof T]: T[K] extends Fn
     ? {
-        params: UnionToIntersection<Parameters<T[K]>[number]>;
+        params: UnionToIntersection<ExcludeString<Parameters<T[K]>>[number]>;
         children: WithParams<ReturnType<T[K]>>;
       }
     : WithParams<T[K]>
 }
+type ExcludeString<T> = T extends string[] ? never: T;
 
 type Fn = (...args: any) => any;
 

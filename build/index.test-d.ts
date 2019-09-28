@@ -19,7 +19,10 @@ const routes = {
     }),
     list: (..._:
       | [{category: Category}, {limit: number}]
+      | [":category", ":limit"]
       | [{registrationDate: ISODate}]
+      | [":registrationDate"]
+      | [":registrationDate?"]
     ) => ({
       page: (
         _: {pageNumber: number}

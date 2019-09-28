@@ -91,10 +91,10 @@ test("parameterized routes", (t) => {
 
   const routes = {
     users: {
-      show: (userId: string) => ({
+      show: (_: {userId: string}) => ({
         delete: {}
       }),
-      list: (...p:
+      list: (..._:
         | [{category: Category}, {limit: number}]
         | [{registrationDate: ISODate}]
       ) => ({})
@@ -126,7 +126,7 @@ test("parameterized routes", (t) => {
   const r = Ruth(routes);
 
   t.deepEqual([
-    `${r.users.show(userId).delete}`,
+    `${r.users.show({userId}).delete}`,
     `${r.users.list({category}, {limit: 30})}`,
     `${r.users.list({registrationDate})}`,
   ], [
@@ -164,14 +164,14 @@ test("templates", (t) => {
 
   const routes = {
     users: {
-      show: (_?:
-        | {userId: string}
-        | ":userId?"
-        | ":userId"
+      show: (..._:
+        | []
+        | [{userId: string}]
+        | [":userId?" | ":userId"]
       ) => ({
         delete: {}
       }),
-      list: (...p:
+      list: (..._:
         | [{category: Category}, {limit: number}]
         | [":category", ":limit"]
         | [{registrationDate: ISODate}]
