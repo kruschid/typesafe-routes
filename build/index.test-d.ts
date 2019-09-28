@@ -1,5 +1,5 @@
 import { expectType, expectError } from "tsd";
-import { Ruth, IRouteNode } from "../src";
+import { Ruth, WithParams } from "../src";
 
 type Category = "all" | "active" | "inactive";
 
@@ -9,57 +9,67 @@ class ISODate {
   }
 }
 
-interface IRoute {
+type Routes = typeof routes;
+type Params = WithParams<Routes>;
+
+const routes = {
   users: {
-    show(userId: string): {
+    show: (_: {userId: string}) => ({
       delete: {}
-    }
-    list(...p:
+    }),
+    list: (..._:
       | [{category: Category}, {limit: number}]
       | [{registrationDate: ISODate}]
-    ): {}
+    ) => ({
+      page: (
+        _: {pageNumber: number}
+      ) => ({})
+    })
   }
 }
 
-const r = Ruth<IRoute>();
-expectType<IRouteNode<IRoute>>(r);
+const r = Ruth(routes);
+expectType<Routes>(r);
 
-expectError<
-  (k: "abc") => {str(): string}
->(r);
+expectError<{
+  abc: {}
+}>(r);
 
-expectType<
-  (k: "users") => {str(): string}
->(r);
+expectType<{
+  delete: {}
+}>(r.users.show({userId: ""}));
 
-expectType<
-  (k: "users") => (k: "show", id: string) => {str(): string}
->(r);
+expectError<{
+  other: {}
+}>(r.users.show({userId: ""}));
 
-expectType<
-  (k: "users") => (k: "show", id: string) => (k: "delete") => {str(): string}
->(r);
+expectType<Params["users"]["list"]["params"]>({
+  category: "all",
+  limit: 234,
+  registrationDate: new ISODate(),
+});
 
-expectType<
-  (k: "users") => (k: "show", id: string) => (k: "delete") => (n: never) => IRouteNode<never>
->(r);
+expectType<Partial<Params["users"]["list"]["params"]>>({
+  category: "all",
+  limit: 234,
+});
 
-expectType<
-  (k: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => {str(): string}
->(r);
+expectError<Partial<Params["users"]["list"]["params"]>>({
+  category: "all",
+  limit: 234,
+  other: 123 as any,
+});
 
-expectType<
-  (l: "users") => (k: "list", a: {category: Category}, b: {limit: number}) => (n: never) => IRouteNode<never>
->(r);
+expectError<Params["users"]["list"]["params"]>({
+  category: "none",
+  limit: 234,
+  registrationDate: new ISODate(),
+});
 
-expectError<
-  (k: "users") => (k: "list", a: {registrationDate: ISODate}, b: {limit: number}) => {str(): string}
->(r);
+expectType<Params["users"]["list"]["children"]["page"]["params"]>({
+  pageNumber: 123,
+});
 
-expectType<
-  (k: "users") => (k: "list", a: {registrationDate: ISODate}) => {str(): string}
->(r);
-
-expectType<
-  (l: "users") => (k: "list", a: {registrationDate: ISODate}) => (n: never) => IRouteNode<never>
->(r);
+expectType<Params["users"]["list"]["children"]["page"]["params"]>({
+  pageNumber: 123,
+});

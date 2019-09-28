@@ -2,34 +2,35 @@ import * as test from "tape";
 import { Ruth, QueryParams } from ".";
 
 test("empty route", (t) => {
-  interface IRoute {
+
+  const routes = {
     "": {}
   }
 
   t.plan(3);
 
   t.equal(
-    Ruth<IRoute>()("").str(),
+    `${Ruth(routes, "")[""]}`,
     "/",
     "should build empty route without prefix",
   );
   
   t.equal(
-    Ruth<IRoute>("#")("").str(),
+    `${Ruth(routes, "#")[""]}`,
     "#/",
     "should build empty route with hash prefix",
   );
 
   const baseUrl = "https://localhost:8080";
   t.equal(
-    Ruth<IRoute>(baseUrl)("").str(),
+    `${Ruth(routes, baseUrl)[""]}`,
     "https://localhost:8080/",
     "should build empty route with baseUrl prefix",
   );
 });
 
 test("absolute routes", (t) => {
-  interface IRoute {
+  const routes = {
     dashboard: {
       apps: {
         all: {}
@@ -40,22 +41,22 @@ test("absolute routes", (t) => {
   t.plan(1);
 
   const baseUrl = "https://localhost:8080";
-  const r = Ruth<IRoute>(baseUrl);
+  const r = Ruth(routes, baseUrl);
 
   t.equal(
-    r("dashboard")("apps")("all").str(),
+    `${r.dashboard.apps.all}`,
     "https://localhost:8080/dashboard/apps/all",
     "should match full route",
   );
 });
 
 test("relative routes", (t) => {
-  interface IRoute {
+  const routes = {
     dashboard: {
       apps: {
-        all: {}
-        games: {}
-        office: {}
+        all: {},
+        games: {},
+        office: {},
       }
     }
   }
@@ -63,19 +64,19 @@ test("relative routes", (t) => {
   t.plan(1);
 
   const baseUrl = "https://localhost:8080";
-  const r = Ruth<IRoute>(baseUrl);
-  const dashboard = r("dashboard");
-  const apps = dashboard("apps");
-  const allApps = apps("all");
-  const games = apps("games");
-  const office = apps("office");
+  const r = Ruth(routes, baseUrl);
+  const dashboard = r.dashboard;
+  const apps = dashboard.apps;
+  const allApps = apps.all;
+  const games = apps.games;
+  const office = apps.office;
 
   t.deepEqual([
-    dashboard.str(),
-    apps.str(),
-    allApps.str(),
-    games.str(),
-    office.str(),
+    `${dashboard}`,
+    `${apps}`,
+    `${allApps}`,
+    `${games}`,
+    `${office}`,
   ], [
     "https://localhost:8080/dashboard",
     "https://localhost:8080/dashboard/apps",
@@ -88,15 +89,15 @@ test("relative routes", (t) => {
 test("parameterized routes", (t) => {
   type Category = "all" | "active" | "inactive";
 
-  interface IRoute {
+  const routes = {
     users: {
-      show(userId: string): {
+      show: (userId: string) => ({
         delete: {}
-      }
-      list(...p:
+      }),
+      list: (...p:
         | [{category: Category}, {limit: number}]
         | [{registrationDate: ISODate}]
-      ): {}
+      ) => ({})
     }
   }
 
@@ -122,12 +123,12 @@ test("parameterized routes", (t) => {
   const category: Category = "active";
   const registrationDate = new ISODate(2017, 1, 1);
 
-  const r = Ruth<IRoute>();
+  const r = Ruth(routes);
 
   t.deepEqual([
-    r("users")("show", userId)("delete").str(),
-    r("users")("list", {category}, {limit: 30}).str(),
-    r("users")("list", {registrationDate}).str(),
+    `${r.users.show(userId).delete}`,
+    `${r.users.list({category}, {limit: 30})}`,
+    `${r.users.list({registrationDate})}`,
   ], [
     "/users/show/5ab8f42e618b623ca0f25533/delete",
     "/users/list/active/30",
@@ -139,19 +140,67 @@ test("parameterized routes", (t) => {
 
 test("query paramters", (t) => {
   
-  interface IRoute {
+  const routes = {
     users: {
-      search(p: QueryParams<{name: string, limit: number}>): {}
+      search: (
+        p: QueryParams<{name: string, limit: number}>
+      ) => ({})
     }
   }
 
   t.plan(1);
 
-  const r = Ruth<IRoute>();
+  const r = Ruth(routes);
 
   t.equal(
-    r("users")("search", new QueryParams({name: "ruth", limit: 100})).str(),
+    `${r.users.search(new QueryParams({name: "ruth", limit: 100}))}`,
     "/users/search?name=ruth&limit=100",
     "should match query string",
   );
+});
+
+test("templates", (t) => {
+  type Category = "all" | "active" | "inactive";
+
+  const routes = {
+    users: {
+      show: (_?:
+        | {userId: string}
+        | ":userId?"
+        | ":userId"
+      ) => ({
+        delete: {}
+      }),
+      list: (...p:
+        | [{category: Category}, {limit: number}]
+        | [":category", ":limit"]
+        | [{registrationDate: ISODate}]
+        | [":registrationDate"]
+      ) => ({})
+    }
+  }
+
+  class ISODate {
+    toString() {
+      return "2017-01-01";
+    }
+  }
+
+  t.plan(1);
+
+  const r = Ruth(routes);
+
+  t.deepEqual([
+    `${r.users.show(":userId?")}`,
+    `${r.users.show().delete}`,
+    `${r.users.show(":userId").delete}`,
+    `${r.users.list(":category", ":limit")}`,
+    `${r.users.list(":registrationDate")}`,
+  ], [
+    "/users/show/:userId?",
+    "/users/show/delete",
+    "/users/show/:userId/delete",
+    "/users/list/:category/:limit",
+    "/users/list/:registrationDate"
+  ], "should match templates");
 });

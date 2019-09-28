@@ -1,7 +1,19 @@
+import { IStringifyOptions } from "qs";
+export declare type WithParams<T> = {
+    [K in keyof T]: T[K] extends Fn ? {
+        params: UnionToIntersection<Parameters<T[K]>[number]>;
+        children: WithParams<ReturnType<T[K]>>;
+    } : WithParams<T[K]>;
+};
 declare type Fn = (...args: any) => any;
-export interface IRouteNode<T> {
-    <K extends keyof T>(k: K, ...params: T[K] extends Fn ? Parameters<T[K]> : []): IRouteNode<T[K] extends Fn ? ReturnType<T[K]> : T[K]>;
-    str(): string;
+declare type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
+export declare const QUERY_FORMATTER: unique symbol;
+export declare class QueryParams<T extends Record<string, any>> {
+    private params;
+    private options?;
+    [QUERY_FORMATTER]: boolean;
+    constructor(params: T, options?: IStringifyOptions | undefined);
+    toString(): string;
 }
-export declare const Ruth: <T>(prefix?: string) => IRouteNode<T>;
+export declare const Ruth: <T extends Record<string, any>>(t: T, prefix?: string) => T;
 export {};
