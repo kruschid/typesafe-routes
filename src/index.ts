@@ -32,6 +32,9 @@ export const Ruth = <T extends Record<string, any>>(
   t: T,
   prefix: string = "",
 ): T => {
+  // parameterized node may return void (in case of recursion)
+  t = t || {};
+
   const f: Record<string, any> = new class F {
     toString(){ return prefix }
   };

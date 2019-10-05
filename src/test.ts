@@ -1,7 +1,7 @@
 import * as test from "tape";
 import { Ruth, QueryParams } from ".";
 
-test("empty route", (t) => {
+test("main page", (t) => {
 
   const routes = {
     "": {}
@@ -29,7 +29,7 @@ test("empty route", (t) => {
   );
 });
 
-test("absolute routes", (t) => {
+test("with baseUrl", (t) => {
   const routes = {
     dashboard: {
       apps: {
@@ -97,7 +97,7 @@ test("parameterized routes", (t) => {
       list: (..._:
         | [{category: Category}, {limit: number}]
         | [{registrationDate: ISODate}]
-      ) => ({})
+      ) => {}
     }
   }
 
@@ -143,7 +143,7 @@ test("query paramters", (t) => {
   const routes = {
     users: {
       search: (
-        p: QueryParams<{name: string, limit: number}>
+        _: QueryParams<{name: string, limit: number}>
       ) => ({})
     }
   }
