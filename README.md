@@ -113,7 +113,7 @@ const routes = {
 
 #### Basic Example
 
-This library has support for typed parameters. You can find a basic example in the code below where a node named `show` takes on named parameter `userId`:
+This library has support for typed parameters. You can find a basic example in the code below where a node named `show` takes one parameter `userId`:
 
 ``` ts
 const routes = {
@@ -125,15 +125,16 @@ const routes = {
 }
 
 const r = R(routes);
-`${r.users.find("ruth", 50,   30)}`
-// => /users/find/ruth/50/30
-`${r.users.find("ruth", 50,   30).show("434ef34")}`
-// => /users/find/ruth/50/30/show/434ef34
+
+// /users/find/ruth/50/30
+`${r.users.find("ruth", 50, 30)}`
+// /users/find/ruth/50/30/show/434ef34
+`${r.users.find("ruth", 50, 30).show("434ef34")}`
+// type error since 'start' is not a number
 `${r.users.find("ruth", "50", 30)}`
-// => type error since 'start' is not a number
 ```
 
-The code fragment defines a hierarchical structure with three nodes `users`, `find` and `show`. The two  nodes `find` and `show` are taking parameters. This is an basic example that is perfectly sufficient so far.However reviewing a code fragment like `find("ruth", 50, 30)` is not very efficient since there is no way for the reviewer to see directly whether `50` is the value for `start` or `limit` without looking up the definition in a different file. The next section tries to approach this issue with a concept that is very similar to named arguments which are known from lagnuages like C# or Python.
+The code fragment defines a hierarchical structure with three nodes `users`, `find` and `show`. The two nodes `find` and `show` accept one or multiple parameters. This is an basic example that is perfectly sufficient so far. However reviewing a code fragment like `find("ruth", 50, 30)` is not very efficient since there is no way for the reviewer to see directly whether `50` is the value for `start` or `limit` without looking up the definition in a different file. The next section tries to approach this issue with a concept that is similar to named arguments which are known from lagnuages like C# or Python.
 
 #### Named Parameters
 
@@ -171,10 +172,10 @@ const start = 50;
 const limit = 100;
 
 const r = R(routes);
+// /users/find/ruth/50/30
 `${r.users.find({name}, {start}, {limit})}`
-// => /users/find/ruth/50/30
-`${r.users.find({name}, {limit}, {start})}`
 // type error since second parameter doesn't match the expected type
+`${r.users.find({name}, {limit}, {start})}`
 ```
 
 #### Overloading
@@ -240,13 +241,11 @@ const routes = {
 In the example above we import the type `WithParams` and apply it on the actual type of our `routes` object. The following code fragment demonstrates how we can get the types of the node `find` and those the child `show`:
 
 ``` ts
-// find:
-Params["users"]["find"]["params"]
 // {name: string} & {start: number} & {limit: number}
+Params["users"]["find"]["params"]
 
-// show:
-Params["users"]["find"]["children"]["show"]["params"]
 // {userId: string}
+Params["users"]["find"]["children"]["show"]["params"]
 ```
 
 The `WithParams` type combines all object parameters of a node via intersection type. Additionally it filters out primitive types since intersection of object with a primitve type would give us the type `never`. Example:
@@ -273,8 +272,8 @@ const route = {
 
 const registrationDate = new ISODate(2017, 1, 1)
 
+// /users/find/ruth/50/100/2017-01-01
 `${r.users.find({name}, {start}, {limit}, {registrationDate})}`
-// => /users/find/ruth/50/100/2017-01-01
 ```
 
 With `ISODate` implemented as followed:
@@ -313,8 +312,9 @@ const routes = {
 }
 
 const query = new QueryParams({name: "ruth", limit: 100});
+
+// /users/search?name=ruth&limit=100
 `${r.users.search({query})}`
-// => /users/search?name=ruth&limit=100
 ```
 
 The `QueryParams` is a wrapper that internally utilises a querystring stringifyer ([qs](https://github.com/ljharb/qs)). `qs.stringify` gives you different formatting options e.g. `arrayFormat` ("`a=b,c`" vs "`a[]=b&a[]=c`" vs "`a[0]=b&a[1]=c`" etc.). You can either pass an options object as the second parameter of `QueryParams` or implement your own `QueryParams` wrapper in case `qs.stringify` doesn't meet your requirements for some reasons. In order to implement your custom query formatter you must import the `QUERY_FORMATTER` symbol and set it as name of a static property with the value `true`: 
@@ -334,13 +334,13 @@ class MyQueryParams<T> {
 
 const query = new MyQueryParams({name: "ruth", limit: 100});
 
+// /users/search?p.name=ruth&p.limit=100
 `${r.users.search({query})}`
-// => /users/search?p.name=ruth&p.limit=100
 ```
 
 ### React Router Case Study
 
-This example suggests how you could create your applications routes with the `Ruth` helper.
+This example suggests how you could create your applications routes with the `R` helper.
 
 ``` tsx
 // my-component.ts
