@@ -16,8 +16,10 @@ var QueryParams = /** @class */ (function () {
 }());
 exports.QueryParams = QueryParams;
 _a = exports.QUERY_FORMATTER;
-exports.Ruth = function (t, prefix) {
+exports.R = function (t, prefix) {
     if (prefix === void 0) { prefix = ""; }
+    // parameterized node may return void (in case of recursion)
+    t = t || {};
     var f = new /** @class */ (function () {
         function F() {
         }
@@ -26,13 +28,13 @@ exports.Ruth = function (t, prefix) {
     }());
     Object.keys(t).forEach(function (k) {
         f[k] = !hasParams(t[k])
-            ? exports.Ruth(t[k], prefix + "/" + k)
+            ? exports.R(t[k], prefix + "/" + k)
             : function () {
                 var p = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     p[_i] = arguments[_i];
                 }
-                return exports.Ruth(t[k](), prefix + "/" + renderParams(k, p));
+                return exports.R(t[k](), prefix + "/" + renderParams(k, p));
             };
     });
     return f;

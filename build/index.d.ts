@@ -16,5 +16,5 @@ export declare class QueryParams<T extends Record<string, any>> {
     constructor(params: T, options?: IStringifyOptions | undefined);
     toString(): string;
 }
-export declare const Ruth: <T extends Record<string, any>>(t: T, prefix?: string) => T;
+export declare const R: <T extends Record<string, any>>(t: T, prefix?: string) => T;
 export {};

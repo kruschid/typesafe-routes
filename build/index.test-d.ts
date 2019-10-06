@@ -1,5 +1,5 @@
 import { expectType, expectError } from "tsd";
-import { Ruth, WithParams } from "../src";
+import { R, WithParams } from "../src";
 
 type Category = "all" | "active" | "inactive";
 
@@ -31,7 +31,7 @@ const routes = {
   }
 }
 
-const r = Ruth(routes);
+const r = R(routes);
 expectType<Routes>(r);
 
 expectError<{
