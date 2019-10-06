@@ -1,5 +1,5 @@
 import * as test from "tape";
-import { Ruth, QueryParams } from ".";
+import { R, QueryParams } from ".";
 
 test("main page", (t) => {
 
@@ -10,20 +10,20 @@ test("main page", (t) => {
   t.plan(3);
 
   t.equal(
-    `${Ruth(routes, "")[""]}`,
+    `${R(routes, "")[""]}`,
     "/",
     "should build empty route without prefix",
   );
   
   t.equal(
-    `${Ruth(routes, "#")[""]}`,
+    `${R(routes, "#")[""]}`,
     "#/",
     "should build empty route with hash prefix",
   );
 
   const baseUrl = "https://localhost:8080";
   t.equal(
-    `${Ruth(routes, baseUrl)[""]}`,
+    `${R(routes, baseUrl)[""]}`,
     "https://localhost:8080/",
     "should build empty route with baseUrl prefix",
   );
@@ -41,7 +41,7 @@ test("with baseUrl", (t) => {
   t.plan(1);
 
   const baseUrl = "https://localhost:8080";
-  const r = Ruth(routes, baseUrl);
+  const r = R(routes, baseUrl);
 
   t.equal(
     `${r.dashboard.apps.all}`,
@@ -64,7 +64,7 @@ test("relative routes", (t) => {
   t.plan(1);
 
   const baseUrl = "https://localhost:8080";
-  const r = Ruth(routes, baseUrl);
+  const r = R(routes, baseUrl);
   const dashboard = r.dashboard;
   const apps = dashboard.apps;
   const allApps = apps.all;
@@ -123,7 +123,7 @@ test("parameterized routes", (t) => {
   const category: Category = "active";
   const registrationDate = new ISODate(2017, 1, 1);
 
-  const r = Ruth(routes);
+  const r = R(routes);
 
   t.deepEqual([
     `${r.users.show({userId}).delete}`,
@@ -150,7 +150,7 @@ test("query paramters", (t) => {
 
   t.plan(1);
 
-  const r = Ruth(routes);
+  const r = R(routes);
 
   t.equal(
     `${r.users.search(new QueryParams({name: "ruth", limit: 100}))}`,
@@ -188,7 +188,7 @@ test("templates", (t) => {
 
   t.plan(1);
 
-  const r = Ruth(routes);
+  const r = R(routes);
 
   t.deepEqual([
     `${r.users.show(":userId?")}`,

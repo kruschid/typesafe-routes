@@ -1,4 +1,4 @@
-# Typesafe Routes (Ruth)
+# Typesafe Routes
 
 This small library exposes functions and typings that allow you to define constraints for your application routes which enable automatic detection of broken links in compile time due to typescripts' static typing ability. In most cases this not only increases efficiency when using IDE with autocompletion but also is also a way to facilitate refactoring of larger code base.
 
@@ -30,12 +30,12 @@ export const routes = {
 
 In order to define the constraints we created the object `routes` that has a nested structure. Our root node is `dashboard` and its'only child is `apps` which is also the parent of the node `all`.
 
-In order to generate the corresponding paths we utilise the function `Ruth` that we import from this library.
+In order to generate the corresponding paths we utilise the function `R` that we import from this library.
 
 ``` ts
-import { Ruth } from "typesafe-routes";
+import { R } from "typesafe-routes";
 
-const r = Ruth(routes);
+const r = R(routes);
 
 r.dashboard.toString();           // => /dashboard
 r.dashboard.apps.toString();      // => /dashboard/apps
@@ -57,19 +57,19 @@ But when developing advanced products there are of course more scenarios that ne
 
 ### Defining `baseUrl`
 
-Defining a `baseUrl` can be achieved by defining the second parameter of the `Ruth` function. The `baseUrl` is a string that could be anything (`Ruth` doesn't perform validation on that string) a url, a fragment indicator (e.g. `#` that is useful when using `HashRouter`) or simpliy the current url of a component (e.g. `withRouter` React-Router).
+Defining a `baseUrl` can be achieved by defining the second parameter of the `R` function. The `baseUrl` is a string that could be anything (`R` doesn't perform validation on that string) a url, a fragment indicator (e.g. `#` that is useful when using `HashRouter`) or simpliy the current url of a component (e.g. `withRouter` React-Router).
 
 ``` ts
 // url
-let r = Ruth(routes, "https://localhost:8080");
+let r = R(routes, "https://localhost:8080");
 `${r.dashboard}` // => https://localhost:8080/dashboard
 
 // fragment indicator
-r = Ruth(routes, "#");
+r = R(routes, "#");
 `${r.dashboard}` // => #/dashboard
 
 // url of react component
-r = Ruth(routes, props.match.url);
+r = R(routes, props.match.url);
 `${r.dashboard}` // => /my/component/path/dashboard
 ```
 
@@ -87,11 +87,11 @@ const routes = {
 Now we can generate a path by passing an empty string for the node name:
 
 ``` ts
-let r = Ruth(routes);
+let r = R(routes);
 `${r[""]}` // => /
 
 // or with a baseUrl:
-r = Ruth(routes, "#");
+r = R(routes, "#");
 `${r[""]}` // => #/
 ```
 
@@ -124,7 +124,7 @@ const routes = {
   }
 }
 
-const r = Ruth(routes);
+const r = R(routes);
 `${r.users.find("ruth", 50,   30)}`
 // => /users/find/ruth/50/30
 `${r.users.find("ruth", 50,   30).show("434ef34")}`
@@ -170,7 +170,7 @@ const name = "ruth";
 const start = 50;
 const limit = 100;
 
-const r = Ruth(routes);
+const r = R(routes);
 `${r.users.find({name}, {start}, {limit})}`
 // => /users/find/ruth/50/30
 `${r.users.find({name}, {limit}, {start})}`
@@ -195,7 +195,7 @@ const routes = {
 With this example we now are able to create route templates without making compromises regarding type-safety:
 
 ``` tsx
-const r = Ruth(routes);
+const r = R(routes);
 
 // template for react router:
 <Route
@@ -343,7 +343,7 @@ This example suggests how you could create your applications routes with the `Ru
 
 ``` tsx
 // my-component.ts
-import { Ruth, WithParams } from "typesafe-routes";
+import { R, WithParams } from "typesafe-routes";
 
 type Routes = typeof routes;
 type Params = WithParams<Routes>;
@@ -363,7 +363,7 @@ const routes = {
 export const MyComponent = withRouter<MyComponentParams>((
   {match: {params: {userId}}},
 ) => {
-  const r = Ruth(routes);
+  const r = R(routes);
 
   return (
     <>

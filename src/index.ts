@@ -28,7 +28,7 @@ export class QueryParams<T extends Record<string, any>> {
   }
 }
 
-export const Ruth = <T extends Record<string, any>>(
+export const R = <T extends Record<string, any>>(
   t: T,
   prefix: string = "",
 ): T => {
@@ -41,8 +41,8 @@ export const Ruth = <T extends Record<string, any>>(
 
   Object.keys(t).forEach((k) => {
     f[k] = !hasParams(t[k])
-      ? Ruth(t[k], `${prefix}/${k}`)
-      : (...p: any[]) => Ruth(t[k](), `${prefix}/${renderParams(k, p)}`);
+      ? R(t[k], `${prefix}/${k}`)
+      : (...p: any[]) => R(t[k](), `${prefix}/${renderParams(k, p)}`);
   })
   return f as T;
 }
