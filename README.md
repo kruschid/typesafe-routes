@@ -179,7 +179,7 @@ const r = R(routes);
 
 #### Overloading
 
-With the spread operator in combination with union type we can also achieve overloading which can be pretty convenient in different use cases:
+With the spread operator in combination with union type we can also achieve overloading which can be pretty convenient for different use cases:
 
 ``` ts
 const routes = {
@@ -204,14 +204,15 @@ const r = R(routes);
 />
 
 // getting a specific path
+const name = "ruth", limit = 10, start = 20;
 <NavLink
-  to={`${r.users.find({name, start, limit})}`}
+  to={`${r.users.find({name}, {start}, {limit})}`}
 >
   Find users with name "ruth"!
 </NavLink>
 ```
 
-#### Type Inference
+#### Inferring Parameter Types
 
 It is very useful to infer the type of parameters that are defined in a route node. This library exposes a a generic type `WithParams<T>` that is able to extract type information from a given node.
 
