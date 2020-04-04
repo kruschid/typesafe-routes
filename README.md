@@ -18,8 +18,6 @@ yarn add typesafe-routes
 
 ### Basic Usage 
 
-In order to get started we need to define the constraints for our routes first:
-
 ``` ts
 import { R } from "typesafe-routes";
 
@@ -60,7 +58,7 @@ r.users().details().$
 ```
 
 ### Route Parameters
-A route consists of a name, an array of 0 to n parameters and its' children (optional). Later the parameter values are rendered after the route name in the specified order (e.g. `<name>/<param1-value>/<param2-value>/...`). In order to specify the order we define the parameters as a list:
+A route consists of a name, an array of `0` to `n` parameters and its' children (optional). Later the parameter values are rendered after the route name in the specified order (e.g. `<name>/<param1-value>/<param2-value>/...`). In order to specify the order we define the parameters as a list:
 
 ```ts
 interface MyRoute {
@@ -102,7 +100,7 @@ r.user(":id").$ // compile error
 
 ### Query Parameters
 
-`QueryParams` is a special parameter type. `QueryParams` values are always rendered at the end of the route. Even when they were defined at a higher level in the hierarchy.
+`QueryParams` is a special parameter type. `QueryParams` values are always rendered at the end of the route. Even though they were defined at a higher level in the hierarchy.
 
 ``` ts
 import { QueryParams } from "typesafe-routes";

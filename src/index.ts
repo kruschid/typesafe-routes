@@ -73,4 +73,4 @@ export class QueryParams<T extends Record<string, any>> {
   public toString() {
     return stringify(this.params, this.options)
   }
-  }
+}
