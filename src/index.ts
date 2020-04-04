@@ -1,62 +1,49 @@
 import { stringify, IStringifyOptions } from "qs";
 
-export type WithParams<T> = {
-  [K in keyof T]: T[K] extends Fn
-    ? {
-        params: UnionToIntersection<ExcludeString<Parameters<T[K]>>[number]>;
-        children: WithParams<ReturnType<T[K]>>;
-      }
-    : WithParams<T[K]>
+export type Route = {
+  name: string
+  params: Array<string | Record<string, any>>
+  children?: Route
 }
-type ExcludeString<T> = T extends string[] ? never: T;
 
-type Fn = (...args: any) => any;
+export type RouteFn<T extends Route> = {
+  // since T could be a tagged union we need to extract the specific type by name via Extract
+  [N in T["name"]]: <K extends Route = Extract<T, {name: N}>>(
+    ...params: K["params"]
+  ) => RouteFn<NonNullable<K["children"]>>
+} & {
+  $: string
+}
+
+export type RouteParams<T extends Route> = UnionToIntersection<ExcludeString<T["params"]>[number]>;
+
+type ExcludeString<T> = T extends string[] ? never: T;
 
 // thank you @jcalz <3 (https://stackoverflow.com/a/50375286)
 type UnionToIntersection<U> = 
-  (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never
+  (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never;
 
-export const QUERY_FORMATTER = Symbol("QUERY_FORMATTER");
-
-export class QueryParams<T extends Record<string, any>> {
-  public [QUERY_FORMATTER] = true;
-
-  public constructor(private params: T, private options?: IStringifyOptions) {}
-
-  public toString() {
-    return stringify(this.params, this.options);
-  }
-}
-
-export const R = <T extends Record<string, any>>(
-  t: T,
-  prefix: string = "",
-): T => {
-  // parameterized node may return void (in case of recursion)
-  t = t || {};
-
-  const f: Record<string, any> = new class F {
-    toString(){ return prefix }
-  };
-
-  Object.keys(t).forEach((k) => {
-    f[k] = !hasParams(t[k])
-      ? R(t[k], `${prefix}/${k}`)
-      : (...p: any[]) => R(t[k](), `${prefix}/${renderParams(k, p)}`);
-  })
-  return f as T;
-}
-
-const hasParams = (x: any) =>
-  typeof x === "function";
-
-const renderParams = (prefix: string, params: any[]) => {
-  let path = prefix;
-  for (let p of params) {
-    path += `${hasQueryParams(p) ? "?" : "/"}${isObject(p) ? getNamedParamValue(p) : p}`;
-  }
-  return path;
-};
+export const R = <T extends Route>(
+  prevPath: string = "",
+  prevQuery: QueryParams<any> = new QueryParams({}, {addQueryPrefix: true}),
+): RouteFn<T> =>
+  new Proxy<any>({}, {
+    get: (target, next, receiver) =>
+      typeof next === "symbol" ? Reflect.get(target, next, receiver)
+      : next === "$" ? prevPath + prevQuery
+      : (...params: Route["params"]) => {
+          let [path, query] = [prevPath, prevQuery];
+          path = `${path}/${next}`;
+          for (let p of params) {
+            if( hasQueryParams(p) ) {
+              query = p.merge(query)
+            } else {
+              path += `/${isObject(p) ? getParamValue(p) : p}`;
+            }
+          }
+          return R(path, query);
+        },
+  });
 
 const hasQueryParams = (x: any): x is QueryParams<any> =>
   x && x[QUERY_FORMATTER];
@@ -64,5 +51,26 @@ const hasQueryParams = (x: any): x is QueryParams<any> =>
 const isObject = (x: any): x is Record<string, any> =>
   x && typeof x === 'object' && x.constructor === Object;
 
-const getNamedParamValue = (param: Record<string, any>) =>
+const getParamValue = (param: Record<string, any>) =>
   param[Object.keys(param)[0]];
+
+export const QUERY_FORMATTER = Symbol("QUERY_FORMATTER");
+
+export class QueryParams<T extends Record<string, any>> {
+  public [QUERY_FORMATTER] = true;
+
+  public constructor(
+    private params: T,
+    private options?: IStringifyOptions,
+  ) {}
+
+  public merge(other: QueryParams<any>) {
+    this.params = {...this.params, ...other.params};
+    this.options = {...this.options, ...other.options};
+    return this;
+  }
+
+  public toString() {
+    return stringify(this.params, this.options)
+  }
+  }

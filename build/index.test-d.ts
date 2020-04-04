@@ -1,78 +1,63 @@
-import { expectType, expectError } from "tsd";
-import { R, WithParams } from "../src";
+import { expectError, expectType } from "tsd";
+import { R, RouteFn, RouteParams } from ".";
 
-type Category = "all" | "active" | "inactive";
-
-class ISODate {
-  toString() {
-    return "2017-01-01";
-  }
+interface NoParams {
+  name: "a"
+  params: []
+  children: WithParams
 }
 
-type Routes = typeof routes;
-type Params = WithParams<Routes>;
-
-const routes = {
-  users: {
-    show: (_: {userId: string}) => ({
-      delete: {}
-    }),
-    list: (..._:
-      | [{category: Category}, {limit: number}]
-      | [":category", ":limit"]
-      | [{registrationDate: ISODate}]
-      | [":registrationDate"]
-      | [":registrationDate?"]
-    ) => ({
-      page: (
-        _: {pageNumber: number}
-      ) => ({})
-    })
-  }
+interface WithParams {
+  name: "b"
+  params: [{id: number}]
+  children:
+    | WithParams
+    | WithParamsOverloaded
 }
 
-const r = R(routes);
-expectType<Routes>(r);
+interface WithParamsOverloaded {
+  name: "c"
+  params:
+    | []
+    | [":n"]
+    | [{n: number}, {s: string}, {b: boolean}]
+  children: NoParams
+}
 
-expectError<{
-  abc: {}
-}>(r);
+const r = R<NoParams>();
 
-expectType<{
-  delete: {}
-}>(r.users.show({userId: ""}));
+expectType<string>(r.a().$);
+expectType<string>(r.a().b({id: 1}).$);
+expectType<string>(r.a().b({id: 1}).c().$);
+expectType<string>(r.a().b({id: 1}).b({id: 2}).b({id: 3}).$);
+expectType<string>(r.a().b({id: 1}).b({id: 2}).b({id: 3}).c(":n").$);
+expectType<RouteFn<WithParams>>(r.a());
+expectType<RouteFn<WithParams | WithParamsOverloaded>>(r.a().b({id: 1}));
+expectType<RouteFn<WithParams | WithParamsOverloaded>>(r.a().b({id: 1}).b({id: 4}));
+expectType<RouteFn<NoParams>>(r.a().b({id: 1}).b({id: 4}).c());
+expectError(r.a("invalid"));
+expectError(r.a().b());
+expectError(r.a().b({id: 1}).b());
+expectError(r.a().b({id: 1}).c(""));
+expectError(r.a().b({id: 1}).c({}));
+expectError(r.a().b({id: 1}).c(4));
 
-expectError<{
-  other: {}
-}>(r.users.show({userId: ""}));
-
-expectType<Params["users"]["list"]["params"]>({
-  category: "all",
-  limit: 234,
-  registrationDate: new ISODate(),
+expectType<RouteParams<WithParamsOverloaded>>(
+  Object.assign(
+    { b: true },
+    { n: 1 },
+    { s: "" },
+  ),
+);
+expectType<RouteParams<NoParams>>({} as unknown);
+expectType<RouteParams<WithParams>>({
+  id: 4,
 });
 
-expectType<Partial<Params["users"]["list"]["params"]>>({
-  category: "all",
-  limit: 234,
+expectError<RouteParams<WithParamsOverloaded>>({
+  b: true,
+  s: ""
 });
-
-expectError<Partial<Params["users"]["list"]["params"]>>({
-  category: "all",
-  limit: 234,
-  other: 123 as any,
-});
-
-expectError<Params["users"]["list"]["params"]>({
-  category: "none",
-  limit: 234,
-  registrationDate: new ISODate(),
-});
-
-expectType<Params["users"]["list"]["children"]["page"]["params"]>({
-  pageNumber: 123,
-});
-
-expectType<Params["users"]["list"]["children"]["page"]["params"]>({
-  pageNumber: 123,
+expectError<RouteParams<WithParams>>({
+  id: "",
 });

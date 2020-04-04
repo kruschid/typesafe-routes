@@ -3,7 +3,8 @@
     "outDir": "build",
     "strict": true,
     "sourceMap": true,
-    "declaration": true
+    "declaration": true,
+    "esModuleInterop": true,
   },
   "files": [
     "src/index.ts"
