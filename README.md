@@ -116,7 +116,7 @@ interface UserSearchRoute {
   params: [QueryParams<{name: string, limit: number}>]
 }
 
-r.users({groupId: 1}, new QueryParams({page: 3}))
+r.users({groupId: 1}, queryParams({page: 3}))
   .search(queryParams({name: "Ruth", limit: 10})).$
 // /users/1/search/?name=Ruth&limit=10&page=3
 ```
