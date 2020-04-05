@@ -118,7 +118,7 @@ interface UserSearchRoute {
 
 r.users({groupId: 1}, queryParams({page: 3}))
   .search(queryParams({name: "Ruth", limit: 10})).$
-// /users/1/search/?name=Ruth&limit=10&page=3
+// /users/1/search?name=Ruth&limit=10&page=3
 ```
 
 Under the hood query string are rendered by [qs](https://www.npmjs.com/package/qs). But you can also pass a custom renderer as the third parameter of `R`:
@@ -129,9 +129,9 @@ const stringify = (params: Record<string, any>) =>
 
 const r = R<MyRoute>("", {}, stringify);
 
-r.users({groupId: 1}, new QueryParams({page: 3}))
+r.users({groupId: 1}, querParams({page: 3}))
   .search(queryParams({name: "Ruth", limit: 10})).$
-// /users/1/search/?state=eyJwYWdlIjoxLCJuYW1lIjoiUnV0aCIsImxpbWl0IjoxMH0=
+// /users/1/search?state=eyJwYWdlIjoxLCJuYW1lIjoiUnV0aCIsImxpbWl0IjoxMH0=
 ```
 
 ### Non Primitive Parameter Types
