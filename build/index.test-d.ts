@@ -1,5 +1,5 @@
 import { expectError, expectType } from "tsd";
-import { R, RouteFn, RouteParams } from ".";
+import { R, RouteFn, RouteParams, QueryParams, queryParams } from ".";
 
 interface NoParams {
   name: "a"
@@ -21,6 +21,7 @@ interface WithParamsOverloaded {
     | []
     | [":n"]
     | [{n: number}, {s: string}, {b: boolean}]
+    | [QueryParams<{name: string}>]
   children: NoParams
 }
 
@@ -42,13 +43,6 @@ expectError(r.a().b({id: 1}).c(""));
 expectError(r.a().b({id: 1}).c({}));
 expectError(r.a().b({id: 1}).c(4));
 
-expectType<RouteParams<WithParamsOverloaded>>(
-  Object.assign(
-    { b: true },
-    { n: 1 },
-    { s: "" },
-  ),
-);
 expectType<RouteParams<NoParams>>({} as unknown);
 expectType<RouteParams<WithParams>>({
   id: 4,
@@ -61,3 +55,29 @@ expectError<RouteParams<WithParamsOverloaded>>({
 expectError<RouteParams<WithParams>>({
   id: "",
 });
+
+// query params
+expectType<RouteParams<WithParamsOverloaded>>(
+  Object.assign(
+    { b: true },
+    { n: 1 },
+    { s: "" },
+    queryParams({name: ""}),
+  ),
+);
+expectError<RouteParams<WithParamsOverloaded>>(
+  Object.assign(
+    { b: true },
+    { n: 1 },
+    { s: "" },
+    queryParams({name: 1}),
+  ),
+);
+expectError<RouteParams<WithParamsOverloaded>>(
+  Object.assign(
+    { b: true },
+    { n: 1 },
+    { s: "" },
+    queryParams({text: ""}),
+  ),
+);

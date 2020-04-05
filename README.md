@@ -103,7 +103,7 @@ r.user(":id").$ // compile error
 `QueryParams` is a special parameter type. `QueryParams` values are always rendered at the end of the route. Even though they were defined at a higher level in the hierarchy.
 
 ``` ts
-import { QueryParams } from "typesafe-routes";
+import { QueryParams, queryParams } from "typesafe-routes";
 
 interface UsersRoute {
   name: "users"
@@ -117,14 +117,21 @@ interface UserSearchRoute {
 }
 
 r.users({groupId: 1}, new QueryParams({page: 3}))
-  .search(new QueryParams({name: "Ruth", limit: 10})).$
+  .search(queryParams({name: "Ruth", limit: 10})).$
 // /users/1/search/?name=Ruth&limit=10&page=3
 ```
 
-Under the hood `QueryParams` renders the search query utilising [qs](https://www.npmjs.com/package/qs). You can pass a configuration object as the second parameter of `R`:
+Under the hood query string are rendered by [qs](https://www.npmjs.com/package/qs). But you can also pass a custom renderer as the third parameter of `R`:
 
 ``` ts
-const r = R<MyRoute>("", { encoder: myEncoder });
+const stringify = (params: Record<string, any>) =>
+  `?state=${Buffer.from(JSON.stringify(params)).toString("base64")}`;
+
+const r = R<MyRoute>("", {}, stringify);
+
+r.users({groupId: 1}, new QueryParams({page: 3}))
+  .search(queryParams({name: "Ruth", limit: 10})).$
+// /users/1/search/?state=eyJwYWdlIjoxLCJuYW1lIjoiUnV0aCIsImxpbWl0IjoxMH0=
 ```
 
 ### Non Primitive Parameter Types
@@ -141,8 +148,6 @@ interface BlogRoute {
 
 r.blog({date: new ISODate(2019, 3, 5)}).$ // /blog/2019-03-05
 ```
-
-### Express Example
 
 ### React Router Example
 
@@ -184,3 +189,12 @@ export const MyComponent = withRouter<RouteParams<ShowUserRoute>>((
 ```
 
 The example above demonstrates that routes can also be defined as nested types. While this is a legit example the given notation might complicate debugging.
+
+## Roadmap
+
+PRs are very welcome :-)
+
+- [ ] add express example
+- [ ] add angular example
+- [ ] add vue example
+- [ ] add koa example

@@ -1,5 +1,5 @@
 import test from "tape";
-import { R, QueryParams, Route } from ".";
+import { R, queryParams, Route, QueryParams } from ".";
 
 test("base url page", (t) => {
   t.plan(3);
@@ -148,12 +148,44 @@ test("query paramters", (t) => {
   const r = R<UsersRoute>();
 
   t.deepEqual([
-    r.users({groupId: 5}, new QueryParams({page: 1}))
-      .search(new QueryParams({name: "Ruth", limit: 10})).$,
-    r.users({groupId: 8}, new QueryParams({page: 3})).$,
+    r.users({groupId: 5}, queryParams({page: 1}))
+      .search(queryParams({name: "Ruth", limit: 10})).$,
+    r.users({groupId: 8}, queryParams({page: 3})).$,
   ], [
-    "/users/5/search?name=Ruth&limit=10&page=1",
+    "/users/5/search?page=1&name=Ruth&limit=10",
     "/users/8?page=3",
+  ],
+    "should match query string",
+  );
+});
+
+test("custom query string renderer", (t) => {
+  
+  interface UsersRoute {
+    name: "users"
+    params: [{groupId: number}, QueryParams<{page: number}>]
+    children: UserSearchRoute
+  }
+
+  interface UserSearchRoute {
+    name: "search"
+    params: [QueryParams<{name: string, limit: number}>]
+  }
+
+  t.plan(1);
+
+  const stringify = (params: Record<string, any>) =>
+    `?state=${Buffer.from(JSON.stringify(params)).toString("base64")}`;
+
+  const r = R<UsersRoute>("", {}, stringify);
+
+  t.deepEqual([
+    r.users({groupId: 5}, queryParams({page: 1}))
+      .search(queryParams({name: "Ruth", limit: 10})).$,
+    r.users({groupId: 8}, queryParams({page: 3})).$,
+  ], [
+    '/users/5/search?state=eyJwYWdlIjoxLCJuYW1lIjoiUnV0aCIsImxpbWl0IjoxMH0=',
+    '/users/8?state=eyJwYWdlIjozfQ==',
   ],
     "should match query string",
   );
