@@ -1,200 +1,177 @@
+<img title="logo" src="logo.png" />
+
 # Typesafe Routes
 
-This small library exposes functions and typings that allow you to define constraints for your application routes which enable automatic detection of broken links in compile time.
+Spices up your favorite routing library by adding type safety to plain string-based route definitions. Let typescript handle the detection of broken links in compilation time while you create maintainable software products.
 
-This project is framework agnostic. This means you can use it with your favorite framework (e.g. [react-router](https://reacttraining.com/react-router/), [express](https://expressjs.com/), etc.) that utilises plain string routes.
+You can use this utility with your favorite framework that follows [path-to-regex](https://github.com/pillarjs/path-to-regexp) syntax (although we only support a subset of it). You can find some demo applications with [react-router](https://reacttraining.com/react-router/) or [express](https://expressjs.com/) in `src/demo`.
+
+**Typesafe Routes utilizes [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) and [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types). These features are only available in [typescript version 4.1 which is still in beta. (release date is set to November 2020)](https://github.com/microsoft/TypeScript/issues/40124)**
 
 ## Installation (npm/yarn examples)
 
 ``` sh
-npm i typesafe-routes
+npm i typesafe-routes@7.0.0-beta
 
 # or
 
-yarn add typesafe-routes
+yarn add typesafe-routes@7.0.0-beta
 ```
 
-## Features
+## Usage
 
-### Basic Usage 
+### `route(path: string, parserMap: Record<string, Parser>, children: Record<string, ChildRoute>)`
+
+* `path: string` must be the path string according to the `path-to-regex` syntax.
+* `parserMap: Record<string, Parser>` contains parameter specific parser (`Parser`) identified by parameter name (`string`)
+* `children` assign children routes here in case you want to utilize serialization of nested routes
+
+### Examples
 
 ``` ts
-import { R } from "typesafe-routes";
+import { route, stringParser } from "typesafe-routes";
 
-interface UsersRoute {
-  name: "users"
-  params: []
-  children:
-    | DetailsRoute 
-    | GroupRoute
-}
+const settingsRoute = route("/settings", {}, {});
 
-interface DetailsRoute {
-  name: "details"
-  params: [{id: number}]
-}
+const accountRoute = route("/account/:accountId", {
+  accountId: stringParser, // responsible for parsing/serialization
+}, {
+  settingsRoute, // child route
+});
 
-interface GroupRoute {
-  name: "group"
-  params: [{groupId: number}, {page: number}]
-}
+const userRoute = route("/user/:userId", {}, {});
+// ts error: userId parser is missing
 
-const r = R<UsersRoute>("http://localhost:8080");
+// serialisation:
 
-r.users().$
-// http://localhost:8080/users
+accountRoute({ accountId: "5c9f1e79e96c" }).$
+// returns "/account/5c9f1e79e96c"
 
-r.users().details({id: 1}).$
-// http://localhost:8080/users/details/1
+accountRoute({ accountId: "5c9f1e79e96c" }).settingsRoute({}).$
+// returns "/account/5c9f1e79e96c/settings"
 
-r.users().group({groupId: 5}, {page: 1}).$
-// http://localhost:8080/users/group/5/1
+accountRoute({ accountId: 123 }).$
+// ts error: accountId can't be number 
 
-r.users("12").$
-// compilation error: UsersRoute doesn't define params
+accountRoute({ }).$
+// ts error: missing accountId can't be number
 
-r.users().details().$
-// compilation error: GroupRoute defines params
+// parsing:
+
+accountRoute.parseParams({ accountId: "123"})
+// returns { accountId: "123"}
+
 ```
 
-### Route Parameters
-A route consists of a name, an array of `0` to `n` parameters and its' children (optional). Later the parameter values are rendered after the route name in the specified order (e.g. `<name>/<param1-value>/<param2-value>/...`). In order to specify the order we define the parameters as a list:
+Besides `stringParser` there are also `intParser`, `floatParser`, `dateParser`, and `booleanParser` shipped with the module. The implementation of custom parsers must follow the interface `Parser<T>`. You can find more details on that topic further down the page.
 
-```ts
-interface MyRoute {
-  name: "<name>"
-  params: [{param1: string}, {param2: string}, ...]
-}
-```
+### Optional Parameters
 
-We define named parameters (object literal with one key-value pair) in order to (a) obtain IDE autocompletion when putting parameter values in corresponding function calls and (b) enable parameter extraction from our route definitions:
+Parameters can be suffixed with a question mark (`?`) to make the parameter optional.
 
-```ts
-import { RouteParams } from "typesafe-routes";
+``` ts
+import { route, intParser } from "typesafe-routes";
 
-type Params = RouteParams<MyRoute>;
-// return intersection type from params array definition
-// {param1: string} & {param2: string} & ... 
-```
+const userRoute = route("/user/:userId/:groupId?", {
+  userId: intParser,
+  groupId: intParser, // parser must be specified for optional parameters
+}, {});
 
-### Parameter Overloading
+// serialisation:
 
-In several cases parameter overloading is a common requirement (e.g. optional parameters or typesafe route templating).
+userRoute({ userId: 5 }).$
+// returns "/user/5"
 
-```ts
-interface UserRoute {
-  name: "user"
-  params:
-    | []
-    | [{userId: number}]
-    | [":userId?"]
-}
+userRoute({ userId: 7, groupId: 34 }).$
+// returns "/user/7/34"
 
-const r = R<UsersRoute>();
+userRoute({ userId: 7, grouId: 34 }).$
+// ts error: typo in "grouId"
 
-r.user().$ // /user
-r.user({userId: 1}).$ // /user/1
-r.user(":userId?").$ // /user/:userId?
-r.user(":id").$ // compile error
+// parsing:
+
+userRoute.parseParams({ userId: "6", groupId: "12" })
+// returns { userId: 6, groupId: 12 }
 ```
 
 ### Query Parameters
 
-`QueryParams` is a special parameter type. `QueryParams` values are always rendered at the end of the route. Even though they were defined at a higher level in the hierarchy.
+Parameters can be prefixed with `&` to make the parameter a query parameter.
 
 ``` ts
-import { QueryParams, queryParams } from "typesafe-routes";
+import { route, intParser } from "typesafe-routes";
 
-interface UsersRoute {
-  name: "users"
-  params: [{groupId: number}, QueryParams<{page: number}>]
-  children: UserSearchRoute
-}
+const usersRoute = route("/users&:start&limit", {
+  start: intParser,
+  limit: intParser,
+}, {});
 
-interface UserSearchRoute {
-  name: "search"
-  params: [QueryParams<{name: string, limit: number}>]
-}
-
-r.users({groupId: 1}, queryParams({page: 3}))
-  .search(queryParams({name: "Ruth", limit: 10})).$
-// /users/1/search?name=Ruth&limit=10&page=3
+usersRoute({ start: 10, limit: 20 }).$
+// returns "/users?start=10&limit=20"
 ```
 
-Under the hood query string are rendered by [qs](https://www.npmjs.com/package/qs). But you can also pass a custom renderer as the third parameter of `R`:
+When serialising nested routes query params are always being appended:
 
 ``` ts
-const stringify = (params: Record<string, any>) =>
-  `?state=${Buffer.from(JSON.stringify(params)).toString("base64")}`;
+import { route, intParser } from "typesafe-routes";
 
-const r = R<MyRoute>("", {}, stringify);
+const settingsRoute = route("/settings&:expertMode", {
+  expertMode: booleanParser,
+}, {});
 
-r.users({groupId: 1}, querParams({page: 3}))
-  .search(queryParams({name: "Ruth", limit: 10})).$
-// /users/1/search?state=eyJwYWdlIjoxLCJuYW1lIjoiUnV0aCIsImxpbWl0IjoxMH0=
-```
-
-### Non Primitive Parameter Types
-
-`ISODate` implements `toString` in order to print a date in ISO format.
-
-``` ts
-interface BlogRoute {
-  name: "blog"
-  params:
-    | []
-    | [{date: ISODate}]
-}
-
-r.blog({date: new ISODate(2019, 3, 5)}).$ // /blog/2019-03-05
-```
-
-### React Router Example
-
-``` tsx
-// MyComponent.ts
-import { R, RouteParams } from "typesafe-routes";
-
-interface UsersRoute {
-  name: "users"
-  params: []
-  children: {
-    name: "show"
-    params:
-      | [{userId: string}]
-      | [":userId"]
-    children: {
-      name: "remove"
-      params: []
-    }
-  }
-}
-
-export const MyComponent = withRouter<RouteParams<ShowUserRoute>>((
-  {match: {params: {userId}}},
-) => {
-  const r = R<UsersRoute>();
-
-  return (
-    <>
-      <NavLink to={r.users().show({userId}).remove().$}>
-        Remove User #{userId}
-      </NavItem>
-      <Switch>
-        <Route path={r.users().show(":userId").remove().$} component={...} />
-      <Switch>
-    </>
-  );
+const usersRoute = route("/users&:start&limit", {
+  start: intParser,
+  limit: intParser,
+}, {
+  settingsRoute
 });
+
+usersRoute({ start: 10, limit: 20 }).settingsRoute({ expertMode: true })$
+// returns "/users/settings?expertMode=true&start=10&limit=20"
+
+userRoute.parseParams({ start: "10", limit: "20", expertMode: "false" });
+// returns { start: 10, limit: 20, expertMode: false }
 ```
 
-The example above demonstrates that routes can also be defined as nested types. While this is a legit example the given notation might complicate debugging.
+### Custom Parser 
+
+If you need to parse/serialize other datatypes than primitive types or dates or the build-in parsers don't meet your requirements for some reason you can create your own parsers with a few lines of code. The `Parser<T>` interface that helps yo to achieve that is defined as followed:
+
+``` ts
+interface Parser<T> {
+  parse: (s: string) => T;
+  serialize: (x: T) => string;
+}
+```
+
+The next example shows how it can be imported and used to implement a typesafe `Vector2D` parser/serializer.
+
+``` ts
+import { Parser, route } from "typesafe-routes";
+
+interface Vector2D {
+  x: number;
+  y: number;
+};
+
+const vectorParser: Parser<Vector2D> = {
+  serialize: (v) => btoa(JSON.stringify(v)),
+  parse: (s) => JSON.parse(atob(s)),
+};
+
+const mapRoute = route("/map&:pos", { pos: vectorParser }, {});
+
+mapRoute({ pos: { x: 1, y: 0 }}).$;
+// returns "/map?pos=eyJ4IjoxLCJ5IjowfQ=="
+
+vectorParser.parseParams({pos: "eyJ4IjoxLCJ5IjowfQ=="})
+// returns { pos: { x: 1, y: 0 }}
+```
 
 ## Roadmap
 
-PRs are very welcome :-)
+So far I consider this library feature-complete that's why I will be mainly concerned about fixing bugs and improving the API. However, if some high demand for additional functionality or PRs shows up I might be considering expanding the scope.
 
-- [ ] add express example
-- [ ] add angular example
-- [ ] add vue example
-- [ ] add koa example
+## Project Support
+
+<a href="https://www.buymeacoffee.com/kruschid" target="_blank"><img width="30%" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" ></a>

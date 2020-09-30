@@ -1,22 +1,40 @@
-export declare type Route = {
-    name: string;
-    params: Array<string | Record<string, any>>;
-    children?: Route;
+declare type IfTrue<A, T, E> = A extends true ? true extends A ? T : E : E;
+export declare type InferParam<T extends string, M extends [string, string]> = T extends `:${infer O}?` ? [M[0], M[1] | O] : T extends `:${infer O}*` ? [M[0], M[1] | O] : T extends `:${infer O}+` ? [M[0] | O, M[1]] : T extends `:${infer O}` ? [M[0] | O, M[1]] : M;
+export declare type InferParamGroups<P extends string> = P extends `${infer A}/${infer B}` ? InferParam<A, InferParamGroups<B>> : P extends `${infer A}&${infer B}` ? InferParam<A, InferParamGroups<B>> : InferParam<P, [never, never]>;
+export declare type MergeParamGroups<G extends [string, string]> = G[0] | G[1];
+export declare type RequiredParamNames<G extends [string, string]> = G[0];
+export declare type OptionalParamNames<G extends [string, string]> = G[1];
+declare type SerializedParams<K extends string = string> = Record<K, string>;
+declare type ChildrenMap = Record<string, RouteNode<any, any, any>>;
+declare type ParserMap<K extends string> = Record<K, Parser<any>>;
+export declare type ExtractParserReturnTypes<P extends ParserMap<any>, F extends keyof P> = {
+    [K in F]: ReturnType<P[K]["parse"]>;
 };
-export declare type RouteFn<T extends Route> = {
-    [N in T["name"]]: <K extends Route = Extract<T, {
-        name: N;
-    }>>(...params: K["params"]) => RouteFn<NonNullable<K["children"]>>;
-} & {
+declare type RouteFn<IS_RECURSIVE = false> = <T extends string, // extending string here ensures successful literal inference
+PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>, C extends ChildrenMap>(templateWithQuery: T, parserMap: PM, children: C) => RouteNode<T, PM, C, IS_RECURSIVE>;
+declare type RecursiveRouteFn = RouteFn<true>;
+export declare type RouteNode<T extends string, PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>, C extends ChildrenMap, IS_RECURSIVE = false> = {
+    parseParams: <G extends InferParamGroups<T>>(params: SerializedParams<RequiredParamNames<G>> & Partial<SerializedParams<OptionalParamNames<G>>>, strict?: boolean) => ExtractParserReturnTypes<PM, RequiredParamNames<G>> & Partial<ExtractParserReturnTypes<PM, OptionalParamNames<G>>>;
+    templateWithQuery: T;
+    template: string;
+    children: C;
+    parserMap: PM;
+} & (<G extends InferParamGroups<T>>(params: ExtractParserReturnTypes<PM, RequiredParamNames<G>> & Partial<ExtractParserReturnTypes<PM, OptionalParamNames<G>>>) => {
     $: string;
-};
-export declare type RouteParams<T extends Route> = UnionToIntersection<ExcludeString<T["params"]>[number]>;
-declare type ExcludeString<T> = T extends string[] ? never : T;
-declare type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
-export declare const HAS_QUERY_PARAMS: unique symbol;
-export declare type QueryParams<T extends Record<string, any>> = T & {
-    [HAS_QUERY_PARAMS]: true;
-};
-export declare const queryParams: <T extends Record<string, any>>(params: T) => QueryParams<T>;
-export declare const R: <T extends Route>(path?: string, queryParams?: any, renderSearchQuery?: <T_1>(queryParams: QueryParams<T_1>) => string) => RouteFn<T>;
+} & {
+    [K in keyof C]: C[K];
+} & IfTrue<IS_RECURSIVE, {
+    $self: RouteNode<T, PM, C, true>;
+}, {}>);
+export interface Parser<T> {
+    parse: (s: string) => T;
+    serialize: (x: T) => string;
+}
+export declare const stringParser: Parser<string>;
+export declare const floatParser: Parser<number>;
+export declare const intParser: Parser<number>;
+export declare const dateParser: Parser<Date>;
+export declare const booleanParser: Parser<boolean>;
+export declare const route: RouteFn;
+export declare const recursiveRoute: RecursiveRouteFn;
 export {};
