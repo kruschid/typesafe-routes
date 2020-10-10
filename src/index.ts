@@ -1,4 +1,3 @@
-import { Key, parse, Token } from "path-to-regexp";
 import { stringify } from "qs";
 
 type IfTrue<A, T, E> = A extends true ? true extends A ? T : E : E;
@@ -51,8 +50,6 @@ type RouteFn<IS_RECURSIVE = false> = <
   children: C,
 ) => RouteNode<T, PM, C, IS_RECURSIVE>;
 
-type RecursiveRouteFn = RouteFn<true>;
-
 export type RouteNode<
   T extends string,
   PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>,
@@ -84,6 +81,13 @@ export type RouteNode<
   >
 );
 
+type PathToken = string | PathParam;
+
+interface PathParam {
+  modifier: "" | "*" | "+" | "?";
+  name: string;
+}
+
 export interface Parser<T> {
   parse: (s: string) => T;
   serialize: (x: T) => string;
@@ -110,14 +114,14 @@ export const booleanParser: Parser<boolean> = {
   serialize: (b) => b.toString(),
 }
 
-const isKey = (x: Token): x is Key => !!(x as Key).name;
+const isPathParam = (x: PathToken): x is PathParam => typeof x !== "string";
 
 const filterParserMap = (
   parserMap: ParserMap<any>,
-  tokens: Token[],
+  tokens: PathToken[],
 ): ParserMap<any> =>
-  tokens.reduce<ParserMap<any>>((acc, t: Token) =>
-    !isKey(t) ? acc : {...acc, [t.name]: parserMap[t.name]},
+  tokens.reduce<ParserMap<any>>((acc, t: PathToken) =>
+    !isPathParam(t) ? acc : {...acc, [t.name]: parserMap[t.name]},
     {},
   );
 
@@ -127,16 +131,8 @@ const parseRoute = (
   parserMap: ParserMap<any>,
 ) => {
   const [pathTemplate, ...queryFragments] = pathWithQuery.split("&");
-  const queryTemplate = queryFragments.join("/");
-  const pathTokens = parse(pathTemplate).map((t) =>
-    isKey(t) ? {
-      ...t,
-      name: typeof t.name === "string"
-        ? t.name.replace(/\//g, "")
-        : t.name
-    } : t.replace(/\//g, "")
-  );
-  const queryTokens = parse(queryTemplate);
+  const pathTokens = parseTokens(pathTemplate.split("/"));
+  const queryTokens = parseTokens(queryFragments);
   const pathParamParsers =  filterParserMap(parserMap, pathTokens);
   const queryParamParsers = filterParserMap(parserMap, queryTokens);
   return {
@@ -149,6 +145,22 @@ const parseRoute = (
   };
 }
 
+const parseTokens = (path: string[]): PathToken[] =>
+  path.reduce<PathToken[]>((acc, f) => {
+    if(!f) {
+      return acc;
+    } else if(f.startsWith(":")) {
+      const maybeMod = f[f.length-1];
+      const modifier = maybeMod === "+" || maybeMod === "*" || maybeMod === "?"
+        ? maybeMod : "";
+      return acc.concat({
+        modifier,
+        name: f.slice(1, modifier ? f.length - 1 : undefined)
+      });
+    }
+    return acc.concat(f);
+  }, []);
+
 const stringifyParams = (
   parserMap: ParserMap<any>,
   params: RawParams,
@@ -159,95 +171,72 @@ const stringifyParams = (
     ),
   }), {});
 
-export const route: RouteFn = function(
+export function routeFn<
+  T extends string, // extending string here ensures successful literal inference
+  PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>,
+  C extends ChildrenMap,
+>(
   this: RouteFnContext,
-  templateWithQuery,
-  parserMap,
-  children,
-){
-  // DEBUG:
-  // console.log("route", {templateWithQuery, parserMap});
+  templateWithQuery: T,
+  parserMap: PM,
+  children: C,
+): RouteNode<T, PM, C>{
   const parsedRoute = parseRoute(templateWithQuery, parserMap);
-  return new Proxy<any>(() => {}, {
-    apply: (_, __, [rawParams]: [RawParams]) =>
-      routeWithParams(
-        parsedRoute,
-        children,
-        rawParams,
-        this.previousQueryParams ?? {},
-        this.previousPath ?? "",
-      ),
-    get: (target, next, receiver) =>
-      ({
-        templateWithQuery,
-        children,
-        parserMap,
-        template: parsedRoute.pathTemplate,
-        parseParams: paramsParser(parsedRoute),
-      } as any)[next] ?? (
-        Reflect.get(target, next, receiver)
-      )
-  });
+  // DEBUG:
+  // console.log("routeFn", {templateWithQuery, parserMap, parsedRoute});
+  const fn = (
+    rawParams: RawParams
+  ) => new Proxy<any>({}, { get: (target, next, receiver) => {
+    const pathParams = stringifyParams(parsedRoute.pathParamParsers, rawParams);
+    const queryParams = {
+      ...this.previousQueryParams,
+      ...stringifyParams(parsedRoute.queryParamParsers, rawParams),
+    };
+    const path = stringifyRoute(parsedRoute.pathTokens, pathParams, this.previousPath);
+    return next === "$" ? (
+        path + stringify(queryParams, { addQueryPrefix: true })
+      ) : next === Symbol.toPrimitive ? (
+        () => path + stringify(queryParams, { addQueryPrefix: true })
+      ) : next === "$self" ? (
+        route.call<RouteFnContext, [T, PM, C], RouteNode<T, PM, C>>({
+          previousPath: path,
+          previousQueryParams: queryParams,
+        }, templateWithQuery, parserMap, children)
+      ) : typeof next == "string" && children[next] ? (
+        route.call<RouteFnContext, [T, PM, C], RouteNode<any, any, any>>({
+          previousPath: path,
+          previousQueryParams: queryParams,
+        }, children[next].templateWithQuery, children[next].parserMap, children[next].children)
+      ) : Reflect.get(target, next,receiver)
+  }});
+  fn.parseParams = paramsParser(parsedRoute);
+  fn.templateWithQuery = templateWithQuery,
+  fn.children = children,
+  fn.parserMap = parserMap,
+  fn.template = parsedRoute.pathTemplate;
+
+  return (fn as any);
 }
 
-export const recursiveRoute: RecursiveRouteFn = route as any;
-
-const routeWithParams = (
-  { pathTokens, pathTemplate, queryParamParsers, pathParamParsers, parserMap }: ParsedRouteMeta,
-  children: ChildrenMap,
-  rawParams: RawParams,
-  previousQueryParams: SerializedParams,
-  previousPath: string,
-) =>
-  new Proxy<any>({}, {
-    get: (target, next, receiver) => {
-      const pathParams = stringifyParams(pathParamParsers, rawParams);
-      const queryParams = {
-        ...previousQueryParams,
-        ...stringifyParams(queryParamParsers, rawParams),
-      };
-      return "$" === next
-        // full path with search query
-        ? `${previousPath}/${stringifyRoute(pathTokens, pathParams, queryParams)}`
-        : next === Symbol.toPrimitive ? () =>
-          `${previousPath}/${stringifyRoute(pathTokens, pathParams, queryParams)}`
-        // recursive reference
-        : next === "$self" ? route.call(
-            {
-              previousPath: `${previousPath}/${stringifyRoute(pathTokens, pathParams)}`,
-              previousQueryParams: queryParams,
-            } as RouteFnContext,
-            pathTemplate,
-            parserMap,
-            children,
-          )
-        // child route
-        : typeof next == "string" && children[next] ? route.call(
-            {
-              previousPath: `${previousPath}/${stringifyRoute(pathTokens, pathParams)}`,
-              previousQueryParams: queryParams,
-            } as RouteFnContext,
-            children[next].templateWithQuery,
-            children[next].parserMap,
-            children[next].children,
-          )
-        : Reflect.get(target, next,receiver);
-    }
-  });
+export const route: RouteFn = routeFn;
+export const recursiveRoute: RouteFn<true> = routeFn as RouteFn<true>;
 
 const stringifyRoute = (
-  pathTokens: Token[],
+  pathTokens: PathToken[],
   params: SerializedParams,
-  queryParams?: SerializedParams,
+  prefixPath = "",
 ): string =>
-  pathTokens.map((t) =>
-    isKey(t) ? params[t.name] : t,
+  [prefixPath].concat(
+    pathTokens.reduce<string[]>((acc, t) =>
+      isPathParam(t) ? (
+        params[t.name] ? acc.concat(encodeURIComponent(params[t.name])) : acc
+      ) : (
+        acc.concat(t)
+      ),
+      [],
+    )
   )
-  .filter((x) => !!x)
-  .map(encodeURIComponent)
-  .join("/") + (
-    queryParams ? stringify(queryParams, { addQueryPrefix: true }) : ""
-  );
+  .join("/");
 
 const paramsParser = (
   { pathTokens, queryTokens, parserMap }: ParsedRouteMeta,
@@ -265,7 +254,7 @@ const paramsParser = (
   if( strict ) {
     pathTokens.concat(queryTokens)
     .forEach((t) => {
-      if(isKey(t) && ["", "+"].includes(t.modifier) && !parsedParams[t.name]) {
+      if(isPathParam(t) && ["", "+"].includes(t.modifier) && !parsedParams[t.name]) {
         throw Error(`[parseParams]: parameter "${t.name}" is required but is not defined`);
       }
     })
