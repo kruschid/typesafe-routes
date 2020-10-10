@@ -29,7 +29,9 @@
     "tsd": "0.13.1",
     "typescript": "^4.1.0-beta"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "typescript": "^4.1.0"
+  },
   "dependencies": {
     "@types/qs": "6.9.5",
     "qs": "6.9.4"
