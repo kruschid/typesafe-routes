@@ -101,7 +101,7 @@ Parameters can be prefixed with `&` to make the parameter a query parameter.
 ``` ts
 import { route, intParser } from "typesafe-routes";
 
-const usersRoute = route("/users&:start&limit", {
+const usersRoute = route("/users&:start&:limit", {
   start: intParser,
   limit: intParser,
 }, {});
@@ -119,7 +119,7 @@ const settingsRoute = route("/settings&:expertMode", {
   expertMode: booleanParser,
 }, {});
 
-const usersRoute = route("/users&:start&limit", {
+const usersRoute = route("/users&:start&:limit", {
   start: intParser,
   limit: intParser,
 }, {
