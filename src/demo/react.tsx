@@ -1,15 +1,14 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { BrowserRouter, Link, Route, Switch, useParams, useRouteMatch } from "react-router-dom";
-import { route, stringParser } from "..";
-
-type TopicParams = Parameters<typeof topicRoute.parseParams>[0];
+import { BrowserRouter, Route, Switch, useRouteMatch } from "react-router-dom";
+import { floatParser, route, stringParser } from "..";
+import { Link, useRouteParams } from "../react-router";
 
 const homeRoute = route("/", {}, {});
 
 const aboutRoute = route("/about", {}, {});
 
-const topicRoute = route("/:topicId", { topicId: stringParser }, {});
+const topicRoute = route("/:topicId&:limit?", { topicId: stringParser, limit: floatParser }, {});
 
 const topicsRoute = route("/topics", {}, { topicRoute });
 
@@ -18,13 +17,13 @@ const App = () =>
     <div>
       <ul>
         <li>
-          <Link to={homeRoute({}).$}>Home</Link>
+          <Link to={homeRoute({})}>Home</Link>
         </li>
         <li>
-          <Link to={aboutRoute({}).$}>About</Link>
+          <Link to={aboutRoute({})}>About</Link>
         </li>
         <li>
-          <Link to={topicsRoute({}).$}>Topics</Link>
+          <Link to={topicsRoute({})}>Topics</Link>
         </li>
       </ul>
       <Switch>
@@ -56,12 +55,12 @@ const Topics = () => {
 
       <ul>
         <li>
-          <Link to={topicsRoute({}).topicRoute({topicId: "components"}).$}>
+          <Link to={topicsRoute({}).topicRoute({topicId: "components"})}>
             Components
           </Link>
         </li>
         <li>
-          <Link to={topicsRoute({}).topicRoute({topicId: "props-v-state"}).$}>
+          <Link to={topicsRoute({}).topicRoute({topicId: "props-v-state", limit: 668.5})}>
             Props v. State
           </Link>
         </li>
@@ -80,8 +79,17 @@ const Topics = () => {
 }
 
 function Topic() {
-  let { topicId } = topicRoute.parseParams(useParams<TopicParams>());
-  return <h3>Requested topic ID: {topicId}</h3>;
+  let { topicId, limit } = useRouteParams(topicRoute);
+  return (
+    <h3>
+      Requested topic ID: {topicId}, limit:&nbsp;
+      {limit != null && limit === limit ? (
+        limit * 2
+      ) : (
+        "unknown"
+      )}
+    </h3>
+  );
 }
 
 ReactDOM.render(<App />, document.getElementById("app"));

@@ -32,6 +32,9 @@
   "peerDependencies": {
     "typescript": "^4.1.0"
   },
+  "optionalDependencies": {
+    "react-router-dom": "^5.2.0"
+  },
   "dependencies": {
     "@types/qs": "6.9.5",
     "qs": "6.9.4"
