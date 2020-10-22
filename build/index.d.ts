@@ -10,9 +10,12 @@ declare type ParserMap<K extends string> = Record<K, Parser<any>>;
 export declare type ExtractParserReturnTypes<P extends ParserMap<any>, F extends keyof P> = {
     [K in F]: ReturnType<P[K]["parse"]>;
 };
+interface RouteFnContext {
+    previousQueryParams?: SerializedParams;
+    previousPath?: string;
+}
 declare type RouteFn<IS_RECURSIVE = false> = <T extends string, // extending string here ensures successful literal inference
 PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>, C extends ChildrenMap>(templateWithQuery: T, parserMap: PM, children: C) => RouteNode<T, PM, C, IS_RECURSIVE>;
-declare type RecursiveRouteFn = RouteFn<true>;
 export declare type RouteNode<T extends string, PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>, C extends ChildrenMap, IS_RECURSIVE = false> = {
     parseParams: <G extends InferParamGroups<T>>(params: SerializedParams<RequiredParamNames<G>> & Partial<SerializedParams<OptionalParamNames<G>>>, strict?: boolean) => ExtractParserReturnTypes<PM, RequiredParamNames<G>> & Partial<ExtractParserReturnTypes<PM, OptionalParamNames<G>>>;
     templateWithQuery: T;
@@ -35,6 +38,8 @@ export declare const floatParser: Parser<number>;
 export declare const intParser: Parser<number>;
 export declare const dateParser: Parser<Date>;
 export declare const booleanParser: Parser<boolean>;
+export declare function routeFn<T extends string, // extending string here ensures successful literal inference
+PM extends ParserMap<MergeParamGroups<InferParamGroups<T>>>, C extends ChildrenMap>(this: RouteFnContext, templateWithQuery: T, parserMap: PM, children: C): RouteNode<T, PM, C>;
 export declare const route: RouteFn;
-export declare const recursiveRoute: RecursiveRouteFn;
+export declare const recursiveRoute: RouteFn<true>;
 export {};

@@ -5,8 +5,10 @@
     "sourceMap": true,
     "declaration": true,
     "esModuleInterop": true,
+    "jsx": "react",
   },
   "files": [
-    "src/index.ts"
+    "src/index.ts",
+    "src/react-router.tsx",
   ]
 }
