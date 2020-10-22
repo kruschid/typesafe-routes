@@ -11,11 +11,11 @@ You can use this utility with your favorite framework that follows [path-to-rege
 ## Installation (npm/yarn examples)
 
 ``` sh
-npm i typesafe-routes@7.0.0-beta
+npm i typesafe-routes@7.0.0-beta.1
 
 # or
 
-yarn add typesafe-routes@7.0.0-beta
+yarn add typesafe-routes@7.0.0-beta.1
 ```
 
 ## Usage
