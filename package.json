@@ -1,6 +1,6 @@
 {
   "name": "typesafe-routes",
-  "version": "7.0.0-beta.1",
+  "version": "7.0.0",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "git@github.com:kruschid/typesafe-routes.git",
