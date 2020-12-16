@@ -237,7 +237,7 @@ yarn add typesafe-routes
 
 ## Developer Fuel
 
-You can have some impact and improve the quality of this project not only by writing code and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort I put in to the development of this library. ¡Gracias!
+You can have some impact and improve the quality of this project not only by writing code and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort I put into the development of this library. ¡Gracias!
 
 <a href="https://www.buymeacoffee.com/kruschid" target="_blank"><img width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" ></a>
 
