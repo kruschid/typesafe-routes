@@ -6,16 +6,16 @@ Spices up your favorite routing library by adding type-safety to plain string-ba
 
 You can use this utility with your favorite framework that follows [path-to-regex](https://github.com/pillarjs/path-to-regexp) syntax (although we only support a subset of it). You can find some demo applications with [react-router](https://reacttraining.com/react-router/) or [express](https://expressjs.com/) in `src/demo`.
 
-**Typesafe Routes utilizes [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) and [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types). These features are only available in [typescript version 4.1 which is still in beta. (release date is set to November 2020)](https://github.com/microsoft/TypeScript/issues/40124)**
+**Typesafe Routes utilizes [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) and [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types). These features are only available in [typescript version 4.1](https://github.com/microsoft/TypeScript/issues/40124) and above.**
 
 ## Installation (npm/yarn examples)
 
 ``` sh
-npm i typesafe-routes@7.0.0-beta.1
+npm i typesafe-routes
 
 # or
 
-yarn add typesafe-routes@7.0.0-beta.1
+yarn add typesafe-routes
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ yarn add typesafe-routes@7.0.0-beta.1
   import { route, stringParser } from "typesafe-routes";
 
   const accountRoute = route("/account/:accountId", {
-    accountId: stringParser, // param type + parsing/serialization
+    accountId: stringParser, // parser implicitly defines the static type (string) of 'accountId'
   }, {});
 
   // serialisation:
@@ -68,14 +68,14 @@ yarn add typesafe-routes@7.0.0-beta.1
 <details>
   <summary>Optional Parameters</summary>
 
-  Parameters can be suffixed with a question mark (?) to make the parameter optional.
+  Parameters can be suffixed with a question mark (?) to make a parameter optional.
 
   ``` ts
   import { route, intParser } from "typesafe-routes";
 
   const userRoute = route("/user/:userId/:groupId?", {
     userId: intParser,
-    groupId: intParser
+    groupId: intParser // parser is required also required for optional parameters
   }, {});
 
   userRoute({ userId: 342 }).$ // groupId is optional
@@ -235,7 +235,7 @@ yarn add typesafe-routes@7.0.0-beta.1
 
 ---
 
-## Amazing Coffee
+## Developer Fuel
 
 You can have some impact and improve the quality of this project not only by writing code and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort I put in to the development of this library. ¡Gracias!
 
