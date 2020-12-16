@@ -4,6 +4,8 @@ import { BrowserRouter, Route, Switch, useRouteMatch } from "react-router-dom";
 import { floatParser, route, stringParser } from "..";
 import { Link, useRouteParams } from "../react-router";
 
+// this benchmark is based on an example taken from https://reactrouter.com/web/guides/quick-start/2nd-example-nested-routing
+
 const homeRoute = route("/", {}, {});
 
 const aboutRoute = route("/about", {}, {});
