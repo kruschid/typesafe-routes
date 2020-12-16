@@ -7,8 +7,8 @@
   "author": "Denis Kruschinski <denis.kruschinski@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "yarn test && yarn tsc && yarn tsd",
-    "test": "yarn tape -r ts-node/register src/test.ts",
+    "build": "yarn test && yarn tsc",
+    "test": "yarn tsd && yarn tape -r ts-node/register src/test.ts",
     "express": "yarn ts-node src/demo/express.ts",
     "react": "yarn parcel src/demo/index.html"
   },
@@ -26,8 +26,8 @@
     "tape": "5.0.1",
     "ts-node": "9.0.0",
     "ts-toolbelt": "^8.0.6",
-    "tsd": "0.13.1",
-    "typescript": "^4.1.0-beta"
+    "tsd": "0.14.0",
+    "typescript": "4.1.3"
   },
   "peerDependencies": {
     "typescript": "^4.1.0"

@@ -153,6 +153,6 @@ expectError(groupRoute.parseParams({}));
 expectError(groupRoute.parseParams({limit: 1}));
 expectError(groupRoute.parseParams({limit: "1", filter: 5}));
 expectError(groupRoute.parseParams({limit: "1", extra: "423"}));
-expectType<{ limit: number }>(
-  groupRoute.parseParams({limit: "1"})
+expectType<number>(
+  groupRoute.parseParams({limit: "1"}).limit
 );
