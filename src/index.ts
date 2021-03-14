@@ -189,10 +189,10 @@ export function routeFn<
   ) => new Proxy<any>({}, { get: (target, next, receiver) => {
     const pathParams = stringifyParams(parsedRoute.pathParamParsers, rawParams);
     const queryParams = {
-      ...this.previousQueryParams,
+      ...this?.previousQueryParams,
       ...stringifyParams(parsedRoute.queryParamParsers, rawParams),
     };
-    const path = stringifyRoute(parsedRoute.pathTokens, pathParams, this.previousPath);
+    const path = stringifyRoute(parsedRoute.pathTokens, pathParams, this?.previousPath);
     return next === "$" ? (
         path + stringify(queryParams, { addQueryPrefix: true })
       ) : next === Symbol.toPrimitive ? (
