@@ -85,8 +85,8 @@ function routeFn(templateWithQuery, parserMap, children) {
     // console.log("routeFn", {templateWithQuery, parserMap, parsedRoute});
     var fn = function (rawParams) { return new Proxy({}, { get: function (target, next, receiver) {
             var pathParams = stringifyParams(parsedRoute.pathParamParsers, rawParams);
-            var queryParams = __assign(__assign({}, _this.previousQueryParams), stringifyParams(parsedRoute.queryParamParsers, rawParams));
-            var path = stringifyRoute(parsedRoute.pathTokens, pathParams, _this.previousPath);
+            var queryParams = __assign(__assign({}, _this === null || _this === void 0 ? void 0 : _this.previousQueryParams), stringifyParams(parsedRoute.queryParamParsers, rawParams));
+            var path = stringifyRoute(parsedRoute.pathTokens, pathParams, _this === null || _this === void 0 ? void 0 : _this.previousPath);
             return next === "$" ? (path + qs_1.stringify(queryParams, { addQueryPrefix: true })) : next === Symbol.toPrimitive ? (function () { return path + qs_1.stringify(queryParams, { addQueryPrefix: true }); }) : next === "$self" ? (exports.route.call({
                 previousPath: path,
                 previousQueryParams: queryParams
