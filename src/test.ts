@@ -1,6 +1,21 @@
 import test from "tape";
 import { booleanParser, dateParser, intParser, recursiveRoute, route, stringParser } from ".";
 
+test("commonjs imports in strict mode", (t) => {
+  // https://github.com/kruschid/typesafe-routes/issues/3
+  t.plan(2);
+
+  const { route: routeCJS } = require(".");
+  t.equal(
+    routeCJS("/root", {}, {})({}).$,
+    "/root",
+  );
+  t.equal(
+    require(".").route("/root", {}, {})({}).$,
+    "/root"
+  );
+});
+
 test("nested routes", (t) => {
   t.plan(2);
 
