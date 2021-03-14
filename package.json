@@ -1,6 +1,6 @@
 {
   "name": "typesafe-routes",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "git@github.com:kruschid/typesafe-routes.git",
@@ -30,8 +30,8 @@
     "typescript": "4.1.3"
   },
   "peerDependencies": {
-    "typescript": "^4.1.0",
-    "react-router-dom": "^5.2.0"
+    "react-router-dom": "^5.2.0",
+    "typescript": "^4.1.0"
   },
   "peerDependenciesMeta": {
     "react-router-dom": {
