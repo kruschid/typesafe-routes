@@ -45,6 +45,8 @@
   "files": [
     "build",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "react-router.d.ts",
+    "react-router.js"
   ]
 }
