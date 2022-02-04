@@ -3,7 +3,7 @@ import React from "react";
 import {
   Link as ReactRouterLink,
   Navigate as ReactRouterNavigate,
-  NavigateProps,
+  type NavigateProps,
   NavLink as ReactRouterNavLink,
   useLocation,
   useParams
