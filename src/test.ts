@@ -16,12 +16,28 @@ test("commonjs imports in strict mode", (t) => {
   );
 });
 
+test("absolute & relative routes", (t) => {
+  t.plan(3);
+
+  const absRoute = route("/root", {}, {});
+  t.equal(absRoute({}).$, "/root");
+
+  const relRoute = route("child", {}, {});
+  t.equal(relRoute({}).$, "child");
+
+  const relRouteWithChild = route("parent", {}, { child: relRoute });
+  t.equal(
+    relRouteWithChild({}).child({}).$,
+    "parent/child"
+  );
+});
+
 test("nested routes", (t) => {
   t.plan(2);
 
   const accountRoute = route("account", {}, {});
   const settingsRoute = route("settings/:settingsId", { settingsId: stringParser }, { accountRoute })
-  const groupRoute = route("group/:groupId?&:filter?&:limit", { 
+  const groupRoute = route("/group/:groupId?&:filter?&:limit", {
     groupId: stringParser,
     filter: booleanParser,
     limit: intParser,
@@ -30,15 +46,15 @@ test("nested routes", (t) => {
   });
 
   t.equal(
-    groupRoute({filter: true, limit: 20, groupId: "groupId"})
-      .settingsRoute({settingsId: "settingsId"})
+    groupRoute({ filter: true, limit: 20, groupId: "groupId" })
+      .settingsRoute({ settingsId: "settingsId" })
       .accountRoute({}).$,
     "/group/groupId/settings/settingsId/account?filter=true&limit=20",
     "should match nested route"
   );
   t.equal(
-    groupRoute({limit: 30})
-      .settingsRoute({settingsId: "settingsId"})
+    groupRoute({ limit: 30 })
+      .settingsRoute({ settingsId: "settingsId" })
       .accountRoute({}).$,
     "/group/settings/settingsId/account?limit=30",
     "should respect optional params"
@@ -48,19 +64,19 @@ test("nested routes", (t) => {
 test("recursive routes", (t) => {
   t.plan(1);
 
-  const nodeRoute = recursiveRoute("node/:nodeId", { nodeId: intParser }, {});
+  const nodeRoute = recursiveRoute("/node/:nodeId", { nodeId: intParser }, {});
 
   t.equal(
     nodeRoute({ nodeId: 1 }).$self({ nodeId: 2 }).$self({ nodeId: 3 }).$self({ nodeId: 4 }).$,
     "/node/1/node/2/node/3/node/4",
     "should match recursive route",
-  )  
+  )
 });
 
 test("param parser", (t) => {
   t.plan(4);
 
-  const groupRoute = route("group/:groupId?&:filter?&:limit&:date?", { 
+  const groupRoute = route("group/:groupId?&:filter?&:limit&:date?", {
     groupId: stringParser,
     filter: booleanParser,
     limit: intParser,
@@ -69,7 +85,7 @@ test("param parser", (t) => {
 
   t.deepEqual(
     groupRoute.parseParams({ limit: "99", filter: "true", groupId: "abc", date: "2020-10-02T10:29:50Z" }),
-    {limit: 99, filter: true, groupId: "abc", date: new Date("2020-10-02T10:29:50Z")},
+    { limit: 99, filter: true, groupId: "abc", date: new Date("2020-10-02T10:29:50Z") },
     "should parse params",
   );
 
@@ -94,8 +110,8 @@ test("param parser", (t) => {
 test("template", (t) => {
   t.plan(1);
 
-  const settingsRoute = route("settings/:settingsId", { settingsId: stringParser }, { })
-  const groupRoute = route("group/:groupId?&:filter?&:limit", { 
+  const settingsRoute = route("settings/:settingsId", { settingsId: stringParser }, {})
+  const groupRoute = route("group/:groupId?&:filter?&:limit", {
     groupId: stringParser,
     filter: booleanParser,
     limit: intParser,
@@ -108,4 +124,7 @@ test("template", (t) => {
     ["settings/:settingsId", "group/:groupId?"],
     "should match templates"
   );
+
+  // const [settingsRoute, settingsTemplate] = route("settings/:settingsId", {} , {...children});
+  // settingsTemplate.childA.childB.$
 });
