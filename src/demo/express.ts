@@ -48,8 +48,7 @@ const accountView = (p: {
   content?: string;
 }) => `
   <h3>${p.id}</h3>
-  <a href="${
-    accountRoute({id: p.id})
+  <a href="${accountRoute({ id: p.id })
     .settingsRoute({ mode: 1, showAllOptions: true })
     .$
   }">
@@ -72,21 +71,19 @@ app.get(homeRoute.template, (_, res) => {
   res.send(mainView());
 });
 
-const accountRouter = express.Router({mergeParams: true});
+const accountRouter = express.Router({ mergeParams: true });
 app.use(accountRoute.template, accountRouter);
 
-accountRouter.get<{id: string}>(homeRoute.template, (req, res) => {
+accountRouter.get<any, any>(homeRoute.template, (req, res) => {
   const { id } = accountRoute.parseParams(req.params);
   res.send(
-    mainView({ content: accountView({id}) }),
+    mainView({ content: accountView({ id }) }),
   );
 });
 
-accountRouter.get<
-  {id: string, mode: string, showAllOptions?: string}
->(settingsRoute.template, (req, res) => {
-  const {id} = accountRoute.parseParams(req.params);
-  const settingsParams = settingsRoute.parseParams({...req.params, ...req.query});
+accountRouter.get<any, any>(settingsRoute.template, (req, res) => {
+  const { id } = accountRoute.parseParams(req.params);
+  const settingsParams = settingsRoute.parseParams({ ...req.params, ...req.query });
   res.send(
     mainView({
       content: accountView({

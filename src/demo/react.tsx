@@ -1,97 +1,70 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-import { BrowserRouter, Route, Switch, useRouteMatch } from "react-router-dom";
-import { floatParser, route, stringParser } from "..";
-import { Link, useRouteParams } from "../react-router";
+import React from "react";
+import { render } from "react-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { intParser, Link, route, useRouteParams } from "..";
 
-// this benchmark is based on an example taken from https://reactrouter.com/web/guides/quick-start/2nd-example-nested-routing
+// example taken from https://reactrouter.com/
 
 const homeRoute = route("/", {}, {});
 
-const aboutRoute = route("/about", {}, {});
+const invoiceRoute = route(":invoice", { invoice: intParser }, {});
 
-const topicRoute = route("/:topicId&:limit?", { topicId: stringParser, limit: floatParser }, {});
+const invoicesRoute = route("invoices", {}, { invoice: invoiceRoute });
 
-const topicsRoute = route("/topics", {}, { topicRoute });
+const salesRoute = route("sales", {}, { invoices: invoiceRoute });
 
-const App = () =>
+
+const Root = () =>
   <BrowserRouter>
-    <div>
-      <ul>
-        <li>
-          <Link to={homeRoute({})}>Home</Link>
-        </li>
-        <li>
-          <Link to={aboutRoute({})}>About</Link>
-        </li>
-        <li>
-          <Link to={topicsRoute({})}>Topics</Link>
-        </li>
-      </ul>
-      <Switch>
-        <Route path={aboutRoute.template}>
-          <About />
+    <Routes>
+      <Route path={homeRoute.template} element={<App />}>
+        <Route path={salesRoute.template} element={<Sales />}>
+          <Route path={invoicesRoute.template} element={<Invoices />}>
+            <Route path={invoiceRoute.template} element={<Invoice />} />
+          </Route>
         </Route>
-        <Route path={topicsRoute.template}>
-          <Topics />
-        </Route>
-        <Route path={homeRoute.template}>
-          <Home />
-        </Route>
-      </Switch>
-    </div>
+      </Route>
+    </Routes>
   </BrowserRouter>;
 
-const Home = () =>
-  <h2>Home</h2>;
+const App = () =>
+  <>
+    <h2>React Router v6 Demo</h2>
+    <Link to={homeRoute({})}>home</Link>
+    <h2>Home</h2>
+    <Link to={salesRoute({})}>sales</Link>
+    <Outlet />
+  </>;
 
-const About = () =>
-  <h2>About</h2>;
+const Sales = () =>
+  <>
+    <h3>Sales</h3>
+    <Link to={invoicesRoute({})}>invoices</Link>
+    <Outlet />
+  </>;
 
-const Topics = () => {
-  let match = useRouteMatch();
+const Invoices = () =>
+  <>
+    <h4>Invoices</h4>
+    <ul>
+      <li>
+        <Link to={invoiceRoute({ invoice: 1234 })}>invoice #1234</Link>
+      </li>
+      <li>
+        <Link to={invoiceRoute({ invoice: 5678 })}>invoice #5678</Link>
+      </li>
+      <li>
+        <Link to={invoiceRoute({ invoice: 9012 })}>invoice #9012</Link>
+      </li>
+    </ul>
+    <Outlet />
+  </>;
 
+const Invoice = () => {
+  const { invoice } = useRouteParams(invoiceRoute);
   return (
-    <div>
-      <h2>Topics</h2>
-
-      <ul>
-        <li>
-          <Link to={topicsRoute({}).topicRoute({topicId: "components"})}>
-            Components
-          </Link>
-        </li>
-        <li>
-          <Link to={topicsRoute({}).topicRoute({topicId: "props-v-state", limit: 668.5})}>
-            Props v. State
-          </Link>
-        </li>
-      </ul>
-
-      <Switch>
-        <Route path={match.path + topicRoute.template}>
-          <Topic />
-        </Route>
-        <Route path={match.path}>
-          <h3>Please select a topic.</h3>
-        </Route>
-      </Switch>
-    </div>
+    <h5>Invoice #{invoice}</h5>
   );
 }
 
-function Topic() {
-  let { topicId, limit } = useRouteParams(topicRoute);
-  return (
-    <h3>
-      Requested topic ID: {topicId}, limit:&nbsp;
-      {limit != null && limit === limit ? (
-        limit * 2
-      ) : (
-        "unknown"
-      )}
-    </h3>
-  );
-}
-
-ReactDOM.render(<App />, document.getElementById("app"));
+render(<Root />, document.getElementById("app"));

@@ -1,6 +1,13 @@
-import * as React from "react";
 import { IParseOptions, parse } from "qs";
-import { useLocation, useParams, Link as OriginalLink, NavLink as OriginalNavLink, Redirect as OriginalRedirect, RedirectProps } from "react-router-dom";
+import React from "react";
+import {
+  Link as ReactRouterLink,
+  Navigate as ReactRouterNavigate,
+  NavigateProps,
+  NavLink as ReactRouterNavLink,
+  useLocation,
+  useParams
+} from "react-router-dom";
 import { RouteNode } from ".";
 
 export const useRouteParams = <T extends RouteNode<string, any, any>>(
@@ -14,17 +21,17 @@ export const useRouteParams = <T extends RouteNode<string, any, any>>(
   }) as any;
 }
 
-export const Link = (p: Omit<Parameters<typeof OriginalLink>[number], "to"> & {
-  to: {$: string}
+export const Link = (p: Omit<Parameters<typeof ReactRouterLink>[number], "to"> & {
+  to: { $: string }
 }) =>
-  <OriginalLink {...p} to={p.to.$}>{p.children}</OriginalLink>;
+  <ReactRouterLink {...p} to={p.to.$}>{p.children}</ReactRouterLink>;
 
-export const NavLink = (p: Omit<Parameters<typeof OriginalNavLink>[number], "to"> & {
-  to: {$: string}
+export const NavLink = (p: Omit<Parameters<typeof ReactRouterNavLink>[number], "to"> & {
+  to: { $: string }
 }) =>
-  <OriginalNavLink {...p} to={p.to.$}>{p.children}</OriginalNavLink>;
+  <ReactRouterNavLink {...p} to={p.to.$}>{p.children}</ReactRouterNavLink>;
 
-export const Redirect = (p: Omit<RedirectProps, "to"> & {
-  to: {$: string}
+export const Redirect = (p: Omit<NavigateProps, "to"> & {
+  to: { $: string }
 }) =>
-  <OriginalRedirect {...p} to={p.to.$} />;
+  <ReactRouterNavigate {...p} to={p.to.$} />;
