@@ -5,14 +5,13 @@ import { intParser, Link, route, useRouteParams } from "..";
 
 // example taken from https://reactrouter.com/
 
-const homeRoute = route("/", {}, {});
-
 const invoiceRoute = route(":invoice", { invoice: intParser }, {});
 
 const invoicesRoute = route("invoices", {}, { invoice: invoiceRoute });
 
-const salesRoute = route("sales", {}, { invoices: invoiceRoute });
+const salesRoute = route("sales", {}, { invoices: invoicesRoute });
 
+const homeRoute = route("/", {}, { sales: salesRoute });
 
 const Root = () =>
   <BrowserRouter>
@@ -30,7 +29,14 @@ const Root = () =>
 const App = () =>
   <>
     <h2>React Router v6 Demo</h2>
-    <Link to={homeRoute({})}>home</Link>
+    <ul>
+      <li>
+        <Link to={homeRoute({})}>home</Link>
+      </li>
+      <li>
+        <Link to={homeRoute({}).sales({}).invoices({}).invoice({ invoice: 1337 })}>invoice #1337</Link>
+      </li>
+    </ul>
     <h2>Home</h2>
     <Link to={salesRoute({})}>sales</Link>
     <Outlet />
