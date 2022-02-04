@@ -6,6 +6,7 @@
     "declaration": true,
     "esModuleInterop": true,
     "jsx": "react",
+    "skipLibCheck": true,
   },
   "files": [
     "src/index.ts",
