@@ -20,11 +20,13 @@ yarn add typesafe-routes
 
 ## Usage
 
+![example](assets/usage.gif)
+
 ### `route(path: string, parserMap: Record<string, Parser>, children: Record<string, ChildRoute>)`
 
-* `path` must be the path string according to the `path-to-regex` syntax.
+* `path` the path following the `path-to-regex` syntax.
 * `parserMap` contains parameter-specific `Parser` identified by parameter name
-* `children` assign children routes here in case you want to utilize serialization of nested routes
+* `children` assigns route children for nested routes
 
 ## Examples
 
@@ -35,7 +37,7 @@ yarn add typesafe-routes
   import { route, stringParser } from "typesafe-routes";
 
   const accountRoute = route("/account/:accountId", {
-    accountId: stringParser, // parser implicitly defines the static type (string) of 'accountId'
+    accountId: stringParser, // parser implicitly defines the type (string) of 'accountId'
   }, {});
 
   // serialisation:
@@ -56,12 +58,40 @@ yarn add typesafe-routes
   ``` ts
   import { route } from "typesafe-routes";
 
-  const detailsRoute = route("/details", {}, {})
-  const settingsRoute = route("/settings", {}, { detailsRoute });
+  const detailsRoute = route("details", {}, {})
+  const settingsRoute = route("settings", {}, { detailsRoute });
   const accountRoute = route("/account", {}, { settingsRoute });
 
   accountRoute({}).settingsRoute({}).detailsRoute({}).$
   // => "/account/settings/details"
+  ```
+</details>
+
+<details>
+  <summary>Absolute & Relative Routes</summary>
+
+  ``` ts
+  import { route } from "typesafe-routes";
+
+  const invoice = route(":invoiceId", { invoiceId: intParser }, {});
+
+  const invoices = route("invoices", {}, { invoice });
+
+  const sales = route("sales", {}, { invoices });
+
+  const home = route("/", {}, { sales }); // root route prefixed with a "/"
+
+  // absolute routes:
+  home({}).sales({}).invoices({}).invoice({invoiceId: 1234}).$ // => "/sales/invoices/1234"
+  home({}).sales({}).invoices({}).$ // => "/sales/invoices"
+  home({}).sales({}).$ // => "/sales"
+  home({}).$ // => "/"
+
+  // relative routes
+  sales({}).invoices({}).invoice({invoiceId: 5678}).$ // => "sales/invoices/5678"
+  .invoices({}).invoice({invoiceId: 8765}).$ // => "invoices/8765"
+  invoice({invoiceId: 4321}).$ // => "4321"
+
   ```
 </details>
 
@@ -109,7 +139,7 @@ yarn add typesafe-routes
   // returns "/users?start=10&limit=20"
   ```
 
-  When serialising nested routes query params are always being appended to the end of the locator string:
+  When serialising nested routes the query params of a parent route are always being appended to the end of the locator string.
 
   ``` ts
   import { route, intParser } from "typesafe-routes";
@@ -174,16 +204,13 @@ yarn add typesafe-routes
 
 <details>
   <summary>React Router Utilities</summary>
-  
-  While library is not limited to react (e.g. express demo code in `src/demo` proves this statement) I've decided to add a few juicy react-router-specific utilities to this library.
 
   #### `useRouteParams(route: RouteNode)`
 
   Internally `useRouteParams` depends on `useParams` that will be imported from the optional dependency `react-router-dom`. However unlike `useParams` the `useRouteParams` function is able to parse query strings by utilising [`qs`](github.com/ljharb/qs).
 
   ``` ts
-  import { route } from "typesafe-routes";
-  import { useRouteParams } from "typesafe-routes/react-router";
+  import { route, useRouteParams } from "typesafe-routes";
 
   const topicRoute = route("/:topicId&:limit?", {
     topicId: stringParser,
@@ -202,8 +229,7 @@ yarn add typesafe-routes
   Same as the original `<Link>` and `<NavLink>` from `react-router-dom` but require the `to` property to be a route:
 
   ``` ts
-  import { route } from "typesafe-routes";
-  import { Link, NavLink } from "typesafe-routes/react-router";
+  import { route, Link, NavLink } from "typesafe-routes";
 
   const topicRoute = route("/topic", {}, {});
 
@@ -237,7 +263,7 @@ yarn add typesafe-routes
 
 ## Developer Fuel
 
-You can have some impact and improve the quality of this project not only by writing code and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort I put into the development of this library. ¡Gracias!
+You can have some impact and improve the quality of this project not only by opening issues and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort. ¡Gracias!
 
 <a href="https://www.buymeacoffee.com/kruschid" target="_blank"><img width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" ></a>
 
