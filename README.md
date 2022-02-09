@@ -89,7 +89,7 @@ yarn add typesafe-routes
 
   // relative routes
   sales({}).invoices({}).invoice({invoiceId: 5678}).$ // => "sales/invoices/5678"
-  .invoices({}).invoice({invoiceId: 8765}).$ // => "invoices/8765"
+  invoices({}).invoice({invoiceId: 8765}).$ // => "invoices/8765"
   invoice({invoiceId: 4321}).$ // => "4321"
 
   ```
