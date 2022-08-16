@@ -60,15 +60,13 @@ var stringifyParams = function (parserMap, params) {
 };
 function routeFn(templateWithQuery, parserMap, children) {
     var _this = this;
-    var isRoot = templateWithQuery[0] === "/";
     var parsedRoute = parseRoute(templateWithQuery, parserMap);
-    // DEBUG:
-    // console.log("routeFn", {templateWithQuery, parserMap, parsed
     var fn = function (rawParams) { return new Proxy({}, {
         get: function (target, next, receiver) {
             var context = _this !== null && _this !== void 0 ? _this : undefined;
             var pathParams = stringifyParams(parsedRoute.pathParamParsers, rawParams);
             var queryParams = __assign(__assign({}, (context === null || context === void 0 ? void 0 : context.previousQueryParams)), stringifyParams(parsedRoute.queryParamParsers, rawParams));
+            var isRoot = templateWithQuery[0] === "/" && !(context === null || context === void 0 ? void 0 : context.previousPath);
             var path = stringifyRoute(isRoot, parsedRoute.pathTokens, pathParams, context === null || context === void 0 ? void 0 : context.previousPath);
             if (next === "$") {
                 return path + (0, qs_1.stringify)(queryParams, { addQueryPrefix: true });
@@ -103,10 +101,11 @@ exports.route = routeFn;
 exports.recursiveRoute = routeFn;
 var stringifyRoute = function (isRoot, pathTokens, params, prefixPath) {
     if (prefixPath === void 0) { prefixPath = ""; }
-    return (isRoot || prefixPath ? [prefixPath] : []).concat(pathTokens.reduce(function (acc, t) {
-        return isPathParam(t) ? (params[t.name] ? acc.concat(encodeURIComponent(params[t.name])) : acc) : (acc.concat(t));
-    }, []))
-        .join("/");
+    return ((isRoot ? "/" : "") +
+        (prefixPath ? (prefixPath === "/" ? [""] : [prefixPath]) : []).concat(pathTokens.reduce(function (acc, t) {
+            return isPathParam(t) ? (params[t.name] ? acc.concat(encodeURIComponent(params[t.name])) : acc) : (acc.concat(t));
+        }, []))
+            .join("/"));
 };
 var paramsParser = function (_a) {
     var pathTokens = _a.pathTokens, queryTokens = _a.queryTokens, parserMap = _a.parserMap;

@@ -17,10 +17,19 @@ test("commonjs imports in strict mode", (t) => {
 });
 
 test("absolute & relative routes", (t) => {
-  t.plan(3);
+  t.plan(5);
 
-  const absRoute = route("/root", {}, {});
-  t.equal(absRoute({}).$, "/root");
+  const rootRoute = route("/", {}, {});
+  t.equal(rootRoute({}).$, "/");
+
+  const absRoute = route("/abs", {}, {});
+  t.equal(absRoute({}).$, "/abs");
+
+  const absRouteWithChild = route("/parent", {}, { child: absRoute });
+  t.equal(
+    absRouteWithChild({}).child({}).$,
+    "/parent/abs"
+  );
 
   const relRoute = route("child", {}, {});
   t.equal(relRoute({}).$, "child");
@@ -33,7 +42,7 @@ test("absolute & relative routes", (t) => {
 });
 
 test("nested routes", (t) => {
-  t.plan(2);
+  t.plan(3);
 
   const accountRoute = route("account", {}, {});
   const settingsRoute = route("settings/:settingsId", { settingsId: stringParser }, { accountRoute })
@@ -59,6 +68,9 @@ test("nested routes", (t) => {
     "/group/settings/settingsId/account?limit=30",
     "should respect optional params"
   );
+
+  const rootRoute = route("/", {}, { account: accountRoute });
+  t.equal(rootRoute({}).account({}).$, "/account");
 });
 
 test("recursive routes", (t) => {
