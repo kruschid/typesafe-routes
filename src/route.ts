@@ -166,10 +166,7 @@ export function routeFn<
     parserMap: PM,
     children: C,
 ): RouteNode<T, PM, C> {
-  const isRoot = templateWithQuery[0] === "/";
   const parsedRoute = parseRoute(templateWithQuery, parserMap);
-  // DEBUG:
-  // console.log("routeFn", {templateWithQuery, parserMap, parsed
   const fn = (
     rawParams: RawParams
   ) => new Proxy<any>({}, {
@@ -180,6 +177,7 @@ export function routeFn<
         ...(context?.previousQueryParams),
         ...stringifyParams(parsedRoute.queryParamParsers, rawParams),
       };
+      const isRoot = templateWithQuery[0] === "/" && !context?.previousPath;
       const path = stringifyRoute(
         isRoot,
         parsedRoute.pathTokens,
@@ -225,8 +223,9 @@ const stringifyRoute = (
   pathTokens: PathToken[],
   params: SerializedParams,
   prefixPath = "",
-): string =>
-  (isRoot || prefixPath ? [prefixPath] : []).concat(
+): string => (
+  (isRoot ? "/" : "") +
+  (prefixPath ? (prefixPath === "/" ? [""] : [prefixPath]) : []).concat(
     pathTokens.reduce<string[]>((acc, t) =>
       isPathParam(t) ? (
         params[t.name] ? acc.concat(encodeURIComponent(params[t.name])) : acc
@@ -236,7 +235,7 @@ const stringifyRoute = (
       [],
     )
   )
-    .join("/");
+    .join("/"));
 
 const paramsParser = (
   { pathTokens, queryTokens, parserMap }: ParsedRouteMeta,
