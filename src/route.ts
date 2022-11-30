@@ -74,7 +74,7 @@ export type RouteNode<
     ) => ExtractParserReturnTypes<PM, G["required"]>
       & Partial<ExtractParserReturnTypes<PM, G["optional"]>>;
     templateWithQuery: T;
-    template: string;
+    template: T extends `${infer BaseT}&${string} ? BaseT : T;
     children: C;
     parserMap: PM;
   } & (
