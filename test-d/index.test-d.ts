@@ -80,7 +80,7 @@ expectType<typeof accountRoute>(
 expectType<string>(
   settingsRoute({ settingsId: "abs" }).accountRoute({}).$
 );
-expectType<string>(
+expectType<"settings/:settingsId">(
   settingsRoute.template
 );
 expectError(settingsRoute({ settingsId: 123 }));
