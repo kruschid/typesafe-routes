@@ -27,7 +27,7 @@ PM extends ParserMap<AllParamNames<InferParamFromPath<T>>>, C extends ChildrenMa
 export declare type RouteNode<T extends string, PM extends ParserMap<AllParamNames<InferParamFromPath<T>>>, C extends ChildrenMap, IS_RECURSIVE = false> = {
     parseParams: <G extends InferParamFromPath<T>>(params: SerializedParams<G["required"]> & Partial<SerializedParams<G["optional"]>>, strict?: boolean) => ExtractParserReturnTypes<PM, G["required"]> & Partial<ExtractParserReturnTypes<PM, G["optional"]>>;
     templateWithQuery: T;
-    template: string;
+    template: T extends `${infer BaseT}&${string}` ? BaseT : T;
     children: C;
     parserMap: PM;
 } & (<G extends InferParamFromPath<T>>(params: ExtractParserReturnTypes<PM, G["required"]> & Partial<ExtractParserReturnTypes<PM, G["optional"]>>) => {

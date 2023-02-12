@@ -12,5 +12,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 exports.__esModule = true;
 __exportStar(require("./route"), exports);
 __exportStar(require("./parser"), exports);
-__exportStar(require("./react-router"), exports);
 //# sourceMappingURL=index.js.map
