@@ -2,9 +2,9 @@
 
 # Typesafe Routes
 
-Spices up your favorite routing library by adding type-safety to plain string-based route definitions. Let typescript handle the detection of broken links in compilation time while you create maintainable software products.
+Enhance your preferred routing library by incorporating type-safety into string-based route definitions. Allow TypeScript to identify broken links during the compilation process, enabling you to develop easily maintainable software.
 
-You can use this utility with your favorite framework that follows [path-to-regex](https://github.com/pillarjs/path-to-regexp) syntax (although we only support a subset of it). You can find some demo applications with [react-router](https://reacttraining.com/react-router/) or [express](https://expressjs.com/) in `src/demo`.
+This utility can be utilized with any framework that adheres to the [path-to-regex](https://github.com/pillarjs/path-to-regexp) syntax (however, only a portion of it is supported). Example applications using [react-router](https://reacttraining.com/react-router/) or [express](https://expressjs.com/) can be found in the `src/demo` directory.
 
 **Typesafe Routes utilizes [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) and [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types). These features are only available in [typescript version 4.1](https://github.com/microsoft/TypeScript/issues/40124) and above.**
 
@@ -49,7 +49,7 @@ yarn add typesafe-routes
   // => { accountId: "123" }
   ```
 
-  While `stringParser` is probably the most common parser/serializer there are also `intParser`, `floatParser`, `dateParser`, and `booleanParser` shipped with the module. But you are not limited to these. If you wish to implement your custom parserserializer just imlement the interface `Parser<T>`. You can find more details on that topic further down the page.
+  The `stringParser` is likely the most widely used parser/serializer, however, the module also includes `intParser`, `floatParser`, `dateParser`, and `booleanParser`. You are not restricted to these options and can implement your own custom parser/serializer by following the `Parser<T>` interface. More information on this topic can be found further down the page.
 </details>
 
 <details>
@@ -207,10 +207,10 @@ yarn add typesafe-routes
 
   #### `useRouteParams(route: RouteNode)`
 
-  Internally `useRouteParams` depends on `useParams` that will be imported from the optional dependency `react-router-dom`. However unlike `useParams` the `useRouteParams` function is able to parse query strings by utilising [`qs`](github.com/ljharb/qs).
+  The `useRouteParams` hook relies on the `useParams` hook from the optional dependency `react-router-dom`. Unlike `useParams`, the `useRouteParams` function additionally parses [`query strings`](https://developer.mozilla.org/en-US/docs/Web/API/Location/search) using [`qs`](github.com/ljharb/qs).
 
   ``` ts
-  import { route, useRouteParams } from "typesafe-routes";
+  import { route, useRouteParams } from "typesafe-routes/react-router";
 
   const topicRoute = route("/:topicId&:limit?", {
     topicId: stringParser,
@@ -229,7 +229,7 @@ yarn add typesafe-routes
   Same as the original `<Link>` and `<NavLink>` from `react-router-dom` but require the `to` property to be a route:
 
   ``` ts
-  import { route, Link, NavLink } from "typesafe-routes";
+  import { route, Link, NavLink } from "typesafe-routes/react-router";
 
   const topicRoute = route("/topic", {}, {});
 
@@ -261,12 +261,12 @@ yarn add typesafe-routes
 
 ---
 
-## Developer Fuel
+## Coffee to Code Transpiler
 
-You can have some impact and improve the quality of this project not only by opening issues and opening PRs but also by buying me a cup of fresh coffee as a small reward for my effort. ¡Gracias!
+You can make a difference and enhance the quality of this project by not only reporting issues and submitting pull requests, but also by treating me to a fresh cup of coffee as a token of appreciation for my efforts.
 
 <a href="https://www.buymeacoffee.com/kruschid" target="_blank"><img width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" ></a>
 
 ## Roadmap
 
-So far I consider this library feature-complete that's why I will be mainly concerned about fixing bugs and improving the API. However, if some high demand for additional functionality or PRs shows up I might be considering expanding the scope.
+At this point, I believe that this library has all the necessary features and my main focus will be on fixing bugs and refining the API. However, if there is a significant demand for additional functionality or pull requests, I may consider expanding the scope of the project.
