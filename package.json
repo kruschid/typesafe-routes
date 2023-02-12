@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@types/qs": "^6.9.7",
-    "qs": "^6.10.3"
+    "qs": "^6.11.0"
   },
   "files": [
     "build",
