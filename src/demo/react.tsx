@@ -1,7 +1,8 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-import { intParser, Link, route, useRouteParams } from "..";
+import { intParser, route } from "..";
+import { Link, useRouteParams } from "../react-router";
 
 // example taken from https://reactrouter.com/
 
