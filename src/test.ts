@@ -140,3 +140,18 @@ test("template", (t) => {
   // const [settingsRoute, settingsTemplate] = route("settings/:settingsId", {} , {...children});
   // settingsTemplate.childA.childB.$
 });
+
+test("serializer", (t) => {
+  t.plan(1);
+
+  const groupRoute = route("group/:groupId?&:limit", {
+    groupId: stringParser,
+    limit: intParser,
+  }, {});
+
+  t.equal(
+    groupRoute({ groupId: "abc", limit: 0 }).$,
+    "group/abc?limit=0",
+    "should serialize 0"
+  );
+});
