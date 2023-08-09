@@ -152,7 +152,7 @@ const stringifyParams = (
 ): Record<string, string> =>
   Object.keys(parserMap).reduce((acc, k) => ({
     ...acc, ...(
-      params[k] ? { [k]: parserMap[k].serialize(params[k]) } : {}
+      params[k] || params[k] === 0 ? { [k]: parserMap[k].serialize(params[k]) } : {}
     ),
   }), {});
 
