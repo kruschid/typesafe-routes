@@ -12,6 +12,9 @@
     "express": "ts-node src/demo/express.ts",
     "react": "parcel src/demo/index.html"
   },
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^17.0.14",

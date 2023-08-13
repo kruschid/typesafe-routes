@@ -55,7 +55,7 @@ var parseTokens = function (path) {
 var stringifyParams = function (parserMap, params) {
     return Object.keys(parserMap).reduce(function (acc, k) {
         var _a;
-        return (__assign(__assign({}, acc), (params[k] ? (_a = {}, _a[k] = parserMap[k].serialize(params[k]), _a) : {})));
+        return (__assign(__assign({}, acc), (params[k] || params[k] === 0 ? (_a = {}, _a[k] = parserMap[k].serialize(params[k]), _a) : {})));
     }, {});
 };
 function routeFn(templateWithQuery, parserMap, children) {
