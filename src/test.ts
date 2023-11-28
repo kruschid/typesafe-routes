@@ -92,7 +92,7 @@ test("recursive routes", (t) => {
 });
 
 test("param parser", (t) => {
-  t.plan(4);
+  t.plan(6);
 
   const groupRoute = route(
     "group/:groupId?&:filter?&:limit&:date?",
@@ -136,6 +136,30 @@ test("param parser", (t) => {
   t.throws(
     () => groupRoute.parseParams({} as any, true),
     "should throw error in strict mode"
+  );
+
+  t.deepEqual(
+    groupRoute.parsePathParams({
+      groupId: "abc",
+    }),
+    {
+      groupId: "abc",
+    },
+    "should only return path params"
+  );
+
+  t.deepEqual(
+    groupRoute.parseQueryParams({
+      limit: "99",
+      filter: "true",
+      date: "2020-10-02T10:29:50Z",
+    }),
+    {
+      limit: 99,
+      filter: true,
+      date: new Date("2020-10-02T10:29:50Z"),
+    },
+    "should only return query params"
   );
 });
 

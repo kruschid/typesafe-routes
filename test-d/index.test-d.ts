@@ -17,7 +17,12 @@ const { checks, check } = Test;
 checks([
   check<
     InferParamFromPath<"a/:one/b/:two&:three">,
-    { required: "one" | "two" | "three"; optional: never },
+    {
+      required: "one" | "two" | "three";
+      optional: never;
+      path: "one" | "two";
+      query: "three";
+    },
     Test.Pass
   >(),
 ]);
@@ -26,7 +31,12 @@ checks([
 checks([
   check<
     InferParamFromPath<":one?/b/:two?&:three?">,
-    { required: never; optional: "one" | "two" | "three" },
+    {
+      required: never;
+      optional: "one" | "two" | "three";
+      path: "one" | "two";
+      query: "three";
+    },
     Test.Pass
   >(),
 ]);
@@ -35,7 +45,12 @@ checks([
 checks([
   check<
     InferParamFromPath<"/:one?/b/:two&:three?">,
-    { required: "two"; optional: "one" | "three" },
+    {
+      required: "two";
+      optional: "one" | "three";
+      path: "one" | "two";
+      query: "three";
+    },
     Test.Pass
   >(),
   check<

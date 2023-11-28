@@ -165,6 +165,35 @@ yarn add typesafe-routes
 </details>
 
 <details>
+  <summary>Parsing Path & Query Parameters Exclusively</summary>
+
+  Specific paremeter types can be rendered exclusively by using the corresponding parsing utility.
+  
+  - `parsePathParams` for exclusively parsing the path parameters
+  - `parseQueryParams` for only parsing query params
+  - `parseParams` for parsing **all** parameters.
+
+  ``` ts
+  import { route, intParser } from "typesafe-routes";
+
+  const usersRoute = route("/users/:userId&:groupId", {
+    userId: intParser,
+    groupId: intParser,
+  }, {});
+
+  userRoute.parseParams({ userId: "10", groupId: "20" });
+  // returns { userId: 10, groupId: 20 }
+
+  userRoute.parsePathParams({ userId: "10", groupId: "20" });
+  // returns { userId: 10 }
+
+  userRoute.parseQueryParams({ userId: "10", groupId: "20" });
+  // returns { groupId: 20 }
+  ```
+
+</details>
+
+<details>
   <summary>Parsers &amp; Serializers</summary>
 
   If you need to parse/serialize other datatypes than primitive types or dates or the build-in parsers don't meet your requirements for some reason you can create your own parsers with a few lines of code. The `Parser<T>` interface that helps yo to achieve that is defined as followed:
@@ -205,7 +234,7 @@ yarn add typesafe-routes
 <details>
   <summary>React Router Utilities</summary>
 
-  #### `useRouteParams(route: RouteNode)`
+  #### `useRouteParams(route: RouteNode)`<br/> `useRouteQueryParams(route: RouteNode)`<br/> `useRoutePathParams(route: RouteNode)`
 
   The `useRouteParams` hook relies on the `useParams` hook from the optional dependency `react-router-dom`. Unlike `useParams`, the `useRouteParams` function additionally parses [`query strings`](https://developer.mozilla.org/en-US/docs/Web/API/Location/search) using [`qs`](github.com/ljharb/qs).
 
@@ -218,7 +247,9 @@ yarn add typesafe-routes
   }, {});
 
   const Component = () => {
-    const { topicId, limit } = useRouteParams(topicRoute);
+    const params = useRouteParams(topicRoute); // { topicId, limit }
+    const queryParams = useRouteQueryParams(topicRoute); // { limit }
+    const pathParams = useRoutePathParams(topicRoute); // { topicId }
 
     return <>{...}</>;
   }

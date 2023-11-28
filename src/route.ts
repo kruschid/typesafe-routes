@@ -3,41 +3,52 @@ import { Parser } from "./parser";
 
 type If<C, T, E> = C extends true ? (true extends C ? T : E) : E;
 
-interface ParamNames<R extends string = string, O extends string = string> {
+interface ParamNames<
+  R extends string = never,
+  O extends string = never,
+  P extends string = never,
+  Q extends string = never
+> {
   required: R;
   optional: O;
+  path: P;
+  query: Q;
 }
 
-type WithOptionalParam<PG extends ParamNames, P extends string> = ParamNames<
-  PG["required"],
-  PG["optional"] | P
->;
-type WithRequiredParam<PG extends ParamNames, P extends string> = ParamNames<
-  PG["required"] | P,
-  PG["optional"]
->;
+type AddParam<
+  PN extends ParamNames,
+  K extends "path" | "query" | "required" | "optional",
+  Name extends string
+> = {
+  [Key in keyof PN]: Key extends K ? PN[Key] | Name : PN[Key];
+};
 
 export type InferParam<
   T extends string,
+  K extends "path" | "query",
   PG extends ParamNames
 > = T extends `:${infer P}?`
-  ? WithOptionalParam<PG, P>
+  ? AddParam<PG, K | "optional", P>
   : T extends `:${infer P}*`
-  ? WithOptionalParam<PG, P>
+  ? AddParam<PG, K | "optional", P>
   : T extends `:${infer P}+`
-  ? WithRequiredParam<PG, P>
+  ? AddParam<PG, K | "required", P>
   : T extends `:${infer P}`
-  ? WithRequiredParam<PG, P>
+  ? AddParam<PG, K | "required", P>
   : PG;
 
-export type InferParamFromPath<P extends string> =
-  P extends `${infer A}/${infer B}`
-    ? InferParam<A, InferParamFromPath<B>>
-    : P extends `${infer A}&${infer B}`
-    ? InferParam<A, InferParamFromPath<B>>
-    : InferParam<P, { required: never; optional: never }>;
+export type InferParamFromPath<
+  P extends string,
+  K extends "path" | "query" = "path"
+> = P extends `${infer A}/${infer B}`
+  ? InferParam<A, K, InferParamFromPath<B, "path">>
+  : P extends `${infer A}&${infer B}`
+  ? InferParam<A, K, InferParamFromPath<B, "query">>
+  : InferParam<P, K, ParamNames>;
 
-export type AllParamNames<G extends ParamNames> = G["required"] | G["optional"];
+export type AllParamNames<
+  G extends ParamNames<string, string, string, string>
+> = G["required"] | G["optional"];
 
 type SerializedParams<K extends string = string> = Record<K, string>;
 
@@ -69,6 +80,20 @@ type RouteFn<IS_RECURSIVE = false> = <
   children: C
 ) => RouteNode<T, PM, C, IS_RECURSIVE>;
 
+type ParseParamsArguments<
+  T extends string,
+  Filter extends string,
+  G extends InferParamFromPath<T>
+> = SerializedParams<G["required"] & Filter> &
+  Partial<SerializedParams<G["optional"] & Filter>>;
+
+type ParseParamsReturnTypes<
+  PM extends ParserMap<any>,
+  Filter extends string,
+  G extends InferParamFromPath<any>
+> = ExtractParserReturnTypes<PM, G["required"] & Filter> &
+  Partial<ExtractParserReturnTypes<PM, G["optional"] & Filter>>;
+
 export type RouteNode<
   T extends string,
   PM extends ParserMap<AllParamNames<InferParamFromPath<T>>>,
@@ -76,40 +101,48 @@ export type RouteNode<
   IS_RECURSIVE = false
 > = {
   parseParams: <G extends InferParamFromPath<T>>(
-    params: SerializedParams<G["required"]> &
-      Partial<SerializedParams<G["optional"]>>,
+    params: ParseParamsArguments<T, G["path"] | G["query"], G>,
     strict?: boolean
-  ) => ExtractParserReturnTypes<PM, G["required"]> &
-    Partial<ExtractParserReturnTypes<PM, G["optional"]>>;
+  ) => ParseParamsReturnTypes<PM, G["path"] | G["query"], G>;
+
+  parsePathParams: <G extends InferParamFromPath<T>>(
+    params: ParseParamsArguments<T, G["path"], G>,
+    strict?: boolean
+  ) => ParseParamsReturnTypes<PM, G["path"], G>;
+
+  parseQueryParams: <G extends InferParamFromPath<T>>(
+    params: ParseParamsArguments<T, G["query"], G>,
+    strict?: boolean
+  ) => ParseParamsReturnTypes<PM, G["query"], G>;
+
   templateWithQuery: T;
   template: T extends `${infer BaseT}&${string}` ? BaseT : T;
   children: C;
   parserMap: PM;
 } & (<G extends InferParamFromPath<T>>(
-  params: ExtractParserReturnTypes<PM, G["required"]> &
-    Partial<ExtractParserReturnTypes<PM, G["optional"]>>
+  params: ParseParamsReturnTypes<PM, G["path"] | G["query"], G>
 ) => {
   $: string;
 } & {
   [K in keyof C]: C[K];
 } & If<IS_RECURSIVE, { $self: RouteNode<T, PM, C, true> }, {}>);
 
-type PathToken = string | PathParam;
+type Segment = string | Param;
 
-interface PathParam {
+interface Param {
   modifier: "" | "*" | "+" | "?";
   name: string;
 }
 
-const isPathParam = (x: PathToken): x is PathParam => typeof x !== "string";
+const isParam = (x: Segment): x is Param => typeof x !== "string";
 
 const filterParserMap = (
   parserMap: ParserMap<any>,
-  tokens: PathToken[]
+  tokens: Segment[]
 ): ParserMap<any> =>
   tokens.reduce<ParserMap<any>>(
-    (acc, t: PathToken) =>
-      !isPathParam(t) ? acc : { ...acc, [t.name]: parserMap[t.name] },
+    (acc, t: Segment) =>
+      !isParam(t) ? acc : { ...acc, [t.name]: parserMap[t.name] },
     {}
   );
 
@@ -130,8 +163,8 @@ const parseRoute = (pathWithQuery: string, parserMap: ParserMap<any>) => {
   };
 };
 
-const parseTokens = (path: string[]): PathToken[] =>
-  path.reduce<PathToken[]>((acc, f) => {
+const parseTokens = (path: string[]): Segment[] =>
+  path.reduce<Segment[]>((acc, f) => {
     if (!f) {
       return acc;
     } else if (f.startsWith(":")) {
@@ -229,6 +262,8 @@ export function routeFn<
     );
 
   fn.parseParams = paramsParser(parsedRoute);
+  fn.parsePathParams = paramsParser(parsedRoute, "path");
+  fn.parseQueryParams = paramsParser(parsedRoute, "query");
   fn.templateWithQuery = templateWithQuery;
   fn.children = children;
   fn.parserMap = parserMap;
@@ -242,7 +277,7 @@ export const recursiveRoute: RouteFn<true> = routeFn as RouteFn<true>;
 
 const stringifyRoute = (
   isRoot: boolean,
-  pathTokens: PathToken[],
+  pathTokens: Segment[],
   params: SerializedParams,
   prefixPath = ""
 ): string =>
@@ -251,7 +286,7 @@ const stringifyRoute = (
     .concat(
       pathTokens.reduce<string[]>(
         (acc, t) =>
-          isPathParam(t)
+          isParam(t)
             ? params[t.name]
               ? acc.concat(encodeURIComponent(params[t.name]))
               : acc
@@ -262,31 +297,33 @@ const stringifyRoute = (
     .join("/");
 
 const paramsParser =
-  ({ pathTokens, queryTokens, parserMap }: ParsedRouteMeta) =>
-  (params: SerializedParams, strict = false): RawParams => {
-    const parsedParams = Object.keys(params).reduce<RawParams>(
-      (acc, k) => ({
+  (
+    { pathTokens, queryTokens, parserMap }: ParsedRouteMeta,
+    type?: "path" | "query"
+  ) =>
+  (params: SerializedParams, strict?: boolean): RawParams => {
+    const tokens = [
+      ...(!type || type === "path" ? pathTokens : []),
+      ...(!type || type === "query" ? queryTokens : []),
+    ];
+
+    const parsedParams = tokens.reduce<RawParams>((acc, t) => {
+      if (!isParam(t)) {
+        return acc;
+      }
+      if (strict && ["", "+"].includes(t.modifier) && !params[t.name]) {
+        throw Error(
+          `[parseParams]: parameter "${t.name}" is required but is not defined`
+        );
+      }
+      if (!parserMap[t.name] || !params[t.name]) {
+        return acc;
+      }
+      return {
         ...acc,
-        ...(parserMap[k]
-          ? {
-              [k]: parserMap[k].parse(params[k]),
-            }
-          : {}),
-      }),
-      {}
-    );
-    if (strict) {
-      pathTokens.concat(queryTokens).forEach((t) => {
-        if (
-          isPathParam(t) &&
-          ["", "+"].includes(t.modifier) &&
-          !parsedParams[t.name]
-        ) {
-          throw Error(
-            `[parseParams]: parameter "${t.name}" is required but is not defined`
-          );
-        }
-      });
-    }
+        [t.name]: parserMap[t.name].parse(params[t.name]),
+      };
+    }, {});
+
     return parsedParams;
   };

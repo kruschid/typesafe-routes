@@ -1,12 +1,12 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-import { intParser, route } from "..";
-import { Link, useRouteParams } from "../react-router";
+import { intParser, route, stringParser } from "..";
+import { Link, useRouteParams, useRoutePathParams, useRouteQueryParams } from "../react-router";
 
 // example taken from https://reactrouter.com/
 
-const invoiceRoute = route(":invoice", { invoice: intParser }, {});
+const invoiceRoute = route(":invoice&:query", { invoice: intParser, query: stringParser }, {});
 
 const invoicesRoute = route("invoices", {}, { invoice: invoiceRoute });
 
@@ -35,7 +35,7 @@ const App = () =>
         <Link to={homeRoute({})}>home</Link>
       </li>
       <li>
-        <Link to={homeRoute({}).sales({}).invoices({}).invoice({ invoice: 1337 })}>invoice #1337</Link>
+        <Link to={homeRoute({}).sales({}).invoices({}).invoice({ invoice: 1337, query: "abc" })}>invoice #1337</Link>
       </li>
     </ul>
     <h2>Home</h2>
@@ -55,22 +55,29 @@ const Invoices = () =>
     <h4>Invoices</h4>
     <ul>
       <li>
-        <Link to={invoiceRoute({ invoice: 1234 })}>invoice #1234</Link>
+        <Link to={invoiceRoute({ invoice: 1234, query: "abc" })}>invoice #1234</Link>
       </li>
       <li>
-        <Link to={invoiceRoute({ invoice: 5678 })}>invoice #5678</Link>
+        <Link to={invoiceRoute({ invoice: 5678, query: "def" })}>invoice #5678</Link>
       </li>
       <li>
-        <Link to={invoiceRoute({ invoice: 9012 })}>invoice #9012</Link>
+        <Link to={invoiceRoute({ invoice: 9012, query: "ghi" })}>invoice #9012</Link>
       </li>
     </ul>
     <Outlet />
   </>;
 
 const Invoice = () => {
-  const { invoice } = useRouteParams(invoiceRoute);
+  const params = useRouteParams(invoiceRoute);
+  const pathParams = useRoutePathParams(invoiceRoute);
+  const queryParams = useRouteQueryParams(invoiceRoute);
   return (
-    <h5>Invoice #{invoice}</h5>
+    <>
+      <h5>Invoice #{params.invoice}</h5>
+      <pre>{JSON.stringify({ params })}</pre>
+      <pre>{JSON.stringify({ pathParams })}</pre>
+      <pre>{JSON.stringify({ queryParams })}</pre>
+    </>
   );
 }
 

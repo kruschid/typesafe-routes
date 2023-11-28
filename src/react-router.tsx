@@ -21,6 +21,28 @@ export const useRouteParams = <T extends RouteNode<string, any, any>>(
   }) as any;
 }
 
+export const useRouteQueryParams = <T extends RouteNode<string, any, any>>(
+  r: T,
+  o: IParseOptions = {}
+): ReturnType<T["parseQueryParams"]> => {
+  const { search } = useLocation();
+  return r.parseQueryParams({
+    ...useParams(),
+    ...parse(search, { ignoreQueryPrefix: true, ...o }),
+  }) as any;
+}
+
+export const useRoutePathParams = <T extends RouteNode<string, any, any>>(
+  r: T,
+  o: IParseOptions = {}
+): ReturnType<T["parsePathParams"]> => {
+  const { search } = useLocation();
+  return r.parsePathParams({
+    ...useParams(),
+    ...parse(search, { ignoreQueryPrefix: true, ...o }),
+  }) as any;
+}
+
 export const Link = (p: Omit<Parameters<typeof ReactRouterLink>[number], "to"> & {
   to: { $: string }
 }) =>
