@@ -27,6 +27,5 @@ export const param: ParamFn = (parser) => (name) =>
       name,
       kind: "optional",
       parser,
-      optional: undefined,
     },
   } as Param<any, any, any>);
