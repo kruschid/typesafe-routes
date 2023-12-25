@@ -12,7 +12,7 @@ export type RouteSegment = {
 export type RouteMap = Record<string, RouteSegment>;
 
 /**
- * ToParamMap<{
+ * SegmentToParamMap<{
  *  path?: (string | Param<TName TValue>)[];
  *  query?: Param<TName TValue>[];
  *  children?: RouteMap;
@@ -21,7 +21,7 @@ export type RouteMap = Record<string, RouteSegment>;
  *  query: {[TName]: TValue, ...}
  * }
  */
-export type ToParamMap<T extends RouteSegment> = {
+export type SegmentToParamMap<T extends RouteSegment> = {
   path: ToParamsRecord<Exclude<Unwrap<T["path"]>, string | undefined>>;
   query: ToParamsRecord<Exclude<Unwrap<T["query"]>, undefined>>;
 };
@@ -64,7 +64,11 @@ export type ToParamsRecord<Params extends AnyParam> = {
  *  | "childA/childB"
  *  | "childA/_childB"
  */
-type PathSegment<T extends RouteMap, IsTemplate = false, IsAbsolute = true> = {
+export type PathSegment<
+  T extends RouteMap,
+  IsTemplate = false,
+  IsAbsolute = true
+> = {
   [K in keyof T]: K extends string // filters out symbol and number
     ? T[K]["children"] extends object // has children
       ?
@@ -86,7 +90,7 @@ type PathSegment<T extends RouteMap, IsTemplate = false, IsAbsolute = true> = {
  *  {path: {...}, query: {...}}
  * > => { param: type, ...}
  */
-type PathToParamMap<
+export type PathToParamMap<
   Path extends string,
   Route extends RouteMap,
   Params extends ParamMap = ParamMap
@@ -94,17 +98,17 @@ type PathToParamMap<
   ? PathToParamMap<
       Rest,
       Route[Segment]["children"] & {}, // shortcut to exclude undefined
-      ToParamMap<Route[Segment]>
+      SegmentToParamMap<Route[Segment]>
     >
   : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
   ? PathToParamMap<
       Rest,
       Route[Segment]["children"] & {}, // shortcut to exclude undefined
-      Params & ToParamMap<Route[Segment]>
+      Params & SegmentToParamMap<Route[Segment]>
     >
   : Path extends `_${infer Segment}` // partial route in the final segment (drop previous options and discontinue)
-  ? ToParamMap<Route[Segment]>
-  : Params & ToParamMap<Route[Path]>;
+  ? SegmentToParamMap<Route[Segment]>
+  : Params & SegmentToParamMap<Route[Path]>;
 
 /**
  * ExcludeEmptyProperties<{
@@ -149,32 +153,13 @@ type Routes = <Routes extends RouteMap>(
     ...args: ArgumentsFromParamMap<PathToParamMap<Path, Routes>>
   ) => string;
   params: <Path extends PathSegment<Routes>>(
-    path: Path
-  ) => PathToParamMap<Path, Routes>;
-  path: <Path extends PathSegment<Routes>>(
-    path: Path
+    path: Path,
+    params: Record<string, any>
   ) => PathToParamMap<Path, Routes>["path"];
   query: <Path extends PathSegment<Routes>>(
-    path: Path
+    path: Path,
+    params: Record<string, any>
   ) => PathToParamMap<Path, Routes>["query"];
 };
 
 export const routes: Routes = null as any;
-
-const testRoutes = routes({
-  home: {},
-  language: {
-    path: [str("lang")],
-    query: [str("sdfsd").optional],
-    children: {
-      user: {
-        path: ["user", int("uid").optional, "whatever"],
-        children: {
-          settings: {
-            path: ["settings", int("settingsId")],
-          },
-        },
-      },
-    },
-  },
-});
