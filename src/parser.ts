@@ -37,3 +37,15 @@ export const list = <T extends string>(_: T[], separator = ";") =>
     parse: (value: string) => value.split(separator) as T[],
     serialize: (options: T[]) => options.join(separator),
   });
+
+export const json = <T>() =>
+  param({
+    parse: (value: string) => JSON.parse(value),
+    serialize: (value: T) => JSON.stringify(value),
+  });
+
+export const base64 = <T>() =>
+  param({
+    parse: (value) => JSON.parse(window.btoa(value)),
+    serialize: (value: T) => window.atob(JSON.stringify(value)),
+  });
