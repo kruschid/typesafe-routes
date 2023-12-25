@@ -1,11 +1,12 @@
 export type ParamKind = "optional" | "required";
 
+export type AnyParam = Param<any, any, any>;
+
 export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;
   kind: K;
   parser: Parser<T>;
-  optional: K extends "required" ? Param<N, T, "optional"> : never;
-};
+} & (K extends "required" ? { optional: Param<N, T, "optional"> } : {});
 
 export interface Parser<T> {
   parse: (value: string) => T;
@@ -14,18 +15,15 @@ export interface Parser<T> {
 
 type ParamFn = <T>(
   parser: Parser<T>
-) => <N extends string, K extends ParamKind = "required">(
-  name: N
-) => Param<N, T, K>;
+) => <N extends string>(name: N) => Param<N, T, "required">;
 
-export const param: ParamFn = (parser) => (name) =>
-  ({
+export const param: ParamFn = (parser) => (name) => ({
+  name,
+  kind: "required",
+  parser,
+  optional: {
     name,
-    kind: "required",
+    kind: "optional",
     parser,
-    optional: {
-      name,
-      kind: "optional",
-      parser,
-    },
-  } as Param<any, any, any>);
+  } as Param<any, any, "optional">,
+});
