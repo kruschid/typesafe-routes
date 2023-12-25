@@ -1,169 +1,178 @@
 import { A, Test } from "ts-toolbelt";
-import { expectError, expectType } from "tsd";
-import {
-  AllParamNames,
-  ExtractParserReturnTypes,
-  InferParamFromPath,
-  RouteNode,
-  booleanParser,
-  intParser,
-  route,
-  stringParser,
-} from "../src";
+import { Param } from "../src/param";
+import { ToParamMap, routes } from "../src/routes";
+import { bool, int, str } from "../src/parser";
+import { expectType } from "tsd";
 
 const { checks, check } = Test;
 
-// only required params
-checks([
-  check<
-    InferParamFromPath<"a/:one/b/:two&:three">,
-    {
-      required: "one" | "two" | "three";
-      optional: never;
-      path: "one" | "two";
-      query: "three";
+const r = routes({
+  home: {},
+  language: {
+    path: [str("lang")],
+    children: {
+      users: {
+        path: ["users"],
+        query: [int("page")],
+        children: {
+          show: {
+            path: ["show", int("userId")],
+            query: [bool("filter").optional],
+          },
+        },
+      },
     },
-    Test.Pass
-  >(),
-]);
-
-// only optional params
-checks([
-  check<
-    InferParamFromPath<":one?/b/:two?&:three?">,
-    {
-      required: never;
-      optional: "one" | "two" | "three";
-      path: "one" | "two";
-      query: "three";
-    },
-    Test.Pass
-  >(),
-]);
-
-// mixed params
-checks([
-  check<
-    InferParamFromPath<"/:one?/b/:two&:three?">,
-    {
-      required: "two";
-      optional: "one" | "three";
-      path: "one" | "two";
-      query: "three";
-    },
-    Test.Pass
-  >(),
-  check<
-    AllParamNames<InferParamFromPath<"/:one?/b/:two&:three?">>,
-    "two" | "one" | "three",
-    Test.Pass
-  >(),
-]);
-
-// extract param types from parser map
-checks([
-  check<
-    ExtractParserReturnTypes<
-      { a: typeof intParser; b: typeof stringParser },
-      "a"
-    >,
-    { a: number },
-    Test.Pass
-  >(),
-]);
-
-//
-//
-// simple routes and parsers
-expectType<RouteNode<"", {}, {}>>(route("", {}, {}));
-expectType<RouteNode<"/test", {}, {}>>(route("/test", {}, {}));
-expectType<RouteNode<"/test", {}, {}>>(route("/test", {}, {}));
-expectType<RouteNode<"/:test", { test: typeof intParser }, {}>>(
-  route("/:test", { test: intParser }, {})
-);
-expectError(route("/:test", {}, {}));
-expectError(route("/:test", { _test: intParser }, {}));
-
-//
-//
-// with params
-const accountRoute = route("account", {}, {});
-const settingsRoute = route(
-  "settings/:settingsId",
-  { settingsId: stringParser },
-  { accountRoute }
-);
-
-expectType(accountRoute({}));
-expectType(settingsRoute({ settingsId: "abs" }));
-expectType<string>(settingsRoute({ settingsId: "abs" }).$);
-expectType<typeof accountRoute>(
-  settingsRoute({ settingsId: "abs" }).accountRoute
-);
-expectType<string>(settingsRoute({ settingsId: "abs" }).accountRoute({}).$);
-expectType<"settings/:settingsId">(settingsRoute.template);
-expectError(settingsRoute({ settingsId: 123 }));
-expectError(settingsRoute({}));
-expectError(settingsRoute({ settingsId: "defgh" }).something);
-
-//
-//
-// nested routes
-
-const groupRoute = route(
-  "group/:groupId?&:filter?&:limit",
-  {
-    groupId: stringParser,
-    filter: booleanParser,
-    limit: intParser,
   },
-  {
-    settingsRoute,
-  }
+});
+
+//
+// template
+//
+expectType<
+  (
+    path:
+      | "home"
+      | "language"
+      | "language/*"
+      | "language/users"
+      | "language/users/*"
+      | "language/_users"
+      | "language/_users/*"
+      | "language/_users/show"
+      | "language/users/show"
+      | "language/users/_show"
+  ) => string
+>(r.template);
+
+//
+// build
+//
+expectType<(path: "home", options: {}) => string>(r.build);
+expectType<(path: "language", options: { path: { lang: string } }) => string>(
+  r.build
+);
+expectType<
+  (
+    path: "language/users",
+    options: { path: { lang: string }; query: { page: number } }
+  ) => string
+>(r.build);
+expectType<
+  (path: "language/_users", options: { query: { page: number } }) => string
+>(r.build);
+expectType<
+  (
+    path: "language/users/show",
+    options: {
+      path: { lang: string; userId: number };
+      query: { filter?: boolean; page: number };
+    }
+  ) => string
+>(r.build);
+expectType<
+  (
+    path: "language/_users/show",
+    options: {
+      path: { userId: number };
+      query: { filter?: boolean; page: number };
+    }
+  ) => string
+>(r.build);
+expectType<
+  (
+    path: "language/users/_show",
+    options: {
+      path: { userId: number };
+      query: { filter?: boolean };
+    }
+  ) => string
+>(r.build);
+
+//
+// render
+//
+expectType<(path: "home") => string>(r.render);
+expectType<(path: "language", params: { lang: string }) => string>(r.render);
+expectType<
+  (
+    path: "language/users",
+    params: { lang: string },
+    query: { page: number }
+  ) => string
+>(r.render);
+expectType<(path: "language/_users", query: { page: number }) => string>(
+  r.render
 );
 
-expectType(groupRoute({ limit: 1 }));
-expectType<typeof settingsRoute>(groupRoute({ limit: 1 }).settingsRoute);
-expectType<string>(
-  groupRoute({ limit: 1 }).settingsRoute({ settingsId: "" }).$
-);
-expectType<string>(
-  groupRoute({ limit: 1, groupId: "", filter: true }).settingsRoute({
-    settingsId: "",
-  }).$
-);
-expectType<typeof accountRoute>(
-  groupRoute({ limit: 1 }).settingsRoute({ settingsId: "" }).accountRoute
-);
-expectType<string>(
-  groupRoute({ limit: 1 }).settingsRoute({ settingsId: "" }).accountRoute({}).$
-);
-expectError(groupRoute({ limit: 1, groupId: "", filter: true, extra: 1 }));
-expectError(groupRoute({ limit: 1, groupIddd: "", filter: true }));
+//
+// params
+//
+expectType<{ path: {}; query: {} }>(r.params("home"));
+expectType<{ path: { lang: string }; query: {} }>(r.params("language"));
+expectType<{ path: { lang: string }; query: {} }>(r.params("language/users"));
+expectType<{
+  path: { lang: string; userId: number };
+  query: { filter?: boolean; page: number };
+}>(r.params("language/users/show"));
+expectType<{ path: {}; query: { page: number } }>(r.params("language/_users"));
+expectType<{
+  path: { userId: number };
+  query: { filter?: boolean; page: number };
+}>(r.params("language/_users/show"));
+expectType<{
+  path: { userId: number };
+  query: { filter?: boolean };
+}>(r.params("language/users/_show"));
 
+//
+// ToParamMap
+//
 checks([
+  // required and optional path params
   check<
-    A.Compute<Parameters<typeof groupRoute>>,
-    [{ filter?: boolean; groupId?: string; limit: number }],
+    A.Compute<
+      ToParamMap<{
+        path: [
+          "user",
+          Param<"uid", string, "required">,
+          Param<"gid", number, "optional">
+        ];
+      }>
+    >,
+    {
+      path: {
+        uid: string;
+        gid?: number;
+      };
+      query: {};
+    },
+    Test.Pass
+  >(),
+  // required and optional query param
+  check<
+    A.Compute<
+      ToParamMap<{
+        path: [
+          "user",
+          Param<"uid", string, "required">,
+          Param<"gid", number, "optional">
+        ];
+        query: [
+          Param<"filter", string, "required">,
+          Param<"page", number, "optional">
+        ];
+      }>
+    >,
+    {
+      path: {
+        uid: string;
+        gid?: number;
+      };
+      query: {
+        filter: string;
+        page?: number;
+      };
+    },
     Test.Pass
   >(),
 ]);
-
-//
-//
-// param parsing
-
-checks([
-  check<
-    A.Compute<ReturnType<typeof groupRoute.parseParams>>,
-    { filter?: boolean; groupId?: string; limit: number },
-    Test.Pass
-  >(),
-]);
-
-expectError(groupRoute.parseParams());
-expectError(groupRoute.parseParams({}));
-expectError(groupRoute.parseParams({ limit: 1 }));
-expectError(groupRoute.parseParams({ limit: "1", filter: 5 }));
-expectError(groupRoute.parseParams({ limit: "1", extra: "423" }));
-expectType<number>(groupRoute.parseParams({ limit: "1" }).limit);

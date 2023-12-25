@@ -1,129 +1,180 @@
+import { AnyParam } from "./param";
 import { int, str } from "./parser";
-import { ParamMap, RouteContext, route } from "./route";
 
-export type RouteMap = Record<string, RouteContext<any, any>>;
+type If<Condition, Then> = Condition extends true ? Then : never;
+type Unwrap<T> = T extends unknown[] ? T[number] : never;
 
-type RootTemplateSegment<
-  T extends RouteMap,
-  IsTemplate = false
-> = `/${TemplateSegment<T, IsTemplate>}`;
+export type RouteSegment = {
+  path?: (string | AnyParam)[];
+  query?: AnyParam[];
+  children?: RouteMap;
+};
+export type RouteMap = Record<string, RouteSegment>;
 
-type TemplateSegment<T extends RouteMap, IsTemplate = false> = {
-  [K in keyof T]: K extends string
-    ? T[K] extends object // has children
+/**
+ * ToParamMap<{
+ *  path?: (string | Param<TName TValue>)[];
+ *  query?: Param<TName TValue>[];
+ *  children?: RouteMap;
+ * }> => {
+ *  path: {[TName]: TValue, ...},
+ *  query: {[TName]: TValue, ...}
+ * }
+ */
+export type ToParamMap<T extends RouteSegment> = {
+  path: ToParamsRecord<Exclude<Unwrap<T["path"]>, string | undefined>>;
+  query: ToParamsRecord<Exclude<Unwrap<T["query"]>, undefined>>;
+};
+type ParamMap = Record<"path" | "query", unknown>;
+
+/**
+ * ToParamsRecord<{
+ *  kind: "required" | "optional";
+ *  name: TName;
+ *  parser: Parser<TParseType>
+ * } | {...}> => {
+ *  [TName]: TParseType,
+ *  [TName]?: TParseType,
+ *  ...
+ * }
+ */
+export type ToParamsRecord<Params extends AnyParam> = {
+  [K in Extract<Params, { kind: "required" }>["name"]]: ReturnType<
+    Extract<Params, { name: K }>["parser"]["parse"]
+  >;
+} & {
+  [K in Extract<Params, { kind: "optional" }>["name"]]?: ReturnType<
+    Extract<Params, { name: K }>["parser"]["parse"]
+  >;
+};
+
+/**
+ * RoutePath<{
+ *  childA: {
+ *    ...,
+ *    childrend: {
+ *      childB: {
+ *        ...
+ *      }
+ *    }
+ *  }
+ * }> =>
+ *  | "childA"
+ *  | "childA/*"
+ *  | "childA/childB"
+ *  | "childA/_childB"
+ */
+type PathSegment<T extends RouteMap, IsTemplate = false, IsAbsolute = true> = {
+  [K in keyof T]: K extends string // filters out symbol and number
+    ? T[K]["children"] extends object // has children
       ?
           | K
-          | (IsTemplate extends true ? `${K}/*` : never)
-          | `${K}/${TemplateSegment<T[K]["child"], IsTemplate>}`
-          | `${K}/_${PartialTemplateSegment<T[K]["child"], IsTemplate>}`
-      : K
+          | `${K}/${PathSegment<T[K]["children"], IsTemplate>}`
+          | If<IsTemplate, `${K}/*`>
+          | If<
+              IsAbsolute,
+              `${K}/_${PathSegment<T[K]["children"], IsTemplate, false>}`
+            >
+      : K // no children
     : never;
 }[keyof T];
 
-type PartialTemplateSegment<T extends RouteMap, IsTemplate = false> = {
-  [K in keyof T]: K extends string
-    ? T[K] extends object // has children
-      ?
-          | K
-          | (IsTemplate extends true ? `${K}/*` : never)
-          | `${K}/${PartialTemplateSegment<T[K]["child"], IsTemplate>}`
-      : K
-    : never;
-}[keyof T];
-
-type RenderOptions<
+/**
+ * PathToParamMap<
+ *  "segement/segment/segment",
+ *  {segment: {..., children: {segment: {..., children: {segment}}}}},
+ *  {path: {...}, query: {...}}
+ * > => { param: type, ...}
+ */
+type PathToParamMap<
   Path extends string,
   Route extends RouteMap,
-  Options extends ParamMap = ParamMap
-> = Path extends `/${infer Rest}` // root segment
-  ? RenderOptions<Rest, Route>
-  : Path extends `_${infer Segment}/${infer Rest}` // partial route segment (drop all previous options)
-  ? RenderOptions<Rest, Route[Segment]["child"], Route[Segment]["params"]>
-  : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
-  ? RenderOptions<
+  Params extends ParamMap = ParamMap
+> = Path extends `_${infer Segment}/${infer Rest}` // partial route segment (drop all previous options)
+  ? PathToParamMap<
       Rest,
-      Route[Segment]["child"],
-      Options & Route[Segment]["params"]
+      Route[Segment]["children"] & {}, // shortcut to exclude undefined
+      ToParamMap<Route[Segment]>
+    >
+  : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
+  ? PathToParamMap<
+      Rest,
+      Route[Segment]["children"] & {}, // shortcut to exclude undefined
+      Params & ToParamMap<Route[Segment]>
     >
   : Path extends `_${infer Segment}` // partial route in the final segment (drop previous options and discontinue)
-  ? Route[Segment]["params"]
-  : Options & Route[Path]["params"];
+  ? ToParamMap<Route[Segment]>
+  : Params & ToParamMap<Route[Path]>;
 
-type TrimRenderOptions<T> = Pick<
+/**
+ * ExcludeEmptyProperties<{
+ *  path: {param: string},
+ *  query: {}
+ * }> => {
+ *  path: {param: string},
+ *  query: never,
+ * }
+ */
+type ExcludeEmptyProperties<T> = Pick<
   T,
   {
     [K in keyof T]: keyof T[K] extends never ? never : K;
   }[keyof T]
 >;
 
-type RenderArguments<P extends ParamMap> = [
-  ...([keyof P["params"]] extends [never] ? [] : [params: P["params"]]),
-  ...([keyof P["query"]] extends [never] ? [] : [query: P["query"]]),
-  ...([keyof P["state"]] extends [never] ? [] : [state: P["state"]]),
-  ...([keyof P["hash"]] extends [never] ? [] : [hash: P["hash"]])
+/**
+ * ArgumentsFromParamMap<{
+ *  path: {uid: string},
+ *  query: {search: string}
+ * }> => [
+ *  path: {uid: string},
+ *  query: {search: string}
+ * ]
+ */
+type ArgumentsFromParamMap<P extends ParamMap> = [
+  ...(keyof P["path"] extends never ? [] : [params: P["path"]]),
+  ...(keyof P["query"] extends never ? [] : [query: P["query"]])
 ];
 
-type Routes = <ChildRoutes extends RouteMap>(
-  routes: ChildRoutes
+type Routes = <Routes extends RouteMap>(
+  routes: Routes
 ) => {
-  template: (path: RootTemplateSegment<ChildRoutes, true>) => string;
-  vrender: <Path extends RootTemplateSegment<ChildRoutes>>(
+  template: (path: PathSegment<Routes, true>) => string;
+  build: <Path extends PathSegment<Routes>>(
     path: Path,
-    options: TrimRenderOptions<RenderOptions<Path, ChildRoutes>>
+    options: ExcludeEmptyProperties<PathToParamMap<Path, Routes>>
   ) => string;
-  render: <Path extends RootTemplateSegment<ChildRoutes>>(
+  render: <Path extends PathSegment<Routes>>(
     path: Path,
-    ...args: RenderArguments<RenderOptions<Path, ChildRoutes>>
+    ...args: ArgumentsFromParamMap<PathToParamMap<Path, Routes>>
   ) => string;
-  parse: <Path extends RootTemplateSegment<ChildRoutes>>(
+  params: <Path extends PathSegment<Routes>>(
     path: Path
-  ) => TrimRenderOptions<RenderOptions<Path, ChildRoutes>>;
-  params: <Path extends RootTemplateSegment<ChildRoutes>>(
+  ) => PathToParamMap<Path, Routes>;
+  path: <Path extends PathSegment<Routes>>(
     path: Path
-  ) => RenderOptions<Path, ChildRoutes>["params"];
-  query: <Path extends RootTemplateSegment<ChildRoutes>>(
+  ) => PathToParamMap<Path, Routes>["path"];
+  query: <Path extends PathSegment<Routes>>(
     path: Path
-  ) => RenderOptions<Path, ChildRoutes>["query"];
-  hash: <Path extends RootTemplateSegment<ChildRoutes>>(
-    path: Path
-  ) => RenderOptions<Path, ChildRoutes>["hash"];
-  state: <Path extends RootTemplateSegment<ChildRoutes>>(
-    path: Path
-  ) => RenderOptions<Path, ChildRoutes>["state"];
+  ) => PathToParamMap<Path, Routes>["query"];
 };
 
-const routes: Routes = null as any;
+export const routes: Routes = null as any;
 
-// prettier-ignore
-const r = routes({
-  home: route`home`
-    .query(int("lalaa"))
-    .hash(str("haha"))
-    .children({
-      news: route`news/${int("newsId")}`
-        .query(int("blob").optional),
-      weather: route`${str("weather")}`
-        .query(int("loloo"))
-        .children({
-          berlin: route`berlin/${int("berlin")}`,
-        }),
-    }),
-  users: route``,
+const testRoutes = routes({
+  home: {},
+  language: {
+    path: [str("lang")],
+    query: [str("sdfsd").optional],
+    children: {
+      user: {
+        path: ["user", int("uid").optional, "whatever"],
+        children: {
+          settings: {
+            path: ["settings", int("settingsId")],
+          },
+        },
+      },
+    },
+  },
 });
-
-r.template("/home/weather/berlin");
-r.template("/home/_weather/berlin/*");
-r.vrender("/home", { query: { lalaa: 2 }, hash: { haha: "SDFDS" } });
-r.vrender("/home/weather/_berlin", {
-  params: { berlin: 2334 },
-});
-r.render(
-  "/home/_weather/berlin",
-  { berlin: 123, weather: "sddf" },
-  { loloo: 2321 }
-);
-r.render("/home/_news", { newsId: 123 }, {});
-r.vrender("/home/_news", { params: { newsId: 1 }, query: {} });
-
-r.parse("/home/weather/berlin");
-r.params("/home/weather/berlin").berlin;
