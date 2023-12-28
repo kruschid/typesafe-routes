@@ -21,6 +21,11 @@ export const isoDate = param({
   serialize: (value: Date) => value.toISOString(),
 });
 
+export const date = param({
+  parse: (value: string) => new Date(value),
+  serialize: (value: Date) => value.toISOString().slice(0, 10),
+});
+
 export const bool = param({
   parse: (value: string) => value === "true",
   serialize: (value: boolean) => value.toString(),

@@ -6,6 +6,7 @@ export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;
   kind: K;
   parser: Parser<T>;
+  value?: string;
 } & (K extends "required" ? { optional: Param<N, T, "optional"> } : {});
 
 export interface Parser<T> {

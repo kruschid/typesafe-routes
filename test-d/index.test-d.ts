@@ -9,13 +9,13 @@ import {
   ToParamsRecord,
   bool,
   int,
-  routes,
+  createRoutes,
   str,
 } from "../src";
 
 const { checks, check } = Test;
 
-const r = routes({
+const r = createRoutes({
   home: {},
   language: {
     path: [str("lang")],
@@ -54,21 +54,21 @@ expectType<
 >(r.template);
 
 //
-// build
+// render
 //
-expectType<(path: "home", options: {}) => string>(r.build);
+expectType<(path: "home", options: {}) => string>(r.render);
 expectType<(path: "language", options: { path: { lang: string } }) => string>(
-  r.build
+  r.render
 );
 expectType<
   (
     path: "language/users",
     options: { path: { lang: string }; query: { page: number } }
   ) => string
->(r.build);
+>(r.render);
 expectType<
   (path: "language/_users", options: { query: { page: number } }) => string
->(r.build);
+>(r.render);
 expectType<
   (
     path: "language/users/show",
@@ -77,7 +77,7 @@ expectType<
       query: { filter?: boolean; page: number };
     }
   ) => string
->(r.build);
+>(r.render);
 expectType<
   (
     path: "language/_users/show",
@@ -86,7 +86,7 @@ expectType<
       query: { filter?: boolean; page: number };
     }
   ) => string
->(r.build);
+>(r.render);
 expectType<
   (
     path: "language/users/_show",
@@ -94,43 +94,6 @@ expectType<
       path: { userId: number };
       query: { filter?: boolean };
     }
-  ) => string
->(r.build);
-
-//
-// render
-//
-expectType<(path: "home") => string>(r.render);
-expectType<(path: "language", params: { lang: string }) => string>(r.render);
-expectType<
-  (
-    path: "language/users",
-    params: { lang: string },
-    query: { page: number }
-  ) => string
->(r.render);
-expectType<(path: "language/_users", query: { page: number }) => string>(
-  r.render
-);
-expectType<
-  (
-    path: "language/users/show",
-    params: { lang: string; userId: number },
-    query: { filter?: boolean; page: number }
-  ) => string
->(r.render);
-expectType<
-  (
-    path: "language/_users/show",
-    params: { userId: number },
-    query: { filter?: boolean; page: number }
-  ) => string
->(r.render);
-expectType<
-  (
-    path: "language/users/_show",
-    params: { userId: number },
-    query: { filter?: boolean }
   ) => string
 >(r.render);
 
@@ -161,6 +124,21 @@ expectType<{ filter?: boolean; page: number }>(
   r.query("language/_users/show", {})
 );
 expectType<{ filter?: boolean }>(r.query("language/users/_show", {}));
+
+//
+// bind
+//
+r.bind("language", { path: { lang: "" } })
+  .bind("users", { query: { page: 1 } })
+  .render("show", { path: { userId: 1 }, query: { filter: true } });
+
+//
+// from
+//
+r.from("language/users", "de/users/5?page=2", {
+  path: { lang: "" },
+  query: { page: 1 },
+}).render("show", { path: { userId: 2 }, query: {} });
 
 //
 // SegmentToParamMap

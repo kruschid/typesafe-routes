@@ -1,8 +1,13 @@
 import { AnyParam } from "./param";
-import { int, str } from "./parser";
+import { RenderableSegments, Renderer, defaultRenderer } from "./renderer";
 
 type If<Condition, Then> = Condition extends true ? Then : never;
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
+type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;
 
 export type RouteSegment = {
   path?: (string | AnyParam)[];
@@ -111,6 +116,29 @@ export type PathToParamMap<
   : Params & SegmentToParamMap<Route[Path]>;
 
 /**
+ * DeepFindParamMap<
+ *  "segement/segment",
+ *  {segment: {..., children: {segment: {..., children: {segment: { ... }}}}}},
+ * > => {segment: { ... }},
+ */
+export type DeepFindParamMap<
+  Path extends string,
+  Route extends RouteMap
+> = Path extends `_${infer Segment}/${infer Rest}` // partial route segment (drop all previous options)
+  ? DeepFindParamMap<
+      Rest,
+      Route[Segment]["children"] & {} // shortcut to exclude undefined
+    >
+  : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
+  ? DeepFindParamMap<
+      Rest,
+      Route[Segment]["children"] & {} // shortcut to exclude undefined
+    >
+  : Path extends `_${infer Segment}` // partial route in the final segment (drop previous options and discontinue)
+  ? Route[Segment]["children"] & {}
+  : Route[Path]["children"] & {};
+
+/**
  * ExcludeEmptyProperties<{
  *  path: {param: string},
  *  query: {}
@@ -126,31 +154,11 @@ type ExcludeEmptyProperties<T> = Pick<
   }[keyof T]
 >;
 
-/**
- * ArgumentsFromParamMap<{
- *  path: {uid: string},
- *  query: {search: string}
- * }> => [
- *  path: {uid: string},
- *  query: {search: string}
- * ]
- */
-type ArgumentsFromParamMap<P extends ParamMap> = [
-  ...(keyof P["path"] extends never ? [] : [params: P["path"]]),
-  ...(keyof P["query"] extends never ? [] : [query: P["query"]])
-];
-
-type Routes = <Routes extends RouteMap>(
-  routes: Routes
-) => {
+export type RoutesContext<Routes extends RouteMap> = {
   template: (path: PathSegment<Routes, true>) => string;
-  build: <Path extends PathSegment<Routes>>(
-    path: Path,
-    options: ExcludeEmptyProperties<PathToParamMap<Path, Routes>>
-  ) => string;
   render: <Path extends PathSegment<Routes>>(
     path: Path,
-    ...args: ArgumentsFromParamMap<PathToParamMap<Path, Routes>>
+    params: ExcludeEmptyProperties<PathToParamMap<Path, Routes>>
   ) => string;
   params: <Path extends PathSegment<Routes>>(
     path: Path,
@@ -160,6 +168,139 @@ type Routes = <Routes extends RouteMap>(
     path: Path,
     params: Record<string, any>
   ) => PathToParamMap<Path, Routes>["query"];
+  bind: <Path extends PathSegment<Routes>>(
+    path: Path,
+    params: ExcludeEmptyProperties<PathToParamMap<Path, Routes>>
+  ) => RoutesContext<DeepFindParamMap<Path, Routes>>;
+  from: <Path extends PathSegment<Routes>>(
+    path: Path,
+    url: string,
+    override?: DeepPartial<ExcludeEmptyProperties<PathToParamMap<Path, Routes>>>
+  ) => RoutesContext<DeepFindParamMap<Path, Routes>>;
 };
 
-export const routes: Routes = null as any;
+type RoutesFn = <Routes extends RouteMap>(
+  routes: Routes,
+  renderer?: Renderer,
+  prevSegments?: RouteSegment[]
+) => RoutesContext<Routes>;
+
+export const createRoutes: RoutesFn = (
+  routeMap,
+  renderer = defaultRenderer,
+  prevSegments = []
+) => {
+  const rndrr = renderer(routeMap);
+
+  const render = (path: string, params: SegmentToParamMap<RouteSegment>) => {
+    let nextSegment: RouteMap | undefined = routeMap;
+    const renderableSegments: RenderableSegments = {
+      path: [],
+      query: [],
+      isRelative: false,
+    };
+
+    path.split("/").forEach((segmentName, i) => {
+      if (!nextSegment) {
+        throw Error(`unknown template segment ${segmentName}`);
+      }
+
+      if (segmentName[0] === "_") {
+        segmentName = segmentName.slice(1);
+        renderableSegments.path = [];
+        renderableSegments.query = [];
+        renderableSegments.isRelative = true;
+      }
+
+      const currSegment = nextSegment[segmentName];
+      nextSegment = currSegment.children;
+
+      currSegment.path?.forEach((pathSegment) => {
+        if (typeof pathSegment === "string") {
+          renderableSegments.path.push(pathSegment);
+        } else if (
+          pathSegment.kind === "required" &&
+          !params.path[pathSegment.name]
+        ) {
+          throw Error(
+            `required path parameter ${pathSegment.name} was not specified`
+          );
+        } else {
+          renderableSegments.path.push({
+            ...pathSegment,
+            value: pathSegment.parser.serialize(params.path[pathSegment.name]),
+          });
+        }
+      }) ?? [];
+
+      currSegment.query?.forEach((queryParam) => {
+        if (queryParam.kind === "required" && !params.query[queryParam.name]) {
+          throw Error(
+            `required query parameter ${queryParam.name} was not specified`
+          );
+        }
+        renderableSegments.query.push({
+          ...queryParam,
+          value: queryParam.parser.serialize(params.query[queryParam.name]),
+        });
+      }) ?? [];
+    });
+
+    // extract  path segments and query params and determine if path is relative
+    return rndrr.render(renderableSegments, path);
+  };
+
+  const bind = (path: string, params: SegmentToParamMap<RouteSegment>) => {
+    let currSegment: RouteSegment = {};
+    let segmentStartsAt = 0;
+
+    const segments = path
+      .split("/")
+      .map<RouteSegment>((segmentName, i) => {
+        const trimmedSegmentName =
+          segmentName[0] === "_" ? segmentName.slice(1) : segmentName;
+
+        if (segmentName.length !== trimmedSegmentName.length) {
+          segmentStartsAt = i;
+        }
+        currSegment = routeMap[trimmedSegmentName];
+
+        return {
+          path: currSegment.path?.map<string | AnyParam>((pathSegment) =>
+            typeof pathSegment === "string"
+              ? pathSegment
+              : {
+                  ...pathSegment,
+                  value: params.path[pathSegment.name],
+                }
+          ),
+          query: currSegment.query?.map<AnyParam>((queryParam) => ({
+            ...queryParam,
+            value: params.query[queryParam.name],
+          })),
+        };
+      })
+      .slice(segmentStartsAt);
+
+    if (!currSegment.children) {
+      throw Error("can't apply bind on childless segment");
+    }
+    return createRoutes(
+      currSegment.children,
+      renderer,
+      segmentStartsAt > 0
+        ? segments // relative path
+        : prevSegments.concat(segments) // absolute path
+    );
+  };
+
+  return {
+    template: rndrr.template,
+    build: null as any,
+    render,
+    params: null as any,
+    query: null as any,
+    bind,
+    from: null as any,
+  } as RoutesContext<any>;
+};
