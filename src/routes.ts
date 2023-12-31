@@ -1,5 +1,5 @@
 import { AnyParam } from "./param";
-import { RenderableSegments, Renderer, defaultRenderer } from "./renderer";
+import { RenderContext, Renderer, defaultRenderer } from "./renderer";
 
 type If<Condition, Then> = Condition extends true ? Then : never;
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
@@ -182,125 +182,126 @@ export type RoutesContext<Routes extends RouteMap> = {
 type RoutesFn = <Routes extends RouteMap>(
   routes: Routes,
   renderer?: Renderer,
-  prevSegments?: RouteSegment[]
+  prevSegments?: RenderContext
 ) => RoutesContext<Routes>;
 
 export const createRoutes: RoutesFn = (
   routeMap,
   renderer = defaultRenderer,
-  prevSegments = []
+  prevSegments
 ) => {
   const rndrr = renderer(routeMap);
 
+  const template = (path: string) => {
+    const ctx = toRenderContext(routeMap, path);
+    return rndrr.template(ctx, path);
+  };
+
   const render = (path: string, params: SegmentToParamMap<RouteSegment>) => {
-    let nextSegment: RouteMap | undefined = routeMap;
-    const renderableSegments: RenderableSegments = {
-      path: [],
-      query: [],
-      isRelative: false,
-    };
-
-    path.split("/").forEach((segmentName, i) => {
-      if (!nextSegment) {
-        throw Error(`unknown template segment ${segmentName}`);
-      }
-
-      if (segmentName[0] === "_") {
-        segmentName = segmentName.slice(1);
-        renderableSegments.path = [];
-        renderableSegments.query = [];
-        renderableSegments.isRelative = true;
-      }
-
-      const currSegment = nextSegment[segmentName];
-      nextSegment = currSegment.children;
-
-      currSegment.path?.forEach((pathSegment) => {
-        if (typeof pathSegment === "string") {
-          renderableSegments.path.push(pathSegment);
-        } else if (
-          pathSegment.kind === "required" &&
-          !params.path[pathSegment.name]
-        ) {
-          throw Error(
-            `required path parameter ${pathSegment.name} was not specified`
-          );
-        } else {
-          renderableSegments.path.push({
-            ...pathSegment,
-            value: pathSegment.parser.serialize(params.path[pathSegment.name]),
-          });
-        }
-      }) ?? [];
-
-      currSegment.query?.forEach((queryParam) => {
-        if (queryParam.kind === "required" && !params.query[queryParam.name]) {
-          throw Error(
-            `required query parameter ${queryParam.name} was not specified`
-          );
-        }
-        renderableSegments.query.push({
-          ...queryParam,
-          value: queryParam.parser.serialize(params.query[queryParam.name]),
-        });
-      }) ?? [];
-    });
-
-    // extract  path segments and query params and determine if path is relative
-    return rndrr.render(renderableSegments, path);
+    const ctx = toRenderContext(routeMap, path, params, prevSegments);
+    return rndrr.render(ctx, path);
   };
 
   const bind = (path: string, params: SegmentToParamMap<RouteSegment>) => {
-    let currSegment: RouteSegment = {};
-    let segmentStartsAt = 0;
+    const ctx = toRenderContext(routeMap, path, params, prevSegments);
 
-    const segments = path
-      .split("/")
-      .map<RouteSegment>((segmentName, i) => {
-        const trimmedSegmentName =
-          segmentName[0] === "_" ? segmentName.slice(1) : segmentName;
-
-        if (segmentName.length !== trimmedSegmentName.length) {
-          segmentStartsAt = i;
-        }
-        currSegment = routeMap[trimmedSegmentName];
-
-        return {
-          path: currSegment.path?.map<string | AnyParam>((pathSegment) =>
-            typeof pathSegment === "string"
-              ? pathSegment
-              : {
-                  ...pathSegment,
-                  value: params.path[pathSegment.name],
-                }
-          ),
-          query: currSegment.query?.map<AnyParam>((queryParam) => ({
-            ...queryParam,
-            value: params.query[queryParam.name],
-          })),
-        };
-      })
-      .slice(segmentStartsAt);
+    const currSegment = ctx.segments[ctx.segments.length - 1];
 
     if (!currSegment.children) {
       throw Error("can't apply bind on childless segment");
     }
-    return createRoutes(
-      currSegment.children,
-      renderer,
-      segmentStartsAt > 0
-        ? segments // relative path
-        : prevSegments.concat(segments) // absolute path
-    );
+
+    return createRoutes(currSegment.children, renderer, ctx);
   };
 
   return {
-    template: rndrr.template,
-    build: null as any,
+    template,
+    bind,
     render,
     params: null as any,
     query: null as any,
-    bind,
     from: null as any,
   } as RoutesContext<any>;
+};
+
+const toRenderContext = (
+  routeMap: RouteMap,
+  path: string,
+  params?: SegmentToParamMap<RouteSegment>,
+  prevContext?: RenderContext
+): RenderContext => {
+  let nextSegment: RouteMap | undefined = routeMap;
+  const [absolutePath, relativePath] = path.split("/_");
+  const isRelative = typeof relativePath === "string";
+
+  // skip leading segments in relative mode
+  if (isRelative) {
+    absolutePath.split("/").forEach((segmentName) => {
+      if (!nextSegment?.[segmentName]) {
+        throw Error(`unknown path segment "${segmentName}" in ${path}`);
+      }
+      nextSegment = nextSegment[segmentName].children;
+    });
+  }
+  const ctx: RenderContext = {
+    path: [],
+    query: {},
+    segments: [],
+    ...(isRelative ? {} : prevContext),
+    isRelative: isRelative || (prevContext?.isRelative ?? false),
+  };
+
+  (relativePath ?? absolutePath).split("/").forEach((segmentName, i) => {
+    if (!nextSegment) {
+      throw Error(`unknown segment ${segmentName}`);
+    }
+
+    // stop if star segment was discovered in a template
+    if (segmentName === "*") {
+      ctx.hasChildren = true;
+      return;
+    }
+
+    const currSegment = nextSegment[segmentName];
+
+    nextSegment = currSegment.children;
+
+    ctx.segments.push(currSegment);
+
+    // stop here if building context for a template
+    if (!params) {
+      return;
+    }
+
+    currSegment.path?.forEach((pathSegment) => {
+      if (typeof pathSegment === "string") {
+        ctx.path.push(pathSegment);
+      } else if (
+        pathSegment.kind === "required" &&
+        !params.path[pathSegment.name]
+      ) {
+        throw Error(
+          `required path parameter ${pathSegment.name} was not specified`
+        );
+      } else if (params.path[pathSegment.name]) {
+        ctx.path.push(
+          pathSegment.parser.serialize(params.path[pathSegment.name])
+        );
+      }
+    }) ?? [];
+
+    currSegment.query?.forEach((queryParam) => {
+      if (queryParam.kind === "required" && !params.query[queryParam.name]) {
+        throw Error(
+          `required query parameter ${queryParam.name} was not specified`
+        );
+      }
+      ctx.query[queryParam.name] = queryParam.parser.serialize(
+        params.query[queryParam.name]
+      );
+    }) ?? [];
+  });
+
+  // extract  path segments and query params and determine if path is relative
+  return ctx;
 };

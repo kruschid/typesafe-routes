@@ -2,27 +2,7 @@ import test from "tape";
 import { date, int, isoDate, str } from "./parser";
 import { createRoutes } from "./routes";
 
-// import {
-//   booleanParser,
-//   dateParser,
-//   intParser,
-//   recursiveRoute,
-//   route,
-//   stringParser,
-// } from ".";
-
-// test("commonjs imports in strict mode", (t) => {
-//   // https://github.com/kruschid/typesafe-routes/issues/3
-//   t.plan(2);
-
-//   const { route: routeCJS } = require(".");
-//   t.equal(routeCJS("/root", {}, {})({}).$, "/root");
-//   t.equal(require(".").route("/root", {}, {})({}).$, "/root");
-// });
-
 test("templates with default renderer", (t) => {
-  t.plan(8);
-
   const routes = createRoutes({
     home: {},
     blog: {
@@ -51,10 +31,11 @@ test("templates with default renderer", (t) => {
   t.equal(routes.template("blog/_category/*"), "category/:cid/*");
   t.equal(routes.template("blog/_category/date"), "category/:cid/:date");
   t.equal(routes.template("blog/category/_date"), ":date");
+  t.end();
 });
 
-test.only("render with default renderer", (t) => {
-  // t.plan(3);
+test("render with default renderer", (t) => {
+  t.plan(7);
 
   const routes = createRoutes({
     home: {},
@@ -105,7 +86,13 @@ test.only("render with default renderer", (t) => {
     }),
     "category/movies/2023-12-28?search=robocop&page=42"
   );
-  t.end();
+  t.equal(
+    routes.render("blog/_category/date", {
+      path: { cid: "movies", date: new Date(1703798091000) },
+      query: { page: 42 },
+    }),
+    "category/movies/2023-12-28?page=42"
+  );
 });
 
 test("bind with default renderer", (t) => {
@@ -120,7 +107,7 @@ test("bind with default renderer", (t) => {
           path: ["category", str("cid")],
           children: {
             date: {
-              path: [isoDate("date")],
+              path: [isoDate("date").optional],
             },
           },
         },
@@ -128,68 +115,36 @@ test("bind with default renderer", (t) => {
     },
   });
 
-  t.equal(routes.bind("home", {}), "/"); // should throw
+  t.throws(
+    () => routes.bind("home", {}),
+    "should throw when binding childless segments"
+  );
   t.equal(
     routes
       .bind("blog/category", { path: { cid: "movies", lang: "en" } })
       .render("date", { path: { date: new Date(1703798091000) } }),
-    "/"
+    "/blog/en/category/movies/2023-12-28T21:14:51.000Z"
+  );
+  t.equal(
+    routes
+      .bind("blog", { path: { lang: "en" } })
+      .bind("category", { path: { cid: "movies" } })
+      .render("date", { path: { date: new Date(1703798091000) } }),
+    "/blog/en/category/movies/2023-12-28T21:14:51.000Z"
+  );
+  t.equal(
+    routes
+      .bind("blog/_category", { path: { cid: "movies" } })
+      .render("date", { path: { date: new Date(1703798091000) } }),
+    "category/movies/2023-12-28T21:14:51.000Z"
+  );
+  t.equal(
+    routes
+      .bind("blog/_category", { path: { cid: "movies" } })
+      .render("date", { path: {} }),
+    "category/movies"
   );
 });
-// test("nested routes", (t) => {
-//   t.plan(3);
-
-//   const accountRoute = route("account", {}, {});
-//   const settingsRoute = route(
-//     "settings/:settingsId",
-//     { settingsId: stringParser },
-//     { accountRoute }
-//   );
-//   const groupRoute = route(
-//     "/group/:groupId?&:filter?&:limit",
-//     {
-//       groupId: stringParser,
-//       filter: booleanParser,
-//       limit: intParser,
-//     },
-//     {
-//       settingsRoute,
-//     }
-//   );
-
-//   t.equal(
-//     groupRoute({ filter: true, limit: 20, groupId: "groupId" })
-//       .settingsRoute({ settingsId: "settingsId" })
-//       .accountRoute({}).$,
-//     "/group/groupId/settings/settingsId/account?filter=true&limit=20",
-//     "should match nested route"
-//   );
-//   t.equal(
-//     groupRoute({ limit: 30 })
-//       .settingsRoute({ settingsId: "settingsId" })
-//       .accountRoute({}).$,
-//     "/group/settings/settingsId/account?limit=30",
-//     "should respect optional params"
-//   );
-
-//   const rootRoute = route("/", {}, { account: accountRoute });
-//   t.equal(rootRoute({}).account({}).$, "/account");
-// });
-
-// test("recursive routes", (t) => {
-//   t.plan(1);
-
-//   const nodeRoute = recursiveRoute("/node/:nodeId", { nodeId: intParser }, {});
-
-//   t.equal(
-//     nodeRoute({ nodeId: 1 })
-//       .$self({ nodeId: 2 })
-//       .$self({ nodeId: 3 })
-//       .$self({ nodeId: 4 }).$,
-//     "/node/1/node/2/node/3/node/4",
-//     "should match recursive route"
-//   );
-// });
 
 // test("param parser", (t) => {
 //   t.plan(6);
@@ -260,54 +215,5 @@ test("bind with default renderer", (t) => {
 //       date: new Date("2020-10-02T10:29:50Z"),
 //     },
 //     "should only return query params"
-//   );
-// });
-
-// test("template", (t) => {
-//   t.plan(1);
-
-//   const settingsRoute = route(
-//     "settings/:settingsId",
-//     { settingsId: stringParser },
-//     {}
-//   );
-//   const groupRoute = route(
-//     "group/:groupId?&:filter?&:limit",
-//     {
-//       groupId: stringParser,
-//       filter: booleanParser,
-//       limit: intParser,
-//     },
-//     {
-//       settingsRoute,
-//     }
-//   );
-
-//   t.deepEqual(
-//     [settingsRoute.template, groupRoute.template],
-//     ["settings/:settingsId", "group/:groupId?"],
-//     "should match templates"
-//   );
-
-//   // const [settingsRoute, settingsTemplate] = route("settings/:settingsId", {} , {...children});
-//   // settingsTemplate.childA.childB.$
-// });
-
-// test("serializer", (t) => {
-//   t.plan(1);
-
-//   const groupRoute = route(
-//     "group/:groupId?&:limit",
-//     {
-//       groupId: stringParser,
-//       limit: intParser,
-//     },
-//     {}
-//   );
-
-//   t.equal(
-//     groupRoute({ groupId: "abc", limit: 0 }).$,
-//     "group/abc?limit=0",
-//     "should serialize 0"
 //   );
 // });
