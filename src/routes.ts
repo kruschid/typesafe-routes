@@ -197,12 +197,12 @@ export const createRoutes: RoutesFn = (
   const rndrr = renderer(routeMap);
 
   const template = (path: string) => {
-    const ctx = pickSegments(routeMap, path);
+    const ctx = prepareContext(routeMap, path);
     return rndrr.template(ctx, path);
   };
 
   const render = (path: string, params: ParamRecordMap<any>) => {
-    const ctx = pickSegments(routeMap, path, prevSegments);
+    const ctx = prepareContext(routeMap, path, prevSegments);
 
     return rndrr.render(ctx, path, {
       path: { ...prevParams.path, ...params.path },
@@ -211,9 +211,9 @@ export const createRoutes: RoutesFn = (
   };
 
   const bind = (path: string, params: ParamRecordMap<any>) => {
-    const ctx = pickSegments(routeMap, path, prevSegments);
+    const ctx = prepareContext(routeMap, path, prevSegments);
 
-    const currSegment = ctx.segments[ctx.segments.length - 1];
+    const currSegment = ctx.nodes[ctx.nodes.length - 1];
 
     if (!currSegment.children) {
       throw Error("can't apply bind on childless segment");
@@ -223,6 +223,10 @@ export const createRoutes: RoutesFn = (
       path: { ...prevParams.path, ...params.path },
       query: { ...prevParams.query, ...params.query },
     });
+  };
+
+  const params = (path: string, params: Record<string, any>) => {
+    const ctx = prepareContext(routeMap, path);
   };
 
   return {
@@ -235,46 +239,59 @@ export const createRoutes: RoutesFn = (
   } as RoutesContext<any>;
 };
 
-const pickSegments = (
+const prepareContext = (
   routeMap: RouteNodeMap,
   path: string,
-  prevContext?: RenderContext
+  parentCtx?: RenderContext
 ): RenderContext => {
-  let nextSegment: RouteNodeMap | undefined = routeMap;
-  const [absolutePath, relativePath] = path.split("/_");
-  const isRelative = typeof relativePath === "string";
-
-  const ctx: RenderContext = {
-    segments: (isRelative ? [] : prevContext?.segments) ?? [],
-    skippedSegments: prevContext?.skippedSegments ?? [],
-    isRelative: isRelative || (prevContext?.isRelative ?? false),
+  const ctx: RenderContext = parentCtx ?? {
+    skippedNodes: [],
+    nodes: [],
+    path: [],
+    query: [],
+    isRelative: false,
     hasWildcard: false,
   };
 
+  const [absolutePath, relativePath] = path.split("/_");
+  const isRelative = typeof relativePath === "string";
+
+  if (isRelative) {
+    ctx.skippedNodes = ctx.skippedNodes.concat(ctx.nodes);
+    ctx.nodes = [];
+    ctx.path = [];
+    ctx.query = [];
+    ctx.isRelative = true;
+  }
+
+  let nextNodeMap: RouteNodeMap | undefined = routeMap;
+
   // skip leading segments in relative path
   if (isRelative) {
-    absolutePath.split("/").forEach((segmentName) => {
-      if (!nextSegment?.[segmentName]) {
-        throw Error(`unknown path segment "${segmentName}" in ${path}`);
+    absolutePath.split("/").forEach((nodeName) => {
+      if (!nextNodeMap?.[nodeName]) {
+        throw Error(`unknown path segment "${nodeName}" in ${path}`);
       }
-      ctx.skippedSegments.push(nextSegment);
-      nextSegment = nextSegment[segmentName].children;
+      ctx.skippedNodes.push(nextNodeMap);
+      nextNodeMap = nextNodeMap[nodeName].children;
     });
   }
 
-  (relativePath ?? absolutePath).split("/").forEach((segmentName, i) => {
-    if (!nextSegment) {
-      throw Error(`unknown segment ${segmentName}`);
+  (relativePath ?? absolutePath).split("/").forEach((nodeName, i) => {
+    if (!nextNodeMap) {
+      throw Error(`unknown segment ${nodeName}`);
     }
 
     // template wildcard segment
-    if (segmentName === "*") {
+    if (nodeName === "*") {
       ctx.hasWildcard = true;
       return;
     }
 
-    ctx.segments.push(nextSegment[segmentName]);
-    nextSegment = nextSegment[segmentName].children;
+    ctx.nodes.push(nextNodeMap[nodeName]);
+    ctx.path.push(...(nextNodeMap[nodeName].path ?? []));
+    ctx.query.push(...(nextNodeMap[nodeName].query ?? []));
+    nextNodeMap = nextNodeMap[nodeName].children;
   });
 
   // extract  path segments and query params and determine if path is relative
