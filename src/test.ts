@@ -1,8 +1,10 @@
 import test from "tape";
-import { date, int, isoDate, str } from "./parser";
+import { bool, date, int, isoDate, str } from "./parser";
 import { createRoutes } from "./routes";
 
 test("templates with default renderer", (t) => {
+  t.plan(8);
+
   const routes = createRoutes({
     home: {},
     blog: {
@@ -31,7 +33,6 @@ test("templates with default renderer", (t) => {
   t.equal(routes.template("blog/_category/*"), "category/:cid/*");
   t.equal(routes.template("blog/_category/date"), "category/:cid/:date");
   t.equal(routes.template("blog/category/_date"), ":date");
-  t.end();
 });
 
 test("render with default renderer", (t) => {
@@ -144,6 +145,18 @@ test("bind with default renderer", (t) => {
       .render("date", { path: {} }),
     "category/movies"
   );
+});
+
+test("parsing path params", (t) => {
+  t.end();
+});
+
+test("parsing query params", (t) => {
+  t.end();
+});
+
+test("parsing query params", (t) => {
+  t.end();
 });
 
 // test("param parser", (t) => {
