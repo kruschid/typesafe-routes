@@ -7,34 +7,31 @@ export type RenderContext = {
   path: Exclude<RouteNode["path"], undefined>;
   query: Exclude<RouteNode["query"], undefined>;
   isRelative: boolean;
-  hasWildcard: boolean;
 };
 
 export type Renderer = (routeMap: RouteNodeMap) => {
-  template: (ctx: RenderContext, path: string) => string;
+  template: (ctx: RenderContext) => string;
   render: (
     segments: RenderContext,
-    path: string,
     params: ParamRecordMap<Record<string, unknown>>
   ) => string;
 };
 
 export const defaultRenderer: Renderer = (_) => ({
-  template: ({ path, hasWildcard, isRelative }, _) => {
+  template: ({ path, isRelative }) => {
     const template = path
       .map((pathSegment) =>
         typeof pathSegment === "string"
           ? pathSegment
           : `:${pathSegment.name}${pathSegment.kind === "optional" ? "?" : ""}`
       )
-      .join("/")
-      .concat(hasWildcard ? "/*" : "");
+      .join("/");
 
     return isRelative
       ? template //relative
       : `/${template}`; // absolute
   },
-  render: ({ path, query, isRelative }, _, params) => {
+  render: ({ path, query, isRelative }, params) => {
     const pathSegments: string[] = [];
     const queryRecord: Record<string, unknown> = {};
 

@@ -9,6 +9,7 @@
   "scripts": {
     "build": "yarn test && yarn tsc",
     "test": "yarn tsd && yarn tape -r ts-node/register src/test.ts",
+    "test2": "yarn tape -r ts-node/register src/test.ts",
     "express": "ts-node src/demo/express.ts",
     "react": "parcel src/demo/index.html"
   },
@@ -41,6 +42,7 @@
   },
   "dependencies": {
     "@types/qs": "^6.9.7",
+    "path-to-regexp": "^6.2.1",
     "qs": "^6.11.0"
   },
   "files": [

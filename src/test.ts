@@ -10,9 +10,11 @@ test("templates with default renderer", (t) => {
     blog: {
       path: ["blog", str("lang")],
       children: {
+        "*": { template: "**" },
         category: {
           path: ["category", str("cid")],
           children: {
+            "*": { template: "**" },
             date: {
               path: [isoDate("date")],
             },
@@ -24,13 +26,13 @@ test("templates with default renderer", (t) => {
 
   t.equal(routes.template("home"), "/");
   t.equal(routes.template("blog"), "/blog/:lang");
-  t.equal(routes.template("blog/*"), "/blog/:lang/*");
+  t.equal(routes.template("blog/*"), "/blog/:lang/**");
   t.equal(
     routes.template("blog/category/date"),
     "/blog/:lang/category/:cid/:date"
   );
-  t.equal(routes.template("blog/category/*"), "/blog/:lang/category/:cid/*");
-  t.equal(routes.template("blog/_category/*"), "category/:cid/*");
+  t.equal(routes.template("blog/category/*"), "/blog/:lang/category/:cid/**");
+  t.equal(routes.template("blog/_category/*"), "category/:cid/**");
   t.equal(routes.template("blog/_category/date"), "category/:cid/:date");
   t.equal(routes.template("blog/category/_date"), ":date");
 });
@@ -116,10 +118,7 @@ test("bind with default renderer", (t) => {
     },
   });
 
-  t.throws(
-    () => routes.bind("home", {}),
-    "should throw when binding childless segments"
-  );
+  t.equal(routes.bind("home", {}).render(), "/");
   t.equal(
     routes
       .bind("blog/category", { path: { cid: "movies", lang: "en" } })
@@ -155,7 +154,44 @@ test("parsing query params", (t) => {
   t.end();
 });
 
-test("parsing query params", (t) => {
+test.only("from", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog", str("lang")],
+      children: {
+        category: {
+          path: ["category", str("cid")],
+          query: [str("search").optional],
+          children: {
+            date: {
+              path: [date("date")],
+              query: [int("page").optional],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.equal(
+    routes
+      .from("blog/category", "/blog/de/category/music", {
+        query: {},
+        path: { cid: "movies", lang: "en" },
+      })
+      .render(),
+    "/blog/en/category/movies"
+  );
+  t.equal(
+    routes
+      .from("blog/_category/date", "category/music/2023-12-31", {
+        query: { page: 1, search: "abc" },
+        path: { cid: "movies", date: new Date("2024-01-01") },
+      })
+      .render(),
+    "category/movies/2024-01-01?search=abc&page=1"
+  );
   t.end();
 });
 

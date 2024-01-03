@@ -1,3 +1,4 @@
+import { match } from "path-to-regexp";
 import { AnyParam } from "./param";
 import { RenderContext, Renderer, defaultRenderer } from "./renderer";
 
@@ -27,6 +28,7 @@ type ExcludeEmptyProperties<T> = Pick<
 
 export type RouteNode = {
   path?: (string | AnyParam)[];
+  template?: string;
   query?: AnyParam[];
   children?: RouteNodeMap;
 };
@@ -81,7 +83,6 @@ export type ExtractParamRecord<Params extends AnyParam> = {
  *  }
  * }> =>
  *  | "childA"
- *  | "childA/*"
  *  | "childA/childB"
  *  | "childA/_childB"
  */
@@ -90,17 +91,19 @@ export type ExtractPaths<
   IsTemplate = false,
   IsAbsolute = true
 > = {
+  // K = NodeName
   [K in keyof T]: K extends string // filters out symbol and number
     ? T[K]["children"] extends object // has children
       ?
           | K
           | `${K}/${ExtractPaths<T[K]["children"], IsTemplate>}`
-          | If<IsTemplate, `${K}/*`>
           | If<
               IsAbsolute,
               `${K}/_${ExtractPaths<T[K]["children"], IsTemplate, false>}`
             >
-      : K // no children
+      : T[K]["template"] extends string
+      ? If<IsTemplate, K>
+      : K
     : never;
 }[keyof T];
 
@@ -157,8 +160,12 @@ export type PathToRouteNodeMap<
 export type RoutesContext<Routes extends RouteNodeMap> = {
   template: (path: ExtractPaths<Routes, true>) => string;
   render: <Path extends ExtractPaths<Routes>>(
-    path: Path,
-    params: ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
+    ...args:
+      | [
+          path: Path,
+          params: ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
+        ]
+      | []
   ) => string;
   params: <Path extends ExtractPaths<Routes>>(
     path: Path,
@@ -175,9 +182,10 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
   from: <Path extends ExtractPaths<Routes>>(
     path: Path,
     url: string,
-    override?: DeepPartial<
+    params: DeepPartial<
       ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
-    >
+    > &
+      ExcludeEmptyProperties<Pick<PathToParamRecordMap<Path, Routes>, "query">> // query params can't be extracted from path:
   ) => RoutesContext<PathToRouteNodeMap<Path, Routes>>;
 };
 
@@ -198,50 +206,101 @@ export const createRoutes: RoutesFn = (
 
   const template = (path: string) => {
     const ctx = prepareContext(routeMap, path);
-    return rndrr.template(ctx, path);
+    return rndrr.template(ctx);
   };
 
-  const render = (path: string, params: ParamRecordMap<any>) => {
+  const render = (path?: string, params?: ParamRecordMap<any>) => {
     const ctx = prepareContext(routeMap, path, prevSegments);
 
-    return rndrr.render(ctx, path, {
-      path: { ...prevParams.path, ...params.path },
-      query: { ...prevParams.query, ...params.query },
+    return rndrr.render(ctx, {
+      path: { ...prevParams.path, ...params?.path },
+      query: { ...prevParams.query, ...params?.query },
     });
   };
 
   const bind = (path: string, params: ParamRecordMap<any>) => {
     const ctx = prepareContext(routeMap, path, prevSegments);
 
-    const currSegment = ctx.nodes[ctx.nodes.length - 1];
+    const currSegmentChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
-    if (!currSegment.children) {
-      throw Error("can't apply bind on childless segment");
-    }
-
-    return createRoutes(currSegment.children, renderer, ctx, {
+    return createRoutes(currSegmentChildren, renderer, ctx, {
       path: { ...prevParams.path, ...params.path },
       query: { ...prevParams.query, ...params.query },
     });
   };
 
-  const params = (path: string, params: Record<string, any>) => {
+  const params = (path: string, params: Record<string, string>) => {
+    const parsedParams: Record<string, any> = {};
     const ctx = prepareContext(routeMap, path);
+
+    ctx.path.forEach((segment) => {
+      if (typeof segment === "string") {
+        return;
+      }
+      if (params[segment.name]) {
+        parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
+      } else if (segment.kind === "required") {
+        throw Error(`required path parameter `);
+      }
+    });
+
+    return parsedParams;
+  };
+
+  const query = (path: string, params: Record<string, string>) => {
+    const parsedParams: Record<string, any> = {};
+    const ctx = prepareContext(routeMap, path);
+
+    ctx.query.forEach((segment) => {
+      if (params[segment.name]) {
+        parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
+      } else if (segment.kind === "required") {
+        throw Error(`required path parameter `);
+      }
+    });
+
+    return parsedParams;
+  };
+
+  const from = (
+    path: string,
+    locationPathname: string,
+    paramMap: ParamRecordMap<Record<string, any>>
+  ) => {
+    // build context from path
+    const ctx = prepareContext(routeMap, path);
+    const template = defaultRenderer(routeMap).template(ctx);
+    const result = match(template, { decode: decodeURIComponent })(
+      locationPathname
+    );
+
+    if (!result) {
+      throw new Error(
+        `location pathname "${locationPathname}" doesn't match the template ${template} (created from path "${path}")`
+      );
+    }
+
+    const lastNodeChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+
+    return createRoutes(lastNodeChildren, renderer, ctx, {
+      path: { ...prevParams.path, ...result.params, ...paramMap.path },
+      query: { ...prevParams.query, ...paramMap.query },
+    });
   };
 
   return {
     template,
     bind,
     render,
-    params: null as any,
-    query: null as any,
-    from: null as any,
+    params,
+    query,
+    from,
   } as RoutesContext<any>;
 };
 
 const prepareContext = (
   routeMap: RouteNodeMap,
-  path: string,
+  path?: string,
   parentCtx?: RenderContext
 ): RenderContext => {
   const ctx: RenderContext = parentCtx ?? {
@@ -250,8 +309,11 @@ const prepareContext = (
     path: [],
     query: [],
     isRelative: false,
-    hasWildcard: false,
   };
+
+  if (!path) {
+    return ctx;
+  }
 
   const [absolutePath, relativePath] = path.split("/_");
   const isRelative = typeof relativePath === "string";
@@ -282,16 +344,13 @@ const prepareContext = (
       throw Error(`unknown segment ${nodeName}`);
     }
 
-    // template wildcard segment
-    if (nodeName === "*") {
-      ctx.hasWildcard = true;
-      return;
-    }
-
-    ctx.nodes.push(nextNodeMap[nodeName]);
-    ctx.path.push(...(nextNodeMap[nodeName].path ?? []));
-    ctx.query.push(...(nextNodeMap[nodeName].query ?? []));
-    nextNodeMap = nextNodeMap[nodeName].children;
+    const nextNode = nextNodeMap[nodeName];
+    ctx.nodes.push(nextNode);
+    ctx.path.push(
+      ...(nextNode.path ?? (nextNode.template ? [nextNode.template] : []))
+    );
+    ctx.query.push(...(nextNode.query ?? []));
+    nextNodeMap = nextNode.children;
   });
 
   // extract  path segments and query params and determine if path is relative
