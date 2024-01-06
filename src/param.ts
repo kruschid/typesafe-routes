@@ -1,6 +1,6 @@
 export type ParamKind = "optional" | "required";
 
-export type AnyParam = Param<any, any, any>;
+export type AnyParam = Param<string, any, any>;
 
 export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;

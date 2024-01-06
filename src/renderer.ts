@@ -1,5 +1,5 @@
 import { stringify } from "qs";
-import { ParamRecordMap, RouteNode, RouteNodeMap } from "./routes";
+import type { ParamRecordMap, RouteNode } from "./routes";
 
 export type RenderContext = {
   skippedNodes: RouteNode[];
@@ -9,7 +9,7 @@ export type RenderContext = {
   isRelative: boolean;
 };
 
-export type Renderer = (routeMap: RouteNodeMap) => {
+export type Renderer = {
   template: (ctx: RenderContext) => string;
   render: (
     segments: RenderContext,
@@ -17,7 +17,7 @@ export type Renderer = (routeMap: RouteNodeMap) => {
   ) => string;
 };
 
-export const defaultRenderer: Renderer = (_) => ({
+export const defaultRenderer: Renderer = {
   template: ({ path, isRelative }) => {
     const template = path
       .map((pathSegment) =>
@@ -60,9 +60,11 @@ export const defaultRenderer: Renderer = (_) => ({
           `required query parameter ${queryParam.name} was not specified`
         );
       }
-      queryRecord[queryParam.name as string] = queryParam.parser.serialize(
-        params.query[queryParam.name]
-      );
+      if (params.query[queryParam.name]) {
+        queryRecord[queryParam.name] = queryParam.parser.serialize(
+          params.query[queryParam.name]
+        );
+      }
     });
 
     return (
@@ -71,4 +73,4 @@ export const defaultRenderer: Renderer = (_) => ({
       stringify(queryRecord, { addQueryPrefix: true })
     );
   },
-});
+};

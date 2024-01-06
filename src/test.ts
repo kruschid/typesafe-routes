@@ -1,6 +1,6 @@
 import test from "tape";
-import { bool, date, int, isoDate, str } from "./parser";
-import { createRoutes } from "./routes";
+import { createRoutes } from "./createRoutes";
+import { date, int, isoDate, str } from "./parser";
 
 test("templates with default renderer", (t) => {
   t.plan(8);
@@ -38,7 +38,7 @@ test("templates with default renderer", (t) => {
 });
 
 test("render with default renderer", (t) => {
-  t.plan(7);
+  t.plan(8);
 
   const routes = createRoutes({
     home: {},
@@ -59,6 +59,7 @@ test("render with default renderer", (t) => {
     },
   });
 
+  t.equal(routes.render(), "/", "renders home route on empty context");
   t.equal(routes.render("home", {}), "/");
   t.equal(routes.render("blog", { path: { lang: "en" } }), "/blog/en");
   t.equal(
@@ -154,18 +155,20 @@ test("parsing query params", (t) => {
   t.end();
 });
 
-test.only("from", (t) => {
+test("from", (t) => {
+  t.plan(6);
+
   const routes = createRoutes({
     home: {},
     blog: {
       path: ["blog", str("lang")],
       children: {
         category: {
-          path: ["category", str("cid")],
+          path: ["category", str("cid").optional],
           query: [str("search").optional],
           children: {
             date: {
-              path: [date("date")],
+              path: ["date", date("date")],
               query: [int("page").optional],
             },
           },
@@ -174,6 +177,15 @@ test.only("from", (t) => {
     },
   });
 
+  t.equal(routes.from("blog", "/blog/de", { path: {} }).render(), "/blog/de");
+  t.equal(
+    routes
+      .from("blog", "/blog/de", {
+        path: { lang: "en" },
+      })
+      .render(),
+    "/blog/en"
+  );
   t.equal(
     routes
       .from("blog/category", "/blog/de/category/music", {
@@ -185,84 +197,30 @@ test.only("from", (t) => {
   );
   t.equal(
     routes
-      .from("blog/_category/date", "category/music/2023-12-31", {
+      .from("blog/category/date", "/blog/de/category/date/2023-12-31", {
+        query: {},
+        path: { cid: "movies", lang: "en", date: new Date("2024-01-01") },
+      })
+      .render(),
+    "/blog/en/category/movies/date/2024-01-01",
+    "skip optional path parameters when using from method"
+  );
+  t.equal(
+    routes
+      .from("blog/_category/date", "category/music/date/2023-12-31", {
+        query: {},
+        path: { cid: "movies", date: new Date("2024-01-01") },
+      })
+      .render(),
+    "category/movies/date/2024-01-01"
+  );
+  t.equal(
+    routes
+      .from("blog/_category/date", "category/music/date/2023-12-31", {
         query: { page: 1, search: "abc" },
         path: { cid: "movies", date: new Date("2024-01-01") },
       })
       .render(),
-    "category/movies/2024-01-01?search=abc&page=1"
+    "category/movies/date/2024-01-01?search=abc&page=1"
   );
-  t.end();
 });
-
-// test("param parser", (t) => {
-//   t.plan(6);
-
-//   const groupRoute = route(
-//     "group/:groupId?&:filter?&:limit&:date?",
-//     {
-//       groupId: stringParser,
-//       filter: booleanParser,
-//       limit: intParser,
-//       date: dateParser,
-//     },
-//     {}
-//   );
-
-//   t.deepEqual(
-//     groupRoute.parseParams({
-//       limit: "99",
-//       filter: "true",
-//       groupId: "abc",
-//       date: "2020-10-02T10:29:50Z",
-//     }),
-//     {
-//       limit: 99,
-//       filter: true,
-//       groupId: "abc",
-//       date: new Date("2020-10-02T10:29:50Z"),
-//     },
-//     "should parse params"
-//   );
-
-//   t.deepEqual(
-//     groupRoute.parseParams({ limit: "9" }),
-//     { limit: 9 },
-//     "should skip optional params"
-//   );
-
-//   t.deepEqual(
-//     groupRoute.parseParams({ limit: "9", extra: 1 } as any),
-//     { limit: 9 },
-//     "should not throw if additional params were provided"
-//   );
-
-//   t.throws(
-//     () => groupRoute.parseParams({} as any, true),
-//     "should throw error in strict mode"
-//   );
-
-//   t.deepEqual(
-//     groupRoute.parsePathParams({
-//       groupId: "abc",
-//     }),
-//     {
-//       groupId: "abc",
-//     },
-//     "should only return path params"
-//   );
-
-//   t.deepEqual(
-//     groupRoute.parseQueryParams({
-//       limit: "99",
-//       filter: "true",
-//       date: "2020-10-02T10:29:50Z",
-//     }),
-//     {
-//       limit: 99,
-//       filter: true,
-//       date: new Date("2020-10-02T10:29:50Z"),
-//     },
-//     "should only return query params"
-//   );
-// });
