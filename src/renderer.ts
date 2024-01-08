@@ -1,4 +1,3 @@
-import { stringify } from "qs";
 import type { ParamRecordMap, RouteNode } from "./routes";
 
 export type RenderContext = {
@@ -33,7 +32,7 @@ export const defaultRenderer: Renderer = {
   },
   render: ({ path, query, isRelative }, params) => {
     const pathSegments: string[] = [];
-    const queryRecord: Record<string, unknown> = {};
+    const queryRecord: Record<string, string> = {};
 
     // path params
     path.forEach((pathSegment) => {
@@ -67,10 +66,13 @@ export const defaultRenderer: Renderer = {
       }
     });
 
+    const searchParams = new URLSearchParams(queryRecord).toString();
+
     return (
       (isRelative ? "" : "/") +
       pathSegments.join("/") +
-      stringify(queryRecord, { addQueryPrefix: true })
+      (searchParams ? `?` : "") +
+      searchParams
     );
   },
 };

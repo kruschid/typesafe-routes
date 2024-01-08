@@ -156,8 +156,6 @@ test("parsing query params", (t) => {
 });
 
 test("from", (t) => {
-  t.plan(6);
-
   const routes = createRoutes({
     home: {},
     blog: {
@@ -203,7 +201,7 @@ test("from", (t) => {
       })
       .render(),
     "/blog/en/category/movies/date/2024-01-01",
-    "skip optional path parameters when using from method"
+    "skip optional path parameters"
   );
   t.equal(
     routes
@@ -223,4 +221,69 @@ test("from", (t) => {
       .render(),
     "category/movies/date/2024-01-01?search=abc&page=1"
   );
+
+  const routesWithOptionalParams = createRoutes({
+    user: {
+      path: ["user", str("uid").optional],
+      children: {
+        setting: {
+          path: ["settings", str("sid").optional],
+          children: {
+            group: {
+              path: [str("gid").optional, "group"],
+            },
+          },
+        },
+      },
+    },
+  });
+  t.equal(
+    routesWithOptionalParams
+      .from("user/setting/group", "/user/settings/group", {
+        path: {},
+      })
+      .render(),
+    "/user/settings/group"
+  );
+  t.equal(
+    routesWithOptionalParams
+      .from("user/setting/group", "/user/settings/group", {
+        path: { gid: "admins" },
+      })
+      .render(),
+    "/user/settings/admins/group"
+  );
+  t.equal(
+    routesWithOptionalParams
+      .from("user/setting/group", "/user/root/settings/group", {
+        path: { uid: "kruschid" },
+      })
+      .render(),
+    "/user/kruschid/settings/group"
+  );
+  t.equal(
+    routesWithOptionalParams
+      .from("user/setting/group", "/user/root/settings/queue/group", {
+        path: {},
+      })
+      .render(),
+    "/user/root/settings/queue/group"
+  );
+  t.equal(
+    routesWithOptionalParams
+      .from("user/_setting/group", "settings/queue/admins/group", {
+        path: {},
+      })
+      .render(),
+    "settings/queue/admins/group"
+  );
+  t.equal(
+    routesWithOptionalParams
+      .from("user/_setting/group", "settings/queue/admins/group", {
+        path: { gid: "clients", sid: "leads" },
+      })
+      .render(),
+    "settings/leads/clients/group"
+  );
+  t.end();
 });

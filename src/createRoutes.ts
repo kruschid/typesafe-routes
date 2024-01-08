@@ -1,4 +1,4 @@
-import { match } from "path-to-regexp";
+import { AnyParam } from "./param";
 import { RenderContext, defaultRenderer } from "./renderer";
 import type {
   CreateRoutes,
@@ -78,21 +78,72 @@ export const createRoutes: CreateRoutes = (
   ) => {
     // build context from path
     const ctx = compilePath(routeMap, path);
-    const template = defaultRenderer.template(ctx);
-    const result = match(template, { decode: decodeURIComponent })(
-      locationPathname
-    );
 
-    if (!result) {
-      throw new Error(
-        `location pathname "${locationPathname}" doesn't match the template ${template} (created from path "${path}")`
-      );
-    }
+    const locationSegments = locationPathname
+      .slice(locationPathname[0] === "/" ? 1 : 0)
+      .split("/");
+
+    const rawParams: Record<string, any> = {};
+    const params: AnyParam[] = [];
+
+    // keep track of recent optional params since they might contain path segments
+    // if a path segment doesn't match the algorithm continues searching in this array
+    const recentOptionalParams: string[] = [];
+
+    ctx.path.forEach((segment) => {
+      const locationSegment = locationSegments.shift();
+
+      if (typeof segment === "string") {
+        if (segment === locationSegment) {
+          recentOptionalParams.length = 0; // irrelevant from here
+        } else {
+          // segment might have been swallowed by an optional param
+          let recentParam: string | undefined;
+          let foundMatch = false;
+          while ((recentParam = recentOptionalParams.shift())) {
+            if (rawParams[recentParam] === segment) {
+              delete rawParams[recentParam];
+              locationSegment && locationSegments.unshift(locationSegment);
+              foundMatch = true;
+            }
+          }
+          if (!foundMatch) {
+            throw new Error(
+              `"${locationPathname}" doesn't match "${defaultRenderer.template(
+                ctx
+              )}", missing segment "${segment}"`
+            );
+          }
+        }
+      } else {
+        rawParams[segment.name] = locationSegment;
+        params.push(segment);
+        if (segment.kind === "optional") {
+          recentOptionalParams.push(segment.name);
+        } else if (!locationSegment) {
+          throw new Error(
+            `"${locationPathname}" doesn't match "${defaultRenderer.template(
+              ctx
+            )}", missing parameter "${segment.name}"`
+          );
+        } else {
+          recentOptionalParams.length = 0;
+        }
+      }
+    });
+
+    const parsedParams: Record<string, any> = {};
+
+    params.forEach((p) => {
+      if (rawParams[p.name]) {
+        parsedParams[p.name] = p.parser.parse(rawParams[p.name]);
+      }
+    });
 
     const lastNodeChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
     return createRoutes(lastNodeChildren, renderer, ctx, {
-      path: { ...prevParams.path, ...result.params, ...paramMap.path },
+      path: { ...prevParams.path, ...parsedParams, ...paramMap.path },
       query: { ...prevParams.query, ...paramMap.query },
     });
   };
