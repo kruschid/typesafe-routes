@@ -38,9 +38,13 @@ export const createRoutes: CreateRoutes = (
     });
   };
 
-  const params = (path: string, params: Record<string, string>) => {
+  const params = (
+    path: string,
+    params: Record<string, string>,
+    maybeContext?: RenderContext
+  ) => {
     const parsedParams: Record<string, any> = {};
-    const ctx = compilePath(routeMap, path);
+    const ctx = maybeContext ?? compilePath(routeMap, path);
 
     ctx.path.forEach((segment) => {
       if (typeof segment === "string") {
@@ -49,22 +53,30 @@ export const createRoutes: CreateRoutes = (
       if (params[segment.name]) {
         parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
       } else if (segment.kind === "required") {
-        throw Error(`required path parameter `);
+        throw Error(
+          `required path parameter "${segment.name}" was not provided for "${path}"`
+        );
       }
     });
 
     return parsedParams;
   };
 
-  const query = (path: string, params: Record<string, string>) => {
+  const query = (
+    path: string,
+    params: Record<string, string>,
+    maybeContext?: RenderContext
+  ) => {
     const parsedParams: Record<string, any> = {};
-    const ctx = compilePath(routeMap, path);
+    const ctx = maybeContext ?? compilePath(routeMap, path);
 
     ctx.query.forEach((segment) => {
       if (params[segment.name]) {
         parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
       } else if (segment.kind === "required") {
-        throw Error(`required path parameter `);
+        throw Error(
+          `required path parameter "${segment.name}" was not provided for "${path}"`
+        );
       }
     });
 
@@ -84,7 +96,6 @@ export const createRoutes: CreateRoutes = (
       .split("/");
 
     const rawParams: Record<string, any> = {};
-    const params: AnyParam[] = [];
 
     // keep track of recent optional params since they might contain path segments
     // if a path segment doesn't match the algorithm continues searching in this array
@@ -117,7 +128,6 @@ export const createRoutes: CreateRoutes = (
         }
       } else {
         rawParams[segment.name] = locationSegment;
-        params.push(segment);
         if (segment.kind === "optional") {
           recentOptionalParams.push(segment.name);
         } else if (!locationSegment) {
@@ -132,13 +142,7 @@ export const createRoutes: CreateRoutes = (
       }
     });
 
-    const parsedParams: Record<string, any> = {};
-
-    params.forEach((p) => {
-      if (rawParams[p.name]) {
-        parsedParams[p.name] = p.parser.parse(rawParams[p.name]);
-      }
-    });
+    const parsedParams = params(path, rawParams, ctx);
 
     const lastNodeChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 

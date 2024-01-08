@@ -31,16 +31,21 @@ export const bool = param({
   serialize: (value: boolean) => value.toString(),
 });
 
-export const oneOf = <T extends string>(..._: T[]) =>
+export const oneOf = (...list: string[]) =>
   param({
-    parse: (value: string) => value as T,
-    serialize: (value: T) => value,
+    parse: (value: string) => {
+      if (!list.includes(value)) {
+        throw new Error(`"${value}" is none of ${list.join(",")}`);
+      }
+      return value;
+    },
+    serialize: (value: string) => value,
   });
 
-export const list = <T extends string>(_: T[], separator = ";") =>
+export const list = (_: string[], separator = ";") =>
   param({
-    parse: (value: string) => value.split(separator) as T[],
-    serialize: (options: T[]) => options.join(separator),
+    parse: (value: string) => value.split(separator),
+    serialize: (options: string[]) => options.join(separator),
   });
 
 export const json = <T>() =>

@@ -1,6 +1,6 @@
 import test from "tape";
 import { createRoutes } from "./createRoutes";
-import { date, int, isoDate, str } from "./parser";
+import { bool, date, int, isoDate, oneOf, str } from "./parser";
 
 test("templates with default renderer", (t) => {
   t.plan(8);
@@ -148,10 +148,106 @@ test("bind with default renderer", (t) => {
 });
 
 test("parsing path params", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog", bool("lang")],
+      children: {
+        category: {
+          path: ["category", int("cid").optional],
+          children: {
+            date: {
+              path: ["date", date("date").optional],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.deepEqual(
+    routes.params("blog/category/date", {
+      lang: "true",
+      cid: "42",
+      date: "2023-12-28",
+    }),
+    {
+      lang: true,
+      cid: 42,
+      date: new Date("2023-12-28T00:00:00.000Z"),
+    }
+  );
+
+  t.deepEqual(
+    routes.params("blog/_category/date", {
+      cid: "42",
+    }),
+    { cid: 42 }
+  );
+
+  t.deepEqual(
+    routes.params("blog/_category/date", {
+      cid: "42",
+    }),
+    { cid: 42 }
+  );
+
   t.end();
 });
 
 test("parsing query params", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog"],
+      query: [str("lang")],
+      children: {
+        category: {
+          path: ["movies"],
+          query: [str("category"), bool("shortmovie")],
+          children: {
+            date: {
+              path: ["2023"],
+              query: [oneOf("jan", "feb", "mar", "apr", "...")("month")],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.deepEqual(
+    routes.query("blog/category/date", {
+      lang: "en",
+      category: "drama",
+      shortmovie: "true",
+      month: "feb",
+    }),
+    {
+      lang: "en",
+      category: "drama",
+      shortmovie: true,
+      month: "feb",
+    }
+  );
+
+  t.deepEqual(
+    routes.query("blog/_category/date", {
+      lang: "en",
+      category: "drama",
+      shortmovie: "true",
+      month: "feb",
+    }),
+    {
+      category: "drama",
+      shortmovie: true,
+      month: "feb",
+    }
+  );
+
+  t.throws(() => routes.query("blog/category/_date", {}));
+  t.throws(() => routes.query("blog/category/_date", { month: "jun" }));
+
   t.end();
 });
 
@@ -285,5 +381,9 @@ test("from", (t) => {
       .render(),
     "settings/leads/clients/group"
   );
+  t.end();
+});
+
+test("parser", (t) => {
   t.end();
 });
