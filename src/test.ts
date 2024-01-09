@@ -282,7 +282,7 @@ test("from", (t) => {
   );
   t.equal(
     routes
-      .from("blog/category", "/blog/de/category/music", {
+      .from("blog/category", "/blog/de/category/music/date/5", {
         query: {},
         path: { cid: "movies", lang: "en" },
       })

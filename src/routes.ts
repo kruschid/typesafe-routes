@@ -184,16 +184,24 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
   ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
   from: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
-    locationPathname: string,
+    location: string,
     params: A.Compute<
-      {
+      ExcludeEmptyProperties<{
         path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
-      } & ExcludeEmptyProperties<
-        Pick<PathToParamRecordMap<Path, Routes>, "query">
-      >
-      // query params need to be provided since they can't be extracted from locationPathname
+        query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
+      }>
     >
   ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
+  replace: <Path extends ExtractPathSuggestions<Routes>>(
+    path: Path,
+    location: string,
+    params: A.Compute<
+      ExcludeEmptyProperties<{
+        path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
+        query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
+      }>
+    >
+  ) => string;
 };
 
 export type CreateRoutes = <Routes extends RouteNodeMap>(
