@@ -168,11 +168,11 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
         ]
       | []
   ) => string;
-  params: <Path extends ExtractPathSuggestions<Routes>>(
+  parseParams: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     params: Record<string, any>
   ) => PathToParamRecordMap<Path, Routes>["path"];
-  query: <Path extends ExtractPathSuggestions<Routes>>(
+  parseQuery: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     params: Record<string, any>
   ) => PathToParamRecordMap<Path, Routes>["query"];

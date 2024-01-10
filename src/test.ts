@@ -166,7 +166,7 @@ test("parsing path params", (t) => {
   });
 
   t.deepEqual(
-    routes.params("blog/category/date", {
+    routes.parseParams("blog/category/date", {
       lang: "true",
       cid: "42",
       date: "2023-12-28",
@@ -179,14 +179,14 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.params("blog/_category/date", {
+    routes.parseParams("blog/_category/date", {
       cid: "42",
     }),
     { cid: 42 }
   );
 
   t.deepEqual(
-    routes.params("blog/_category/date", {
+    routes.parseParams("blog/_category/date", {
       cid: "42",
     }),
     { cid: 42 }
@@ -217,7 +217,7 @@ test("parsing query params", (t) => {
   });
 
   t.deepEqual(
-    routes.query("blog/category/date", {
+    routes.parseQuery("blog/category/date", {
       lang: "en",
       category: "drama",
       shortmovie: "true",
@@ -232,7 +232,7 @@ test("parsing query params", (t) => {
   );
 
   t.deepEqual(
-    routes.query("blog/_category/date", {
+    routes.parseQuery("blog/_category/date", {
       lang: "en",
       category: "drama",
       shortmovie: "true",
@@ -245,8 +245,8 @@ test("parsing query params", (t) => {
     }
   );
 
-  t.throws(() => routes.query("blog/category/_date", {}));
-  t.throws(() => routes.query("blog/category/_date", { month: "jun" }));
+  t.throws(() => routes.parseQuery("blog/category/_date", {}));
+  t.throws(() => routes.parseQuery("blog/category/_date", { month: "jun" }));
 
   t.end();
 });
@@ -384,6 +384,69 @@ test("from", (t) => {
   t.end();
 });
 
-test("parser", (t) => {
+test("replace", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog", str("lang")],
+      children: {
+        category: {
+          path: ["category", str("cid").optional],
+          query: [str("search").optional],
+          children: {
+            date: {
+              path: ["date", date("date")],
+              query: [int("page").optional],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.equal(
+    routes.replace(
+      "blog/category",
+      "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" }, query: {} }
+    ),
+    "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
+    "should replace path params in absolute path"
+  );
+
+  t.equal(
+    routes.replace(
+      "blog/_category/date",
+      "category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" }, query: {} }
+    ),
+    "category/art/date/2012-12-28?search=batman&page=1",
+    "should replace params in relative paths"
+  );
+
+  t.equal(
+    routes.replace(
+      "blog/_category/date",
+      "category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" }, query: { search: undefined } }
+    ),
+    "category/art/date/2012-12-28?page=1",
+    "should remove param"
+  );
+
+  t.throws(
+    () =>
+      routes.replace("blog/_category/date", "category/movies/date/2012-12-28", {
+        path: { date: undefined },
+        query: {},
+      }),
+    "required path parameter date was not specified"
+  );
+
   t.end();
+
+  ("should replace query params in absolute path");
+  ("should replace query params in relative path");
+  ("should replace path & query params in absolute path");
+  ("should replace path & query params in relative path");
 });

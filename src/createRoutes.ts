@@ -1,3 +1,5 @@
+import { AnyParam } from "./param";
+import { str } from "./parser";
 import { RenderContext, defaultRenderer } from "./renderer";
 import type {
   CreateRoutes,
@@ -24,10 +26,7 @@ export const createRoutes: CreateRoutes = (
   ) => {
     const ctx = context ?? compilePath(routeMap, path, prevSegments);
 
-    return renderer.render(ctx, {
-      path: { ...prevParams.path, ...params?.path },
-      query: { ...prevParams.query, ...params?.query },
-    });
+    return renderer.render(ctx, mergeParams(prevParams, params));
   };
 
   const bind = (path: string, params: ParamRecordMap<any>) => {
@@ -43,7 +42,7 @@ export const createRoutes: CreateRoutes = (
     );
   };
 
-  const params = (
+  const parseParams = (
     path: string,
     params: Record<string, string>, // todo: | string,
     maybeContext?: RenderContext
@@ -67,17 +66,24 @@ export const createRoutes: CreateRoutes = (
     return parsedParams;
   };
 
-  const query = (
+  const parseQuery = (
     path: string,
-    params: Record<string, string>, // todo: | string,
+    params: Record<string, string> | string,
     maybeContext?: RenderContext
   ) => {
     const parsedParams: Record<string, any> = {};
     const ctx = maybeContext ?? compilePath(routeMap, path);
 
+    const paramsRecord =
+      typeof params === "string"
+        ? Object.fromEntries(new URLSearchParams(params))
+        : params;
+
     ctx.query.forEach((segment) => {
-      if (params[segment.name]) {
-        parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
+      if (paramsRecord[segment.name]) {
+        parsedParams[segment.name] = segment.parser.parse(
+          paramsRecord[segment.name]
+        );
       } else if (segment.kind === "required") {
         throw Error(
           `required path parameter "${segment.name}" was not provided for "${path}"`
@@ -98,7 +104,13 @@ export const createRoutes: CreateRoutes = (
 
     const lastNodeChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
-    const { parsedParams } = matchLocation(path, location, ctx, params);
+    const { parsedParams } = matchLocation(
+      path,
+      location,
+      ctx,
+      parseParams,
+      parseQuery
+    );
 
     return createRoutes(
       lastNodeChildren,
@@ -114,15 +126,22 @@ export const createRoutes: CreateRoutes = (
     overwriteParams: ParamRecordMap<Record<string, any>>
   ) => {
     // basically the same as the from method but returns rendered path with remaining segments appended
-    // appends query string if available
+    // appends query string as well (if available)
 
     const ctx = compilePath(routeMap, path);
 
-    const { parsedParams, tail } = matchLocation(path, location, ctx, params);
+    const { parsedParams, tail } = matchLocation(
+      path,
+      location,
+      ctx,
+      parseParams,
+      parseQuery
+    );
 
     const ctxWithTail = {
       ...ctx,
-      path: ctx.path.concat(tail),
+      path: ctx.path.concat(tail.path),
+      query: ctx.query.concat(tail.query), // todo add query params
     };
 
     return render(
@@ -136,8 +155,8 @@ export const createRoutes: CreateRoutes = (
     template,
     bind,
     render,
-    params,
-    query,
+    parseParams,
+    parseQuery,
     from,
     replace,
   } as RoutesContext<any>;
@@ -206,26 +225,31 @@ const matchLocation = (
   path: string,
   location: string,
   ctx: RenderContext,
-  params: (
+  parseParams: (
     path: string,
-    params: Record<string, string>, // todo: | string,
+    params: Record<string, string>,
+    maybeContext?: RenderContext
+  ) => Record<string, string>,
+  parseQuery: (
+    path: string,
+    params: Record<string, string>,
     maybeContext?: RenderContext
   ) => Record<string, string>
 ) => {
-  const [pathname, query] = location.split("?");
+  const [pathname, queryString] = location.split("?");
 
-  const pathnameSegments = pathname
+  const remainingPathSegments = pathname
     .slice(pathname[0] === "/" ? 1 : 0)
     .split("/");
 
-  const rawParams: Record<string, any> = {};
+  const rawPathParams: Record<string, any> = {};
 
   // keep track of recent optional params since they might contain path segments
   // if a path segment doesn't match the algorithm continues searching in this array
   const recentOptionalParams: string[] = [];
 
   ctx.path.forEach((segment) => {
-    const pathnameSegment = pathnameSegments.shift();
+    const pathnameSegment = remainingPathSegments.shift();
 
     if (typeof segment === "string") {
       if (segment === pathnameSegment) {
@@ -235,10 +259,10 @@ const matchLocation = (
         let recentParam: string | undefined;
         let foundMatch = false;
         while ((recentParam = recentOptionalParams.shift())) {
-          if (rawParams[recentParam] === segment) {
-            delete rawParams[recentParam];
+          if (rawPathParams[recentParam] === segment) {
+            delete rawPathParams[recentParam];
             // hold segment back for the next iteration
-            pathnameSegment && pathnameSegments.unshift(pathnameSegment);
+            pathnameSegment && remainingPathSegments.unshift(pathnameSegment);
             foundMatch = true;
           }
         }
@@ -251,7 +275,7 @@ const matchLocation = (
         }
       }
     } else {
-      rawParams[segment.name] = pathnameSegment;
+      rawPathParams[segment.name] = pathnameSegment;
       if (segment.kind === "optional") {
         recentOptionalParams.push(segment.name);
       } else if (!pathnameSegment) {
@@ -265,15 +289,31 @@ const matchLocation = (
       }
     }
   });
+  const rawQueryParams = Object.fromEntries(new URLSearchParams(queryString));
 
   const parsedParams: ParamRecordMap<Record<string, any>> = {
-    path: params(path, rawParams, ctx),
-    query: Object.fromEntries(new URLSearchParams(query)),
+    path: parseParams(path, rawPathParams, ctx),
+    query: parseQuery(path, rawQueryParams, ctx),
+  };
+
+  // contains all the remaining path segments and query params
+  const tail: {
+    path: string[];
+    query: AnyParam[];
+  } = {
+    path: remainingPathSegments,
+    query: Object.entries(rawQueryParams).flatMap(([name, value]) => {
+      if (!parsedParams.query[name]) {
+        parsedParams.query[name] = value;
+        return str(name).optional; // context requires a parser, string parser is just the identity function
+      }
+      return [];
+    }),
   };
 
   return {
     parsedParams,
-    tail: pathnameSegments,
+    tail,
   };
 };
 
