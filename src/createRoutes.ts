@@ -1,12 +1,13 @@
-import { AnyParam } from "./param";
-import { str } from "./parser";
-import { RenderContext, defaultRenderer } from "./renderer";
-import type {
+import {
+  AnyParam,
   CreateRoutes,
   ParamRecordMap,
+  RenderContext,
   RouteNodeMap,
   RoutesContext,
-} from "./routes";
+  defaultRenderer,
+  str,
+} from ".";
 
 export const createRoutes: CreateRoutes = (
   routeMap,

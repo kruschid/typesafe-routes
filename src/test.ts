@@ -1,6 +1,5 @@
 import test from "tape";
-import { createRoutes } from "./createRoutes";
-import { bool, date, int, isoDate, oneOf, str } from "./parser";
+import { bool, createRoutes, date, int, isoDate, oneOf, str } from ".";
 
 test("templates with default renderer", (t) => {
   t.plan(8);
