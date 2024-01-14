@@ -4,10 +4,14 @@
 
 Enhance your preferred routing library by incorporating type-safety into string-based route definitions. Allow TypeScript to identify broken links during the compilation process, enabling you to develop easily maintainable software.
 
-This utility can be utilized with any framework that adheres to the [path-to-regex](https://github.com/pillarjs/path-to-regexp) syntax (however, only a portion of it is supported). Example applications using [react-router](https://reacttraining.com/react-router/) or [express](https://expressjs.com/) can be found in the `src/demo` directory.
-
-**Typesafe Routes utilizes [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) and [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types). These features are only available in [typescript version 4.1](https://github.com/microsoft/TypeScript/issues/40124) and above.**
-
+- [Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
+- [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types).
+- [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html)
+- [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) 
+- [Tail-Recursion Elimination on Conditional Types](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-5.html#tail-recursion-elimination-on-conditional-types)
+- 
+- This design provides a seamless and robust handling of dynamic data within the route system.
+  
 ## Installation (npm/yarn examples)
 
 ``` sh
@@ -18,281 +22,364 @@ npm i typesafe-routes
 yarn add typesafe-routes
 ```
 
-## Usage
-
-![example](assets/usage.gif)
-
-### `route(path: string, parserMap: Record<string, Parser>, children: Record<string, ChildRoute>)`
-
-* `path` the path following the `path-to-regex` syntax.
-* `parserMap` contains parameter-specific `Parser` identified by parameter name
-* `children` assigns route children for nested routes
-
-## Examples
+## Basic Features
 
 <details>
-  <summary>Basic Example</summary>
+  <summary>Absolute routes</summary>
 
-  ``` ts
-  import { route, stringParser } from "typesafe-routes";
+  ### Absolute routes
 
-  const accountRoute = route("/account/:accountId", {
-    accountId: stringParser, // parser implicitly defines the type (string) of 'accountId'
-  }, {});
-
-  // serialisation:
-  accountRoute({ accountId: "5c9f1e79e96c" }).$
-  // => "/account/5c9f1e79e96c"
-
-  // parsing:
-  accountRoute.parseParams({ accountId: "123"}).$
-  // => { accountId: "123" }
-  ```
-
-  The `stringParser` is likely the most widely used parser/serializer, however, the module also includes `intParser`, `floatParser`, `dateParser`, and `booleanParser`. You are not restricted to these options and can implement your own custom parser/serializer by following the `Parser<T>` interface. More information on this topic can be found further down the page.
-</details>
-
-<details>
-  <summary>Nested Routes</summary>
+  - when using `createRoutes`, define route nodes with a routes object, where property names represent route names.
+  - each route may specify a `path` using a string array.
+  - the `render` method is versatile, accepting arguments.
+  - if arguments are present,
+    - the first parameter holds a string path with route names,
+    - and the second parameter can be used for passing path or query parameters.
+    - refer to other sections for detailed examples illustrating the effective utilization of these features.
   
   ``` ts
-  import { route } from "typesafe-routes";
+  import { createRoutes } from "typesafe-routes";
 
-  const detailsRoute = route("details", {}, {})
-  const settingsRoute = route("settings", {}, { detailsRoute });
-  const accountRoute = route("/account", {}, { settingsRoute });
-
-  accountRoute({}).settingsRoute({}).detailsRoute({}).$
-  // => "/account/settings/details"
-  ```
-</details>
-
-<details>
-  <summary>Absolute & Relative Routes</summary>
-
-  ``` ts
-  import { route } from "typesafe-routes";
-
-  const invoice = route(":invoiceId", { invoiceId: intParser }, {});
-
-  const invoices = route("invoices", {}, { invoice });
-
-  const sales = route("sales", {}, { invoices });
-
-  const home = route("/", {}, { sales }); // root route prefixed with a "/"
-
-  // absolute routes:
-  home({}).sales({}).invoices({}).invoice({invoiceId: 1234}).$ // => "/sales/invoices/1234"
-  home({}).sales({}).invoices({}).$ // => "/sales/invoices"
-  home({}).sales({}).$ // => "/sales"
-  home({}).$ // => "/"
-
-  // relative routes
-  sales({}).invoices({}).invoice({invoiceId: 5678}).$ // => "sales/invoices/5678"
-  invoices({}).invoice({invoiceId: 8765}).$ // => "invoices/8765"
-  invoice({invoiceId: 4321}).$ // => "4321"
-
-  ```
-</details>
-
-<details>
-  <summary>Optional Parameters</summary>
-
-  Parameters can be suffixed with a question mark (?) to make a parameter optional.
-
-  ``` ts
-  import { route, intParser } from "typesafe-routes";
-
-  const userRoute = route("/user/:userId/:groupId?", {
-    userId: intParser,
-    groupId: intParser // parser is required also required for optional parameters
-  }, {});
-
-  userRoute({ userId: 342 }).$ // groupId is optional
-  // => "/user/342"
-  userRoute({ userId: 5453, groupId: 5464 }).$
-  // => "/user/5453/5464"
-  userRoute({ groupId: 464 }).$
-  // => error because userId is missing
-
-  // parsing:
-  userRoute.parseParams({ userId: "65", groupId: "212" });
-  // returns { userId: 6, groupId: 12 }
-  ```
-
-</details>
-
-<details>
-  <summary>Query Parameters</summary>
-
-  Parameters can be prefixed with `&` to make the parameter a query parameter.
-
-  ``` ts
-  import { route, intParser } from "typesafe-routes";
-
-  const usersRoute = route("/users&:start&:limit", {
-    start: intParser,
-    limit: intParser,
-  }, {});
-
-  usersRoute({ start: 10, limit: 20 }).$
-  // returns "/users?start=10&limit=20"
-  ```
-
-  When serialising nested routes the query params of a parent route are always being appended to the end of the locator string.
-
-  ``` ts
-  import { route, intParser } from "typesafe-routes";
-
-  const settingsRoute = route("/settings&:expertMode", {
-    expertMode: booleanParser,
-  }, {});
-
-  const usersRoute = route("/users&:start&:limit", {
-    start: intParser,
-    limit: intParser,
-  }, {
-    settingsRoute
+  const routes = createRoutes({
+    home: { // <= route segment name: "home"
+      path: ["home"] // <= path segment array
+    },
+    about: {
+      path: ["about-us"]
+    },
+    blogCategories: {
+      path: ["blog", "categories", "all"]
+    }
   });
 
-  usersRoute({ start: 10, limit: 20 }).settingsRoute({ expertMode: true })$
-  // returns "/users/settings?expertMode=true&start=10&limit=20"
+  routes.render(); // => "/"
+  routes.render("home", {}); // => "/home"
+  routes.render("about", {}); // => "/about-us"
+  routes.render("blogCategories", {}); // => "/blog/categories/all"
+  ```
+</details>
 
-  userRoute.parseParams({ start: "10", limit: "20", expertMode: "false" });
-  // returns { start: 10, limit: 20, expertMode: false }
+<details>
+  <summary>Path parameters</summary>
+
+  ### Path parameters
+
+  - in addition to static path segments, `path` segment arrays in the route definition can accommodate dynamic segments, referred to as parameters.
+  - parameters are named, have specific types, and are equipped with parser and serializer implementations to facilitate string conversion.
+  - parameters can be designated as `optional`, ensuring that no exceptions are raised if optional parameters are absent during rendering or parsing processes.
+  - the example showcases the import of string and integer parameter functions for defining typed parameters.
+    - for details on other built-in parameter types, please refer to the relevant section.
+    - this modular approach ensures flexibility and adaptability for diverse parameter requirements.
+
+  ``` ts
+  import { createRoutes, str, int } from "typesafe-routes";
+
+  const routes = createRoutes({
+    blog: {
+      path: ["blog", "categories", str("category"), "year", int("year").optional]
+    }
+  });
+
+  routes.render("blog", {
+    path: {category: "movies"}
+  }); // => "/blog/categories/movies/year"
+
+  routes.render("blog", { path: {
+    category: "movies",
+    year: 2024,
+  }}); // => "/blog/categories/movies/year/2024"
   ```
 
 </details>
 
 <details>
-  <summary>Parsing Path & Query Parameters Exclusively</summary>
+  <summary>Nested routes</summary>
 
-  Specific paremeter types can be rendered exclusively by using the corresponding parsing utility.
+  ### Nested routes
+
+  - route segments can be nested using the `children` propery containing an object with other route segments
+  - `render` method takes a path as the first argument containing route segment names separated by a slash `/` character
+  - if provided multiple segment names all the corresponding parameters have to be provided as the second argument combined in one object
+    - the overview can suffer from this so consult the other sections to learn more about how to assign parameters to segments using the `bind` method
+
+  - Nested route segments are achieved through the `children` property, containing an object with additional route segments.
+  - The `render` method's first argument is a path with route segment names separated by a slash `/`.
+  - When supplying multiple segment names, include all corresponding parameters in the second argument as a unified object.
+    - For improved clarity in assigning parameters, refer to other sections for guidance on utilizing the `bind` method.
+
+  ``` ts
+  import { createRoutes, oneOf, int } from "typesafe-routes";
+
+  const routes = createRoutes({
+    home: {
+      path: ["home"]
+    },
+    blog: {
+      path: ["blog"],
+      children: { // <= indicates nested routes 
+        categories: {
+          path: ["categories", oneOf("all", "art", "movies")("category")],
+          children: {  // <= indicates nested routes 
+            year: {path: ["year", int("year")]},
+          }
+        }
+      }
+    }
+  });
+
+  routes.render("blog", {}); // => "/blog"
+
+  routes.render("blog/categories", { path: {
+    category: "movies"
+  }}); // => "/blog/categories/movies"
   
-  - `parsePathParams` for exclusively parsing the path parameters
-  - `parseQueryParams` for only parsing query params
-  - `parseParams` for parsing **all** parameters.
+  routes.render("blog/categories/year", { path: {
+    category: "all",
+    year: 2024
+  }}); // => "/blog/categories/all/year/2024"
+  ```
+</details>
+
+<details>
+  <summary>Relative routes</summary>
 
   ``` ts
-  import { route, intParser } from "typesafe-routes";
+  import { createRoutes, oneOf, int } from "typesafe-routes";
 
-  const usersRoute = route("/users/:userId&:groupId", {
-    userId: intParser,
-    groupId: intParser,
-  }, {});
+  const routes = createRoutes({
+    home: {
+      path: ["home"]
+    },
+    blog: {
+      path: ["blog"],
+      children: {
+        categories: {
+          path: ["categories", oneOf("all", "art", "movies")("category")],
+          children: {
+            year: {path: ["year", int("year")]},
+          }
+        }
+      }
+    }
+  });
 
-  userRoute.parseParams({ userId: "10", groupId: "20" });
-  // returns { userId: 10, groupId: 20 }
+  routes.render("blog/categories", { path: {
+    category: "art"
+  }}); // => "/blog/categories/art"
 
-  userRoute.parsePathParams({ userId: "10", groupId: "20" });
-  // returns { userId: 10 }
+  routes.render("blog/_categories", { path: {
+    category: "art"
+  }}); // => "categories/art"
+  
+  routes.render("blog/_categories/year", { path: {
+    category: "movies",
+    year: 2024
+  }}); // => "categories/movies/year/2024"
 
-  userRoute.parseQueryParams({ userId: "10", groupId: "20" });
-  // returns { groupId: 20 }
+  routes.render("blog/categories/_year", { path: {
+    year: 2024
+  }}); // => "year/2024"
   ```
 
 </details>
 
 <details>
-  <summary>Parsers &amp; Serializers</summary>
-
-  If you need to parse/serialize other datatypes than primitive types or dates or the build-in parsers don't meet your requirements for some reason you can create your own parsers with a few lines of code. The `Parser<T>` interface that helps yo to achieve that is defined as followed:
+  <summary>Templates</summary>
 
   ``` ts
-  interface Parser<T> {
-    parse: (s: string) => T;
-    serialize: (x: T) => string;
-  }
+  import { createRoutes, oneOf, int } from "typesafe-routes";
+
+  const blogCat = oneOf("all", "art", "movies");
+
+  const routes = createRoutes({
+    home: {
+      path: ["home"]
+    },
+    blog: {
+      path: ["blog"],
+      children: {
+        "*": {
+          template: "**"
+        },
+        categories: {
+          path: ["categories", blogCat("category")],
+          children: {
+            year: {path: ["year", int("year").optional]},
+          }
+        }
+      }
+    }
+  });
+
+  routes.template("home"); // => "/home"
+
+  routes.template("blog/categories"); // => "/blog/categories/:category"
+  routes.template("blog/categories/year"); // => "/blog/categories/:category/year/:year?"
+  routes.template("blog/_categories/year"); // => "categories/:category/year/:year?"
+  routes.template("blog/categories/_year"); // => "year/:year?"
+
+  routes.template("blog/*"); // => "/blog/**"
   ```
 
-  The next example shows the implementation and usage of a typesafe `Vector2D` parser/serializer.
+</details>
+  
+<details>
+  <summary>Query parameters</summary>
 
   ``` ts
-  import { Parser, route } from "typesafe-routes";
+  import { createRoutes, str, int } from "typesafe-routes";
 
-  interface Vector2D {
-    x: number;
-    y: number;
-  };
+  const routes = createRoutes({
+    home: {
+      path: ["home"]
+    },
+    blog: {
+      path: ["blog"],
+      children: {
+        categories: {
+          path: ["categories", str("category")],
+          query: [str("search"), int(page).optional]
+          children: {
+            year: {
+              path: ["year", int("year")],
+              query: [str("filter").optional]
+            },
+          }
+        }
+      }
+    }
+  });
 
-  const vectorParser: Parser<Vector2D> = {
-    serialize: (v) => btoa(JSON.stringify(v)),
-    parse: (s) => JSON.parse(atob(s)),
-  };
+  routes.render("blog/categories", {
+    path: { category: "movies" },
+    query: { search: "batman" }
+  }); // => "/blog/categories/movies?search=batman"
 
-  const mapRoute = route("/map&:pos", { pos: vectorParser }, {});
+  routes.render("blog/categories", {
+    path: { category: "movies" },
+    query: { search: "robocop", page: 4 }
+  }); // => "/blog/categories/movies?search=robocop&page=4"
 
-  mapRoute({ pos: { x: 1, y: 0 }}).$;
-  // returns "/map?pos=eyJ4IjoxLCJ5IjowfQ%3D%3D"
+  routes.render("blog/categories/year", {
+    path: { category: "movies", year: 2024 },
+    query: { search: "batman", page: 0, filter: "joker" }
+  }); // => "/blog/categories/movies/year/2024?search=batman&page=0&filter=joker"
 
-  vectorParser.parseParams({pos: "eyJ4IjoxLCJ5IjowfQ=="})
-  // returns { pos: { x: 1, y: 0 }}
+  routes.render("blog/categories/_year", {
+    path: { year: 2024 },
+    query: { filter: "joker" }
+  }); // => "year/2024?filter=joker
   ```
+</details>
+  
+<details>
+  <summary>Parameter binding</summary>
+
+  - use `.bind` method for clearer assignment between routes and parameters
+  - creates a route context that can be passed around
+  - supports underscore prefix _ for relative routes
+  - to render the path the `render` method can be chained after binding parameters
+
+  ``` ts
+  import { createRoutes, str, int } from "typesafe-routes";
+
+  const routes = createRoutes({
+    blog: {
+      path: ["blog"],
+      children: {
+        categories: {
+          path: ["categories", str("category")],
+          children: {
+            year: {
+              path: ["year", int("year")],
+            },
+          }
+        }
+      }
+    }
+  });
+
+  routes
+    .bind("blog/categories", {
+      path: { category: "movies" },
+    })
+    .bind("year", {
+      path: { year: 2024 },
+    })
+    .render(); // => "/blog/categories/movies/year/2024"
+
+  routes
+    .bind("blog/_categories")
+      path: { category: "movies" },
+    })
+    .bind("year", {
+      path: { year: 2024 },
+    })
+    .render(); // => "categories/movies/year/2024"
+
+  routes
+    .bind("blog")
+    .bind("categories", {
+      path: { category: "movies" },
+    })
+    .render("year", {
+      path: { year: 2024 },
+    }); // => "/blog/categories/movies/year/2024"
+
+  ```
+</details>
+
+### Advanced Features 
+
+<details>
+  <summary>Extend string paths</summary>
+
+  - use this if you want to build a typesafe path based on an existing string path
+  - string path can be extended partially by using the relative route prefix `_` (underscore) 
+  - path and query parameters in the string path can be overridden
+   
+</details>
+  
+<details>
+  <summary>Replace dynamic segments</summary>
+
+  - use this if you want to replace specific dynamic segments in a string path
+  - absolute paths can be converted into relative parts with the underscore `_` prefix
 
 </details>
 
 <details>
-  <summary>React Router Utilities</summary>
+  <summary>Parameter types</summary>
 
-  #### `useRouteParams(route: RouteNode)`<br/> `useRouteQueryParams(route: RouteNode)`<br/> `useRoutePathParams(route: RouteNode)`
+  - string
+  - float
+  - date
+  - bool
+  - oneOf
+  - list
+  - json
+  - base64
+  - uvm
 
-  The `useRouteParams` hook relies on the `useParams` hook from the optional dependency `react-router-dom`. Unlike `useParams`, the `useRouteParams` function additionally parses [`query strings`](https://developer.mozilla.org/en-US/docs/Web/API/Location/search) using [`qs`](github.com/ljharb/qs).
+</details>
 
-  ``` ts
-  import { route, useRouteParams } from "typesafe-routes/react-router";
+### Customization
 
-  const topicRoute = route("/:topicId&:limit?", {
-    topicId: stringParser,
-    limit: floatParser,
-  }, {});
+<details>
+  <summary>Custom parameter types</summary>
+</details>
 
-  const Component = () => {
-    const params = useRouteParams(topicRoute); // { topicId, limit }
-    const queryParams = useRouteQueryParams(topicRoute); // { limit }
-    const pathParams = useRoutePathParams(topicRoute); // { topicId }
+<details>
+  <summary>Path renderering</summary>
+</details>
 
-    return <>{...}</>;
-  }
-  ```
-
-  #### `<Link>` and `<NavLink>`
-
-  Same as the original `<Link>` and `<NavLink>` from `react-router-dom` but require the `to` property to be a route:
-
-  ``` ts
-  import { route, Link, NavLink } from "typesafe-routes/react-router";
-
-  const topicRoute = route("/topic", {}, {});
-
-  <Link to={topicRoute({})}>Topic</Link>
-  <NavLink to={topicRoute({})}>Topic</NavLink>
-
-  <Link to="/topic">Topic</Link> // error "to" prop can't be string 
-  <NavLink to="/topic">Topic</NavLink> // error "to" prop can't be string 
-  ```
-
-  #### `template`
-
-  `typesafe-routes` implements a subset of template syntax of `react-router` and thus is compatible with it. But since specifying additional query params would break the compatibility (`react-router` doesn't understand the `&` prefix) the `.template` property doesn't contain any of such parameters and can be used to define router in your `react-router` app:
-
-  ``` ts
-  import { route } from "typesafe-routes";
-
-  const topicRoute = route("/:topicId&:limit?", {
-    topicId: stringParser,
-    limit: floatParser,
-  }, {});
-
-  <Route path={topicRoute.template}> // template only contains the "/:topicId" path
-    <Topic />
-  </Route>
-  ```
-
+<details>
+  <summary>Template renderering</summary>
 </details>
 
 ---
 
-## Coffee to Code Transpiler
+## Coffee to code transpiler
 
 You can make a difference and enhance the quality of this project by not only reporting issues and submitting pull requests, but also by treating me to a fresh cup of coffee as a token of appreciation for my efforts.
 
@@ -300,4 +387,13 @@ You can make a difference and enhance the quality of this project by not only re
 
 ## Roadmap
 
-At this point, I believe that this library has all the necessary features and my main focus will be on fixing bugs and refining the API. However, if there is a significant demand for additional functionality or pull requests, I may consider expanding the scope of the project.
+- react router
+  - demo
+  - utility components with memo
+- refine js demo
+- vue router
+  - maybe renderer
+  - demo
+- angular router
+  - renderer
+  - demo
