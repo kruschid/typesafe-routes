@@ -110,6 +110,8 @@ yarn add typesafe-routes
   ``` ts
   import { createRoutes, oneOf, int } from "typesafe-routes";
 
+  const blogCat = oneOf("all", "art", "movies");
+
   const routes = createRoutes({
     home: {
       path: ["home"]
@@ -118,7 +120,7 @@ yarn add typesafe-routes
       path: ["blog"],
       children: { // <= indicates nested routes 
         categories: {
-          path: ["categories", oneOf("all", "art", "movies")("category")],
+          path: ["categories", blogCat("category")],
           children: {  // <= indicates nested routes 
             year: {path: ["year", int("year")]},
           }
@@ -143,8 +145,14 @@ yarn add typesafe-routes
 <details>
   <summary>Relative routes</summary>
 
+  - You can create relative routes by prefixing a route segment with an underscore `_` within the `render` method's path argument.
+  - The relative path returned by default begins without a leading `/` character and excludes any route segments specified before the `_`.
+  - You can modify this default behavior using a custom renderer. Refer to the customization section for more examples.
+
   ``` ts
   import { createRoutes, oneOf, int } from "typesafe-routes";
+
+  const blogCat = oneOf("all", "art", "movies");
 
   const routes = createRoutes({
     home: {
@@ -154,7 +162,7 @@ yarn add typesafe-routes
       path: ["blog"],
       children: {
         categories: {
-          path: ["categories", oneOf("all", "art", "movies")("category")],
+          path: ["categories", blogCat("category")],
           children: {
             year: {path: ["year", int("year")]},
           }
@@ -165,11 +173,11 @@ yarn add typesafe-routes
 
   routes.render("blog/categories", { path: {
     category: "art"
-  }}); // => "/blog/categories/art"
+  }}); // => "/blog/categories/art" (an absolute path with a leading "/")
 
   routes.render("blog/_categories", { path: {
     category: "art"
-  }}); // => "categories/art"
+  }}); // => "categories/art" (a relative path without the leading "/blog" path segment)
   
   routes.render("blog/_categories/year", { path: {
     category: "movies",
@@ -178,13 +186,23 @@ yarn add typesafe-routes
 
   routes.render("blog/categories/_year", { path: {
     year: 2024
-  }}); // => "year/2024"
+  }}); // => "year/2024" (we skipped two route segments here)
   ```
 
 </details>
 
 <details>
   <summary>Templates</summary>
+
+  - Use the `template` method to generate templates for routers like react-router, vue-router, or Angular router.
+  - The `template` method requires a path parameter to define the route segments to render.
+  - Absolute route templates are rendered with a leading `/` by default.
+  - Render relative route templates with an `_` prefix, similar to how relative routes are rendered with the `render` method.
+  - Dynamic segments or parameters are rendered with a colon `:` prefix
+  - Optional parameters are indicated with a `?` suffix in the resulting template
+  - For edge cases like wildcards (`**` in Angular routes) or star sign (`*` in react router), use the pass-through `template` property to pass any string to the resulting template.
+  - Only the `template` method can render route segments with a `template` property; `render` ignores them.
+  - You can personalize template rendering using a custom renderer. For examples, refer to the customization section.
 
   ``` ts
   import { createRoutes, oneOf, int } from "typesafe-routes";
@@ -199,7 +217,7 @@ yarn add typesafe-routes
       path: ["blog"],
       children: {
         "*": {
-          template: "**"
+          template: "**" // pass through property
         },
         categories: {
           path: ["categories", blogCat("category")],
