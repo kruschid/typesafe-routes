@@ -2,6 +2,10 @@
 
 # Typesafe Routes
 
+- 14Kb bundle size
+- 11Kb minified
+- 2.6Kb gz compressed
+
 Enhance your preferred routing library by incorporating type-safety into string-based route definitions. Allow TypeScript to identify broken links during the compilation process, enabling you to develop easily maintainable software.
 
 - [Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
@@ -9,8 +13,6 @@ Enhance your preferred routing library by incorporating type-safety into string-
 - [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html)
 - [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) 
 - [Tail-Recursion Elimination on Conditional Types](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-5.html#tail-recursion-elimination-on-conditional-types)
-- 
-- This design provides a seamless and robust handling of dynamic data within the route system.
   
 ## Installation (npm/yarn examples)
 
@@ -145,8 +147,10 @@ yarn add typesafe-routes
 <details>
   <summary>Relative routes</summary>
 
+  ### Relative routes
+
   - You can create relative routes by prefixing a route segment with an underscore `_` within the `render` method's path argument.
-  - The relative path returned by default begins without a leading `/` character and excludes any route segments specified before the `_`.
+  - The relative path returned begins without a leading `/` character and excludes any route segments specified before the `_`.
   - You can modify this default behavior using a custom renderer. Refer to the customization section for more examples.
 
   ``` ts
@@ -193,6 +197,8 @@ yarn add typesafe-routes
 
 <details>
   <summary>Templates</summary>
+
+  ### Templates
 
   - Use the `template` method to generate templates for routers like react-router, vue-router, or Angular router.
   - The `template` method requires a path parameter to define the route segments to render.
@@ -244,6 +250,15 @@ yarn add typesafe-routes
 <details>
   <summary>Query parameters</summary>
 
+  ### Query parameters
+
+  - Define query parameters by setting a `query` property in a route segment
+  - Make `query` parameters `optional` to avoid mandatory inclusion
+  - If an `optional` query parameter is missing during parsing, no exception will be thrown
+  - The `render` method concatenates the entire query string following the location path.
+  - Pass query parameters to the `render` method using the second argument, which should be an object containing a `query` property.
+  - Query parameters are fully compatible with relative paths.
+
   ``` ts
   import { createRoutes, str, int } from "typesafe-routes";
 
@@ -289,14 +304,91 @@ yarn add typesafe-routes
   }); // => "year/2024?filter=joker
   ```
 </details>
+
+<details>
+  <summary>Parameter parsing</summary>
+
+  ### Path parameter parsing
+
+  ``` ts
+  import { createRoutes, int, str, date } from "typesafe-routes";
+
+  const routes = createRoutes({
+    blog: {
+      path: ["blog", int("blogId")],
+      children: {
+        categories: {
+          path: ["category", str("catId").optional],
+          children: {
+            date: {
+              path: ["date", date("date")],
+            },
+          }
+        }
+      }
+    }
+  });
+
+  routes.parseParams("blog/category/date", {
+    blogId: "35",
+    catId: "x546f23x",
+    date: "2023-12-28",
+  }); // => { blogId: 35, catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+
+  routes.parseParams("blog/_category/date", {
+    catId: "x546f23x",
+    date: "2023-12-28",
+  }); // => { catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+
+  routes.parseParams("blog/category/_date", {
+    date: "2023-12-28",
+  }); // => { date: Date("2023-12-28T00:00:00.000Z") }
+
+  routes.parseParams("blog/_category", {}); // => { }
+  ```
+
+  ### Query parameter parsing
+
+  ``` ts
+  import { createRoutes, bool, date } from "typesafe-routes";
+
+  const routes = createRoutes({
+    blog: {
+      path: ["blog"],
+      children: {
+        categories: {
+          path: ["category"],
+          query: [str("catId").optional]
+          children: {
+            options: {
+              query: [date("date"), bool("showModal")]
+            },
+          }
+        }
+      }
+    }
+  });
+
+  route.parseQuery("blog/category", { catId: "x546f23x" }); // => { catId: "x546f23x" }
+
+  route.parseQuery("blog/category/options", {
+    date: "2023-12-28",
+    showModal: "false",
+  }); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+
+ ```
+
+</details>
   
 <details>
   <summary>Parameter binding</summary>
 
-  - use `.bind` method for clearer assignment between routes and parameters
-  - creates a route context that can be passed around
-  - supports underscore prefix _ for relative routes
-  - to render the path the `render` method can be chained after binding parameters
+  ### Parameter binding
+
+  - Use `bind` method for clearer assignment between routes and parameters
+  - `bind` creates a new route context that can be passed around
+  - Supports underscore prefix `_` for relative routes
+  - To render the path the `render` method can be chained after binding your parameters
 
   ``` ts
   import { createRoutes, str, int } from "typesafe-routes";
@@ -327,7 +419,7 @@ yarn add typesafe-routes
     .render(); // => "/blog/categories/movies/year/2024"
 
   routes
-    .bind("blog/_categories")
+    .bind("blog/_categories", {
       path: { category: "movies" },
     })
     .bind("year", {
@@ -347,7 +439,7 @@ yarn add typesafe-routes
   ```
 </details>
 
-### Advanced Features 
+## Advanced Features 
 
 <details>
   <summary>Extend string paths</summary>
@@ -381,7 +473,7 @@ yarn add typesafe-routes
 
 </details>
 
-### Customization
+## Customization
 
 <details>
   <summary>Custom parameter types</summary>
@@ -405,6 +497,7 @@ You can make a difference and enhance the quality of this project by not only re
 
 ## Roadmap
 
+- prevent duplicate param names in route tree 
 - react router
   - demo
   - utility components with memo
