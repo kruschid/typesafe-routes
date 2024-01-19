@@ -1,19 +1,8 @@
-import type { ParamRecordMap, RouteNode } from "./routes";
-
-export type RenderContext = {
-  skippedNodes: RouteNode[];
-  nodes: RouteNode[];
-  path: Exclude<RouteNode["path"], undefined>;
-  query: Exclude<RouteNode["query"], undefined>;
-  isRelative: boolean;
-};
+import { RenderContext } from "./createRoutes";
 
 export type Renderer = {
   template: (ctx: RenderContext) => string;
-  render: (
-    segments: RenderContext,
-    params: ParamRecordMap<Record<string, unknown>>
-  ) => string;
+  render: (ctx: RenderContext) => string;
 };
 
 export const defaultRenderer: Renderer = {
@@ -30,7 +19,7 @@ export const defaultRenderer: Renderer = {
       ? template //relative
       : `/${template}`; // absolute
   },
-  render: ({ path, query, isRelative }, params) => {
+  render: ({ path, query, isRelative, parsedParams, parsedQuery }) => {
     const pathSegments: string[] = [];
     const queryRecord: Record<string, string> = {};
 
@@ -40,28 +29,28 @@ export const defaultRenderer: Renderer = {
         pathSegments.push(pathSegment);
       } else if (
         pathSegment.kind === "required" &&
-        !params.path[pathSegment.name]
+        !parsedParams[pathSegment.name]
       ) {
         throw Error(
           `required path parameter ${pathSegment.name} was not specified`
         );
-      } else if (params.path[pathSegment.name]) {
+      } else if (parsedParams[pathSegment.name]) {
         pathSegments.push(
-          pathSegment.parser.serialize(params.path[pathSegment.name])
+          pathSegment.parser.serialize(parsedParams[pathSegment.name])
         );
       }
     });
 
     // query params
     query.forEach((queryParam) => {
-      if (queryParam.kind === "required" && !params.query[queryParam.name]) {
+      if (queryParam.kind === "required" && !parsedQuery[queryParam.name]) {
         throw Error(
           `required query parameter ${queryParam.name} was not specified`
         );
       }
-      if (params.query[queryParam.name]) {
+      if (parsedQuery[queryParam.name]) {
         queryRecord[queryParam.name] = queryParam.parser.serialize(
-          params.query[queryParam.name]
+          parsedQuery[queryParam.name]
         );
       }
     });

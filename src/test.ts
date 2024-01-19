@@ -424,6 +424,14 @@ test("replace", (t) => {
   );
 
   t.equal(
+    routes.replace("blog", "/blog/en?additionalParam=value", {
+      path: { lang: "es" },
+    }),
+    "/blog/es?additionalParam=value",
+    "should keep additional params"
+  );
+
+  t.equal(
     routes.replace(
       "blog/_category/date",
       "category/movies/date/2012-12-28?search=batman&page=1",

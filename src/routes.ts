@@ -1,6 +1,7 @@
 import type { A } from "ts-toolbelt";
+import { RenderContext } from "./createRoutes";
 import type { AnyParam } from "./param";
-import type { RenderContext, Renderer } from "./renderer";
+import type { Renderer } from "./renderer";
 
 type If<Condition, Then> = Condition extends true ? Then : never;
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
@@ -207,6 +208,5 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
 export type CreateRoutes = <Routes extends RouteNodeMap>(
   routes: Routes,
   renderer?: Renderer,
-  prevCtx?: RenderContext,
-  prevParams?: ParamRecordMap<any>
+  parentContext?: RenderContext
 ) => RoutesContext<Routes>;
