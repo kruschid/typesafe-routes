@@ -310,6 +310,13 @@ yarn add typesafe-routes
 
   ### Path parameter parsing
 
+  - **Type Conversion**: `parseParams` converts path parameter values from a string format to their corresponding types.
+  - **Framework Compatibility:** Capable of parsing parameters from objects extracted by frameworks such as React-Router or Angular Router.
+  - **Location paths**: Parsing parameters from string paths (such as `location.pathname`), including:
+    - Support for both relative and absolute paths.
+    - Ability to handle relative route paths prefixed with `_`.
+  - **Required Parameters**: Throws if a required parameter is not present.
+
   ``` ts
   import { createRoutes, int, str, date } from "typesafe-routes";
 
@@ -329,25 +336,50 @@ yarn add typesafe-routes
     }
   });
 
-  routes.parseParams("blog/category/date", {
+  routes.parseParams("blog/categories/date", {
     blogId: "35",
     catId: "x546f23x",
     date: "2023-12-28",
   }); // => { blogId: 35, catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
 
-  routes.parseParams("blog/_category/date", {
+  routes.parseParams("blog/_categories/date", {
     catId: "x546f23x",
     date: "2023-12-28",
   }); // => { catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
 
-  routes.parseParams("blog/category/_date", {
+  routes.parseParams("blog/categories/_date", {
     date: "2023-12-28",
   }); // => { date: Date("2023-12-28T00:00:00.000Z") }
 
-  routes.parseParams("blog/_category", {}); // => { }
+  routes.parseParams("blog/_categories", {}); // => {}
+
+  // with absolute path location
+  routes.parseParams(
+    "blog/categories/date",
+    "/blog/35/category/x546f23x/date/2023-12-28"
+  ); // => { blogId: 35, catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+
+  // with optional parameters
+  routes.parseParams(
+    "blog/categories/date",
+    "/blog/35/category/date/2023-12-28"
+  ); // => { blogId: 35, date: Date("2023-12-28T00:00:00.000Z") }
+
+  // with relative location path
+  routes.parseParams(
+    "blog/_categories/date",
+    "category/date/2023-12-28"
+  ); // => { date: Date("2023-12-28T00:00:00.000Z") }
   ```
 
   ### Query parameter parsing
+
+  - **Type Conversion**: `parseQuery` converts search parameter values from a string format to their corresponding types.
+  - **Framework Compatibility:** Capable of parsing url query parameters provided by frameworks such as React-Router or Angular Router.
+  - **Location Search Params**: Parsing parameters from search strings (such as `location.search`), including:
+    - Ability to handle relative route paths prefixed with `_`.
+    - Skips additional parameters that are not specified by the route path
+  - **Required Parameters** throw an exception if not present 
 
   ``` ts
   import { createRoutes, bool, date } from "typesafe-routes";
@@ -358,7 +390,7 @@ yarn add typesafe-routes
       children: {
         categories: {
           path: ["category"],
-          query: [str("catId").optional]
+          query: [str("catId")]
           children: {
             options: {
               query: [date("date"), bool("showModal")]
@@ -369,14 +401,33 @@ yarn add typesafe-routes
     }
   });
 
+  // object search parameters with absolute route path
   route.parseQuery("blog/category", { catId: "x546f23x" }); // => { catId: "x546f23x" }
 
-  route.parseQuery("blog/category/options", {
+  // object; relative route path
+  route.parseQuery("blog/category/_options", {
     date: "2023-12-28",
     showModal: "false",
   }); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
 
- ```
+  // string; absolute route path
+  route.parseQuery(
+    "blog/category/options",
+    "?catId=x546f23x&date=2023-12-28&showModal=false"
+  ); // => { catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+
+  // string; relative route path
+  route.parseQuery(
+    "blog/category/_options",
+    "?date=2023-12-28&showModal=false"
+  ); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+
+  // ignores addional parameters 
+  route.parseQuery(
+    "blog/category",
+    "?catId=x546f23&a=123&b=456" // "a" and "b" are not in the result object
+  ); // => { catId: "x546f23x" }
+  ```
 
 </details>
   
