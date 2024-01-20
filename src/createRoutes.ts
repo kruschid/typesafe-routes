@@ -31,24 +31,56 @@ export const createRoutes: CreateRoutes = (
     context?: RenderContext
   ) => {
     const ctx = pipe(
+      context ?? createRenderContext(routeMap, path, parentContext),
       withRawParams(params?.path),
       withRawQuery(params?.query),
       withParsedParams,
       withParsedQuery
-    )(context ?? createRenderContext(routeMap, path, parentContext));
+    );
 
     return renderer.render(ctx);
   };
 
   const bind = (path: string, params: ParamRecordMap<any>) => {
     const ctx = pipe(
+      createRenderContext(routeMap, path, parentContext),
       withRawParams(params.path),
       withRawQuery(params.query)
-    )(createRenderContext(routeMap, path, parentContext));
+    );
 
-    const currSegmentChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+    const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
-    return createRoutes(currSegmentChildren, renderer, ctx);
+    return createRoutes(pathChildren, renderer, ctx);
+  };
+
+  const template = (path: string) =>
+    renderer.template(createRenderContext(routeMap, path));
+
+  const parseParams = (
+    path: string,
+    params: Record<string, string> | string
+  ) => {
+    const ctx = pipe(
+      createRenderContext(routeMap, path, parentContext),
+      typeof params === "string"
+        ? withRawParamsFromLocationPath(params)
+        : withRawParams(params),
+      withParsedParams
+    );
+
+    return ctx.parsedParams;
+  };
+
+  const parseQuery = (path: string, query: Record<string, string> | string) => {
+    const ctx = pipe(
+      createRenderContext(routeMap, path, parentContext),
+      typeof query === "string"
+        ? withRawQueryFromUrlSearch(query)
+        : withRawQuery(query),
+      withParsedQuery
+    );
+
+    return ctx.parsedQuery;
   };
 
   const from = (
@@ -58,11 +90,12 @@ export const createRoutes: CreateRoutes = (
   ) => {
     const [locationPath, locationQuery] = location.split("?");
     const ctx = pipe(
+      createRenderContext(routeMap, path, parentContext),
       withRawParamsFromLocationPath(locationPath),
       withRawQueryFromUrlSearch(locationQuery),
       withRawParams(overrideParams.path),
       withRawQuery(overrideParams.query)
-    )(createRenderContext(routeMap, path, parentContext));
+    );
 
     const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
@@ -78,49 +111,26 @@ export const createRoutes: CreateRoutes = (
   ) => {
     const [locationPath, locationQuery] = location.split("?");
     const ctx = pipe(
+      createRenderContext(routeMap, path, parentContext),
       withRawParamsFromLocationPath(locationPath, true),
-      withRawQueryFromUrlSearch(locationQuery, true)
-    )(createRenderContext(routeMap, path, parentContext));
-
-    return render(path, overrideParams, ctx);
-  };
-
-  const template = (path: string) =>
-    renderer.template(createRenderContext(routeMap, path));
-
-  const parseParams = (
-    path: string,
-    params: Record<string, string> | string
-  ) => {
-    const ctx = pipe(
-      typeof params === "string"
-        ? withRawParamsFromLocationPath(params)
-        : withRawParams(params),
-      withParsedParams
-    )(createRenderContext(routeMap, path, parentContext));
-
-    return ctx.parsedParams;
-  };
-
-  const parseQuery = (path: string, query: Record<string, string> | string) => {
-    const ctx = pipe(
-      typeof query === "string"
-        ? withRawQueryFromUrlSearch(query)
-        : withRawQuery(query),
+      withRawParams(overrideParams.path),
+      withRawQueryFromUrlSearch(locationQuery, true),
+      withRawQuery(overrideParams.query),
+      withParsedParams,
       withParsedQuery
-    )(createRenderContext(routeMap, path, parentContext));
+    );
 
-    return ctx.parsedQuery;
+    return renderer.render(ctx);
   };
 
   return {
     render,
     bind,
-    from,
-    replace,
     template,
     parseParams,
     parseQuery,
+    from,
+    replace,
   } as RoutesContext<any>;
 };
 
@@ -186,7 +196,6 @@ const createRenderContext = (
     nextNodeMap = nextNode.children;
   });
 
-  // extract  path segments and query params and determine if path is relative
   return ctx;
 };
 
@@ -296,7 +305,7 @@ const withRawQueryFromUrlSearch =
   });
 
 const withRawQuery =
-  (queryParams?: Record<string, string>, includeExtraQuery: boolean = true) =>
+  (queryParams?: Record<string, string>, includeExtraQuery: boolean = false) =>
   (ctx: RenderContext): RenderContext => {
     const remaining = { ...queryParams };
     const rawQuery: Record<string, string> = {};
@@ -310,7 +319,11 @@ const withRawQuery =
 
     return {
       ...ctx,
-      rawQuery: { ...ctx.rawQuery, ...rawQuery },
+      rawQuery: {
+        ...ctx.rawQuery,
+        ...rawQuery,
+        ...(includeExtraQuery ? remaining : undefined),
+      },
       query: includeExtraQuery
         ? ctx.query.concat(
             Object.keys(remaining).map((name) => str(name).optional)
@@ -342,7 +355,7 @@ const withParsedQuery = (ctx: RenderContext): RenderContext => {
   };
 };
 
-const pipe =
-  (...fns: ((ctx: RenderContext) => RenderContext)[]) =>
-  (ctx: RenderContext) =>
-    fns.reduce((ctx, fn) => fn(ctx), ctx);
+const pipe = (
+  initialCtx: RenderContext,
+  ...fns: ((ctx: RenderContext) => RenderContext)[]
+) => fns.reduce((ctx, fn) => fn(ctx), initialCtx);
