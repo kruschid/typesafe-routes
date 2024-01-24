@@ -31,10 +31,15 @@ export type RenderContext = {
     path: Exclude<RouteNode["path"], undefined>;
     query: Exclude<RouteNode["query"], undefined>;
     isRelative: boolean;
+    rawParams: Record<string, string>;
+    rawQuery: Record<string, string>;
+    parsedParams: Record<string, unknown>;
+    parsedQuery: Record<string, unknown>;
 };
+export const createRoutes: CreateRoutes;
 export type Renderer = {
     template: (ctx: RenderContext) => string;
-    render: (segments: RenderContext, params: ParamRecordMap<Record<string, unknown>>) => string;
+    render: (ctx: RenderContext) => string;
 };
 export const defaultRenderer: Renderer;
 type If<Condition, Then> = Condition extends true ? Then : never;
@@ -151,7 +156,6 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
         query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
     }>>) => string;
 };
-export type CreateRoutes = <Routes extends RouteNodeMap>(routes: Routes, renderer?: Renderer, prevCtx?: RenderContext, prevParams?: ParamRecordMap<any>) => RoutesContext<Routes>;
-export const createRoutes: CreateRoutes;
+export type CreateRoutes = <Routes extends RouteNodeMap>(routes: Routes, renderer?: Renderer, parentContext?: RenderContext) => RoutesContext<Routes>;
 
 //# sourceMappingURL=index.d.ts.map

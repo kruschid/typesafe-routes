@@ -98,95 +98,76 @@ var $d027411d9f32df53$exports = {};
 
 $parcel$export($d027411d9f32df53$exports, "createRoutes", () => $d027411d9f32df53$export$dfc730c04fdecfcb);
 
-const $d027411d9f32df53$export$dfc730c04fdecfcb = (routeMap, renderer = (0, $52e32790be7c44a2$export$6093ee13d2f7fa25), prevSegments, prevParams = {
-    path: {},
-    query: {}
-})=>{
-    const template = (path)=>{
-        const ctx = $d027411d9f32df53$var$compilePath(routeMap, path);
-        return renderer.template(ctx);
-    };
+const $d027411d9f32df53$export$dfc730c04fdecfcb = (routeMap, renderer = (0, $52e32790be7c44a2$export$6093ee13d2f7fa25), parentContext)=>{
     const render = (path, params, context)=>{
-        const ctx = context ?? $d027411d9f32df53$var$compilePath(routeMap, path, prevSegments);
-        return renderer.render(ctx, $d027411d9f32df53$var$mergeParams(prevParams, params));
+        const ctx = $d027411d9f32df53$var$pipe(context ?? $d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), $d027411d9f32df53$var$withRawParams(params?.path), $d027411d9f32df53$var$withRawQuery(params?.query), $d027411d9f32df53$var$withParsedParams, $d027411d9f32df53$var$withParsedQuery);
+        return renderer.render(ctx);
     };
     const bind = (path, params)=>{
-        const ctx = $d027411d9f32df53$var$compilePath(routeMap, path, prevSegments);
-        const currSegmentChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
-        return $d027411d9f32df53$export$dfc730c04fdecfcb(currSegmentChildren, renderer, ctx, $d027411d9f32df53$var$mergeParams(prevParams, params));
+        const ctx = $d027411d9f32df53$var$pipe($d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), $d027411d9f32df53$var$withRawParams(params.path), $d027411d9f32df53$var$withRawQuery(params.query));
+        const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+        return $d027411d9f32df53$export$dfc730c04fdecfcb(pathChildren, renderer, ctx);
     };
-    const parseParams = (path, params, maybeContext)=>{
-        const parsedParams = {};
-        const ctx = maybeContext ?? $d027411d9f32df53$var$compilePath(routeMap, path);
-        ctx.path.forEach((segment)=>{
-            if (typeof segment === "string") return;
-            if (params[segment.name]) parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
-            else if (segment.kind === "required") throw Error(`required path parameter "${segment.name}" was not provided for "${path}"`);
-        });
-        return parsedParams;
+    const template = (path)=>renderer.template($d027411d9f32df53$var$createRenderContext(routeMap, path));
+    const parseParams = (path, params)=>{
+        const ctx = $d027411d9f32df53$var$pipe($d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), typeof params === "string" ? $d027411d9f32df53$var$withRawParamsFromLocationPath(params) : $d027411d9f32df53$var$withRawParams(params), $d027411d9f32df53$var$withParsedParams);
+        return ctx.parsedParams;
     };
-    const parseQuery = (path, params, maybeContext)=>{
-        const parsedParams = {};
-        const ctx = maybeContext ?? $d027411d9f32df53$var$compilePath(routeMap, path);
-        const paramsRecord = typeof params === "string" ? Object.fromEntries(new URLSearchParams(params)) : params;
-        ctx.query.forEach((segment)=>{
-            if (paramsRecord[segment.name]) parsedParams[segment.name] = segment.parser.parse(paramsRecord[segment.name]);
-            else if (segment.kind === "required") throw Error(`required path parameter "${segment.name}" was not provided for "${path}"`);
-        });
-        return parsedParams;
+    const parseQuery = (path, query)=>{
+        const ctx = $d027411d9f32df53$var$pipe($d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), typeof query === "string" ? $d027411d9f32df53$var$withRawQueryFromUrlSearch(query) : $d027411d9f32df53$var$withRawQuery(query), $d027411d9f32df53$var$withParsedQuery);
+        return ctx.parsedQuery;
     };
-    const from = (path, location, overwriteParams)=>{
-        // build context from path
-        const ctx = $d027411d9f32df53$var$compilePath(routeMap, path);
-        const lastNodeChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
-        const { parsedParams: parsedParams } = $d027411d9f32df53$var$matchLocation(path, location, ctx, parseParams, parseQuery);
-        return $d027411d9f32df53$export$dfc730c04fdecfcb(lastNodeChildren, renderer, ctx, $d027411d9f32df53$var$mergeParams(prevParams, parsedParams, overwriteParams));
+    const from = (path, location, overrideParams)=>{
+        const [locationPath, locationQuery] = location.split("?");
+        const ctx = $d027411d9f32df53$var$pipe($d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), $d027411d9f32df53$var$withRawParamsFromLocationPath(locationPath), $d027411d9f32df53$var$withRawQueryFromUrlSearch(locationQuery), $d027411d9f32df53$var$withRawParams(overrideParams.path), $d027411d9f32df53$var$withRawQuery(overrideParams.query));
+        const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+        return $d027411d9f32df53$export$dfc730c04fdecfcb(pathChildren, renderer, ctx);
     };
-    const replace = (path, location, overwriteParams)=>{
-        // basically the same as the from method but returns rendered path with remaining segments appended
-        // appends query string as well (if available)
-        const ctx = $d027411d9f32df53$var$compilePath(routeMap, path);
-        const { parsedParams: parsedParams, tail: tail } = $d027411d9f32df53$var$matchLocation(path, location, ctx, parseParams, parseQuery);
-        const ctxWithTail = {
-            ...ctx,
-            path: ctx.path.concat(tail.path),
-            query: ctx.query.concat(tail.query)
-        };
-        return render(path, $d027411d9f32df53$var$mergeParams(prevParams, parsedParams, overwriteParams), ctxWithTail);
+    // basically the same as the from method but returns rendered path with remaining segments appended
+    // appends query string as well (if available)
+    const replace = (path, location, overrideParams)=>{
+        const [locationPath, locationQuery] = location.split("?");
+        const ctx = $d027411d9f32df53$var$pipe($d027411d9f32df53$var$createRenderContext(routeMap, path, parentContext), $d027411d9f32df53$var$withRawParamsFromLocationPath(locationPath, true), $d027411d9f32df53$var$withRawParams(overrideParams.path), $d027411d9f32df53$var$withRawQueryFromUrlSearch(locationQuery, true), $d027411d9f32df53$var$withRawQuery(overrideParams.query), $d027411d9f32df53$var$withParsedParams, $d027411d9f32df53$var$withParsedQuery);
+        return renderer.render(ctx);
     };
     return {
-        template: template,
-        bind: bind,
         render: render,
+        bind: bind,
+        template: template,
         parseParams: parseParams,
         parseQuery: parseQuery,
         from: from,
         replace: replace
     };
 };
-const $d027411d9f32df53$var$compilePath = (routeMap, path, parentCtx)=>{
-    const ctx = parentCtx ?? {
+const $d027411d9f32df53$var$createRenderContext = (routeMap, path, parentCtx)=>{
+    let ctx = parentCtx ?? {
         skippedNodes: [],
         nodes: [],
         path: [],
         query: [],
-        isRelative: false
+        isRelative: false,
+        rawParams: {},
+        rawQuery: {},
+        parsedParams: {},
+        parsedQuery: {}
     };
     if (!path) return ctx;
     const [absolutePath, relativePath] = path.split("/_");
     const isRelative = typeof relativePath === "string";
-    if (isRelative) {
-        ctx.skippedNodes = ctx.skippedNodes.concat(ctx.nodes);
-        ctx.nodes = [];
-        ctx.path = [];
-        ctx.query = [];
-        ctx.isRelative = true;
-    }
+    if (isRelative) ctx = {
+        ...ctx,
+        skippedNodes: ctx.skippedNodes.concat(ctx.nodes),
+        nodes: [],
+        path: [],
+        query: [],
+        isRelative: true
+    };
     let nextNodeMap = routeMap;
     // skip leading segments in relative path
     if (isRelative) absolutePath.split("/").forEach((nodeName)=>{
         if (!nextNodeMap?.[nodeName]) throw Error(`unknown path segment "${nodeName}" in ${path}`);
-        ctx.skippedNodes.push(nextNodeMap);
+        ctx.skippedNodes.push(nextNodeMap[nodeName]);
         nextNodeMap = nextNodeMap[nodeName].children;
     });
     (relativePath ?? absolutePath).split("/").forEach((nodeName, i)=>{
@@ -199,77 +180,102 @@ const $d027411d9f32df53$var$compilePath = (routeMap, path, parentCtx)=>{
         ctx.query.push(...nextNode.query ?? []);
         nextNodeMap = nextNode.children;
     });
-    // extract  path segments and query params and determine if path is relative
     return ctx;
 };
-const $d027411d9f32df53$var$matchLocation = (path, location, ctx, parseParams, parseQuery)=>{
-    const [pathname, queryString] = location.split("?");
-    const remainingPathSegments = pathname.slice(pathname[0] === "/" ? 1 : 0).split("/");
-    const rawPathParams = {};
-    // keep track of recent optional params since they might contain path segments
-    // if a path segment doesn't match the algorithm continues searching in this array
-    const recentOptionalParams = [];
-    ctx.path.forEach((segment)=>{
-        const pathnameSegment = remainingPathSegments.shift();
-        if (typeof segment === "string") {
-            if (segment === pathnameSegment) recentOptionalParams.length = 0; // irrelevant from here
-            else {
-                // segment might have been swallowed by an optional param
-                let recentParam;
-                let foundMatch = false;
-                while(recentParam = recentOptionalParams.shift())if (rawPathParams[recentParam] === segment) {
-                    delete rawPathParams[recentParam];
-                    // hold segment back for the next iteration
-                    pathnameSegment && remainingPathSegments.unshift(pathnameSegment);
-                    foundMatch = true;
+const $d027411d9f32df53$var$withRawParamsFromLocationPath = (locationPath = "", includeExtraPath = false)=>(ctx)=>{
+        const remaining = locationPath.slice(locationPath[0] === "/" ? 1 : 0).split("/");
+        const rawParams = {};
+        // keep track of recent optional params since they might contain path segments
+        // if a path segment doesn't match the algorithm continues searching in this array
+        const recentOptionalParams = [];
+        ctx.path.forEach((segment)=>{
+            const locationPathSegment = remaining.shift();
+            if (typeof segment === "string") {
+                if (segment === locationPathSegment) recentOptionalParams.length = 0; // irrelevant from here
+                else {
+                    // segment might have been swallowed by an optional param
+                    let recentParam;
+                    let foundMatch = false;
+                    while(recentParam = recentOptionalParams.shift())if (rawParams[recentParam] === segment) {
+                        delete rawParams[recentParam];
+                        // hold segment back for the next iteration
+                        locationPathSegment && remaining.unshift(locationPathSegment);
+                        foundMatch = true;
+                    }
+                    if (!foundMatch) throw new Error(`"${locationPath}" doesn't match "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}", missing segment "${segment}"`);
                 }
-                if (!foundMatch) throw new Error(`"${pathname}" doesn't match "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}", missing segment "${segment}"`);
+            } else {
+                rawParams[segment.name] = locationPathSegment;
+                if (segment.kind === "optional") recentOptionalParams.push(segment.name);
+                else if (!locationPathSegment) throw new Error(`"${locationPath}" doesn't match "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}", missing parameter "${segment.name}"`);
+                else recentOptionalParams.length = 0;
             }
-        } else {
-            rawPathParams[segment.name] = pathnameSegment;
-            if (segment.kind === "optional") recentOptionalParams.push(segment.name);
-            else if (!pathnameSegment) throw new Error(`"${pathname}" doesn't match "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}", missing parameter "${segment.name}"`);
-            else recentOptionalParams.length = 0;
-        }
+        });
+        return {
+            ...ctx,
+            rawParams: rawParams,
+            path: includeExtraPath ? ctx.path.concat(remaining) : ctx.path
+        };
+    };
+const $d027411d9f32df53$var$withRawParams = (rawParams)=>(ctx)=>({
+            ...ctx,
+            rawParams: {
+                ...ctx.rawParams,
+                ...rawParams
+            }
+        });
+const $d027411d9f32df53$var$withParsedParams = (ctx)=>{
+    const parsedParams = {};
+    ctx.path.forEach((segment)=>{
+        if (typeof segment === "string") return;
+        if (ctx.rawParams[segment.name]) parsedParams[segment.name] = segment.parser.parse(ctx.rawParams[segment.name]);
+        else if (segment.kind === "required") throw Error(`required path parameter "${segment.name}" was not provided in "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}"`);
     });
-    const rawQueryParams = Object.fromEntries(new URLSearchParams(queryString));
-    const parsedParams = {
-        path: parseParams(path, rawPathParams, ctx),
-        query: parseQuery(path, rawQueryParams, ctx)
-    };
-    // contains all the remaining path segments and query params
-    const tail = {
-        path: remainingPathSegments,
-        query: Object.entries(rawQueryParams).flatMap(([name, value])=>{
-            if (!parsedParams.query[name]) {
-                parsedParams.query[name] = value;
-                return (0, $7bf57fe77896cce6$export$42d51816ce590c93)(name).optional; // context requires a parser, string parser is just the identity function
-            }
-            return [];
-        })
-    };
     return {
-        parsedParams: parsedParams,
-        tail: tail
+        ...ctx,
+        parsedParams: parsedParams
     };
 };
-const $d027411d9f32df53$var$mergeParams = (...args)=>{
-    const result = {
-        path: {},
-        query: {}
+const $d027411d9f32df53$var$withRawQueryFromUrlSearch = (urlSearchParams = "", includeExtraQuery = false)=>(ctx)=>({
+            ...ctx,
+            ...$d027411d9f32df53$var$withRawQuery(Object.fromEntries(new URLSearchParams(urlSearchParams)), includeExtraQuery)(ctx)
+        });
+const $d027411d9f32df53$var$withRawQuery = (queryParams, includeExtraQuery = false)=>(ctx)=>{
+        const remaining = {
+            ...queryParams
+        };
+        const rawQuery = {};
+        ctx.query.forEach(({ name: name })=>{
+            if (name in remaining) {
+                rawQuery[name] = remaining[name];
+                delete remaining[name];
+            }
+        });
+        return {
+            ...ctx,
+            rawQuery: {
+                ...ctx.rawQuery,
+                ...rawQuery,
+                ...includeExtraQuery ? remaining : undefined
+            },
+            query: includeExtraQuery ? ctx.query.concat(Object.keys(remaining).map((name)=>(0, $7bf57fe77896cce6$export$42d51816ce590c93)(name).optional)) : ctx.query
+        };
     };
-    args.forEach((next)=>{
-        result.path = {
-            ...result.path,
-            ...next?.path
-        };
-        result.query = {
-            ...result.query,
-            ...next?.query
-        };
+const $d027411d9f32df53$var$withParsedQuery = (ctx)=>{
+    const parsedQuery = {};
+    ctx.query.forEach((segment)=>{
+        if (ctx.rawQuery[segment.name]) parsedQuery[segment.name] = segment.parser.parse(ctx.rawQuery[segment.name]);
+        else if (segment.kind === "required") throw Error(`required query parameter "${segment.name}" was not provided in "${(0, $52e32790be7c44a2$export$6093ee13d2f7fa25).template(ctx)}"`);
     });
-    return result;
+    return {
+        ...ctx,
+        parsedQuery: {
+            ...ctx.parsedQuery,
+            ...parsedQuery
+        }
+    };
 };
+const $d027411d9f32df53$var$pipe = (initialCtx, ...fns)=>fns.reduce((ctx, fn)=>fn(ctx), initialCtx);
 
 
 var $52e32790be7c44a2$exports = {};
