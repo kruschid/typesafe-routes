@@ -2,13 +2,6 @@
 
 ## Path Parameters
 
-- **Type Conversion**: `parseParams` converts path parameter values from a string format to their corresponding types.
-- **Framework Compatibility:** Capable of parsing parameters from objects extracted by frameworks such as React-Router or Angular Router.
-- **Location paths**: Parsing parameters from string paths (such as `location.pathname`), including:
-  - Support for both relative and absolute paths.
-  - Ability to handle relative route paths prefixed with `_`.
-- **Required Parameters**: Throws if a required parameter is not present.
-
 ``` js
 import { createRoutes, int, str, date } from "typesafe-routes";
 
@@ -17,7 +10,7 @@ const routes = createRoutes({
     path: ["blog", int("blogId")],
     children: {
       categories: {
-        path: ["category", str("catId").optional],
+        path: ["category", str("category").optional],
         children: {
           date: {
             path: ["date", date("date")],
@@ -27,42 +20,69 @@ const routes = createRoutes({
     }
   }
 });
+```
+<!-- tabs:start -->
 
-routes.parseParams("blog/categories/date", {
+## **Parameter Record**
+
+Frameworks such as React Router offer a feature where they supply a record containing parameter values. These parameters, typically in string format, can be efficiently processed using the `parseParams` method. This method transforms these string values into their respective JavaScript types, enhancing data handling within the application.
+
+``` js
+// this object might be provided by a routing library
+const params = {
   blogId: "35",
-  catId: "x546f23x",
+  category: "movies",
   date: "2023-12-28",
-}); // => { blogId: 35, catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+};
 
+routes.parseParams("blog/categories/date", params); // => { blogId: 35, category: "movies", date: Date("2023-12-28T00:00:00.000Z") }
+```
+
+## **Relative Routes**
+
+`parseParams` is also able to handle relative route paths prefixed with `_`.
+
+```js
 routes.parseParams("blog/_categories/date", {
-  catId: "x546f23x",
+  category: "movies",
   date: "2023-12-28",
-}); // => { catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+}); // => { category: "movies", date: Date("2023-12-28T00:00:00.000Z") }
 
 routes.parseParams("blog/categories/_date", {
   date: "2023-12-28",
 }); // => { date: Date("2023-12-28T00:00:00.000Z") }
+```
 
-routes.parseParams("blog/_categories", {}); // => {}
+## **Absolute Location Path**
 
+Alternatively, parsing parameters from string paths, like `location.pathname`, is also supported.
+
+``` js
 // with absolute path location
 routes.parseParams(
   "blog/categories/date",
-  "/blog/35/category/x546f23x/date/2023-12-28"
-); // => { blogId: 35, catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z") }
+  "/blog/35/category/movies/date/2023-12-28" // location.path
+); // => { blogId: 35, catId: "movies", date: Date("2023-12-28T00:00:00.000Z") }
 
 // with optional parameters
 routes.parseParams(
   "blog/categories/date",
-  "/blog/35/category/date/2023-12-28"
+  "/blog/35/category/date/2023-12-28" // without the "category" parameter
 ); // => { blogId: 35, date: Date("2023-12-28T00:00:00.000Z") }
+```
 
+## **Relative Location Path**
+
+This includes the capability to manage relative route paths that are prefixed with `_`, ensuring flexible and robust route handling.
+
+```js
 // with relative location path
 routes.parseParams(
   "blog/_categories/date",
   "category/date/2023-12-28"
 ); // => { date: Date("2023-12-28T00:00:00.000Z") }
 ```
+<!-- tabs:end -->
 
 ### Query Parameters
 
@@ -94,7 +114,7 @@ const routes = createRoutes({
 });
 
 // object search parameters with absolute route path
-route.parseQuery("blog/categories", { catId: "x546f23x" }); // => { catId: "x546f23x" }
+route.parseQuery("blog/categories", { catId: "movies" }); // => { catId: "movies" }
 
 // object; relative route path
 route.parseQuery("blog/categories/_options", {
@@ -105,8 +125,8 @@ route.parseQuery("blog/categories/_options", {
 // string; absolute route path
 route.parseQuery(
   "blog/categories/options",
-  "?catId=x546f23x&date=2023-12-28&showModal=false"
-); // => { catId: "x546f23x", date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+  "?catId=movies&date=2023-12-28&showModal=false"
+); // => { catId: "movies", date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
 
 // string; relative route path
 route.parseQuery(
@@ -118,5 +138,5 @@ route.parseQuery(
 route.parseQuery(
   "blog/categories",
   "?catId=x546f23&a=123&b=456" // "a" and "b" are not in the result object
-); // => { catId: "x546f23x" }
+); // => { catId: "movies" }
 ```

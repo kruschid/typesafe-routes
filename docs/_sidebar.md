@@ -1,10 +1,9 @@
 * Basic Features
   * [Absolute Routes](basic-features/absolute-routes.md)
-  * [Path Parameters](basic-features/path-parameters.md)
+  * [Parameters](basic-features/parameters.md)
   * [Nested Routes](basic-features/nested-routes.md)
   * [Relative Routes](basic-features/relative-routes.md)
   * [Route Templates](basic-features/route-templates.md)
-  * [Query Parameters](basic-features/query-parameters.md)
   * [Parameter Parsing](basic-features/parameter-parsing.md)
   * [Parameter Binding](basic-features/parameter-binding.md)
   * [Parameter Types](basic-features/parameter-types.md)

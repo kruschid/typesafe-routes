@@ -31,9 +31,7 @@ routes.render(); // => "/"
 
 ## **Named Paths**
 
-- The first parameter holds a string path with the name of the path to be rendered
-- The second parameter can be used for passing path or query parameters
-- Refer to other sections for detailed examples illustrating the effective utilization of these features.
+The first argument holds a string path with the name of the route segment to be rendered. The second argument can be used for passing route parameters. Refer to other sections for detailed examples illustrating the effective utilization of parameters.
 
 ``` js
 routes.render("about", {}); // => "/about-us"
