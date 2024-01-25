@@ -1,6 +1,10 @@
 # Parameter Parsing
 
+This section explains how to parse path and query parameter values. Parsing converts string values into their corresponding types that were specified in the route tree. These values may originate from various sources. For instance, they can be in the form of an object provided by router libraries such as React Router. Alternatively, they might come from the global location object as a string. This flexibility allows for effective handling of parameter values regardless of their source.
+
 ## Path Parameters
+
+Path parameter values are dynamic segments in a location path. For example, if we look at the path `"/blog/35/category/movies/date/2023-12-28"` using the route definition below, we can find three dynamic segments: `"35"`,`"movies"`, and `"2023-12-28"`.
 
 ``` js
 import { createRoutes, int, str, date } from "typesafe-routes";
@@ -86,42 +90,51 @@ routes.parseParams(
 
 ### Query Parameters
 
-- **Type Conversion**: `parseQuery` converts search parameter values from a string format to their corresponding types.
-- **Framework Compatibility:** Capable of parsing url query parameters provided by frameworks such as React-Router or Angular Router.
-- **Location Search Params**: Parsing parameters from search strings (such as `location.search`), including:
-  - Ability to handle relative route paths prefixed with `_`.
-  - Skips additional parameters that are not specified by the route path
-- **Required Parameters** throw an exception if not present 
+The `parseQuery` method converts search parameter values from string format to their corresponding types. The first argument accepts the route path, which defines the context of the conversion. The second argument is the source, which contains the string-based parameter values that need to be parsed. A source can be an object `{name: "value",...}` or a search string `"?name=value&..."`.
 
 ``` js
-import { createRoutes, str, bool, date } from "typesafe-routes";
+import { createRoutes, int, bool, date } from "typesafe-routes";
 
 const routes = createRoutes({
   blog: {
     path: ["blog"],
+    query: [int("page")]
     children: {
       categories: {
         path: ["category"],
-        query: [str("catId")]
+        query: [date("date").optional]
         children: {
           options: {
-            query: [date("date"), bool("showModal")]
+            query: [bool("showModal")]
           },
         }
       }
     }
   }
 });
+```
 
-// object search parameters with absolute route path
-route.parseQuery("blog/categories", { catId: "movies" }); // => { catId: "movies" }
+Note that in the example the `options` node lacks a `path` property, indicating that this node is exclusively used for handling query parameters. 
 
-// object; relative route path
-route.parseQuery("blog/categories/_options", {
+<!-- tabs:start -->
+## **Basic Usage**
+``` js
+// this could come from a router library:
+const params = { page: "1", showModal: "false" };
+
+route.parseQuery("blog/categories/options", params); // => { page: 1, showModal: false }
+```
+
+## **Relative Routes**
+``` js
+route.parseQuery("blog/_categories/options", {
   date: "2023-12-28",
   showModal: "false",
 }); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+```
 
+## **String Source**
+``` js
 // string; absolute route path
 route.parseQuery(
   "blog/categories/options",
@@ -133,10 +146,17 @@ route.parseQuery(
   "blog/categories/_options",
   "?date=2023-12-28&showModal=false"
 ); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+```
 
+## **Unknown Params**
+
+Parameters that are not specified in any of the route nodes will not be included in the parsing result. This means that only parameters defined within the route nodes are considered and processed, ensuring a focused and relevant parsing outcome.
+
+``` js
 // ignores addional parameters 
 route.parseQuery(
   "blog/categories",
-  "?catId=x546f23&a=123&b=456" // "a" and "b" are not in the result object
-); // => { catId: "movies" }
+  "?page=5&a=123&b=456" // "a" and "b" are not in the result
+); // => { page: 5 }
 ```
+<!-- tabs:end -->
