@@ -12,5 +12,5 @@
   * [Replace Dynamic Segments](advanced-features/replace-dynamic-segments.md)
 * Customization
   * [Custom Parameter Types](customization/custom-parameter-types.md)
-  * [Custom Path Rendering](customization/custom-path-rendering.md)
   * [Custom Template Rendering](customization/custom-template-rendering.md)
+  * [Custom Path Rendering](customization/custom-path-rendering.md)
