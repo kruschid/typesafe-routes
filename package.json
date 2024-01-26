@@ -9,6 +9,7 @@
   "main": "build/index.cjs",
   "types": "build/index.d.ts",
   "scripts": {
+    "docs": "docsify serve ./docs",
     "build": "yarn test && parcel build",
     "test": "yarn tape -r ts-node/register src/test.ts",
     "testTypes": "yarn tsd && yarn tape -r ts-node/register src/test.ts"
