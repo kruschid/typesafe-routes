@@ -9,7 +9,7 @@ import {
 } from ".";
 
 export type RenderContext = {
-  skippedNodes: RouteNode[]; // containes leading nodes that were skipped in a relative path
+  skippedNodes: RouteNode[]; // contains leading nodes that were skipped in a relative path
   nodes: RouteNode[];
   pathSegments: Exclude<RouteNode["path"], undefined>;
   querySegments: Exclude<RouteNode["query"], undefined>;
@@ -281,9 +281,7 @@ const addPathParams =
 
     ctx.currentPathSegments.forEach((segment) => {
       if (typeof segment === "string") {
-        return;
-      }
-      if (params[segment.name] != null) {
+      } else if (params[segment.name] != null) {
         pathParams[segment.name] = segment.parser.serialize(
           params[segment.name]
         );
@@ -314,11 +312,10 @@ const parsePathParams = (ctx: RenderContext): Record<string, unknown> => {
 
   ctx.pathSegments.forEach((segment) => {
     if (typeof segment === "string") {
-      return;
-    }
-    const value = ctx.pathParams[segment.name];
-    if (value != null) {
-      parsedParams[segment.name] = segment.parser.parse(value);
+    } else if (ctx.pathParams[segment.name] != null) {
+      parsedParams[segment.name] = segment.parser.parse(
+        ctx.pathParams[segment.name]
+      );
     } else if (segment.kind === "required") {
       throw Error(
         `parsePathParams: required path parameter "${
