@@ -5,7 +5,6 @@ export type Param<N = string, T = any, K extends ParamKind = "required"> = {
     name: N;
     kind: K;
     parser: Parser<T>;
-    value?: string;
 } & (K extends "required" ? {
     optional: Param<N, T, "optional">;
 } : {});
@@ -28,13 +27,13 @@ export const base64: <T>() => <N extends string>(name: N) => Param<N, T, "requir
 export type RenderContext = {
     skippedNodes: RouteNode[];
     nodes: RouteNode[];
-    path: Exclude<RouteNode["path"], undefined>;
-    query: Exclude<RouteNode["query"], undefined>;
+    pathSegments: Exclude<RouteNode["path"], undefined>;
+    querySegments: Exclude<RouteNode["query"], undefined>;
+    currentPathSegments: Exclude<RouteNode["path"], undefined>;
+    currentQuerySegments: Exclude<RouteNode["query"], undefined>;
     isRelative: boolean;
-    rawParams: Record<string, string>;
-    rawQuery: Record<string, string>;
-    parsedParams: Record<string, unknown>;
-    parsedQuery: Record<string, unknown>;
+    pathParams: Record<string, string>;
+    queryParams: Record<string, string>;
 };
 export const createRoutes: CreateRoutes;
 export type Renderer = {
@@ -147,7 +146,7 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
     parseParams: <Path extends ExtractPathSuggestions<Routes>>(path: Path, params: Record<string, any>) => PathToParamRecordMap<Path, Routes>["path"];
     parseQuery: <Path extends ExtractPathSuggestions<Routes>>(path: Path, params: Record<string, any>) => PathToParamRecordMap<Path, Routes>["query"];
     bind: <Path extends ExtractPathSuggestions<Routes>>(path: Path, params: A.Compute<ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>>) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
-    from: <Path extends ExtractPathSuggestions<Routes>>(path: Path, location: string, params: A.Compute<ExcludeEmptyProperties<{
+    from: <Path extends ExtractPathSuggestions<Routes>>(path: Path, location: string, params?: A.Compute<ExcludeEmptyProperties<{
         path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
         query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
     }>>) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
