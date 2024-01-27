@@ -186,7 +186,7 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
   from: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     location: string,
-    params: A.Compute<
+    params?: A.Compute<
       ExcludeEmptyProperties<{
         path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
         query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
