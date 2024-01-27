@@ -37,8 +37,6 @@ test("templates with default renderer", (t) => {
 });
 
 test("render with default renderer", (t) => {
-  t.plan(8);
-
   const routes = createRoutes({
     home: {},
     blog: {
@@ -83,6 +81,14 @@ test("render with default renderer", (t) => {
     "/blog/en/category/movies/2023-12-28?search=robocop&page=42"
   );
   t.equal(
+    routes.render("blog/category/date", {
+      path: { lang: "en", cid: "movies", date: new Date(1703798091000) },
+      query: { search: "robocop", page: 0 },
+    }),
+    "/blog/en/category/movies/2023-12-28?search=robocop&page=0",
+    "falsy parameters should be rendered"
+  );
+  t.equal(
     routes.render("blog/_category/date", {
       path: { cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 42 },
@@ -96,11 +102,11 @@ test("render with default renderer", (t) => {
     }),
     "category/movies/2023-12-28?page=42"
   );
+
+  t.end();
 });
 
 test("bind with default renderer", (t) => {
-  t.plan(5);
-
   const routes = createRoutes({
     home: {},
     blog: {
@@ -144,6 +150,8 @@ test("bind with default renderer", (t) => {
       .render("date", { path: {} }),
     "category/movies"
   );
+
+  t.end();
 });
 
 test("parsing path params", (t) => {
@@ -173,6 +181,19 @@ test("parsing path params", (t) => {
     {
       lang: true,
       cid: 42,
+      date: new Date("2023-12-28T00:00:00.000Z"),
+    }
+  );
+
+  t.deepEqual(
+    routes.parseParams("blog/category/date", {
+      lang: "true",
+      cid: "0",
+      date: "2023-12-28",
+    }),
+    {
+      lang: true,
+      cid: 0,
       date: new Date("2023-12-28T00:00:00.000Z"),
     }
   );
@@ -309,6 +330,40 @@ test("from", (t) => {
   );
   t.equal(
     routes
+      .bind("blog", { path: { lang: "en" } })
+      .from("category/date", "category/music/date/2023-12-31", {
+        query: {},
+        path: { cid: "movies", date: new Date("2024-01-01") },
+      })
+      .render(),
+    "/blog/en/category/movies/date/2024-01-01",
+    "should take context from bind method"
+  );
+  t.equal(
+    routes
+      .from("blog", "blog/de", { path: { lang: "en" } })
+      .bind("category/date", {
+        query: {},
+        path: { cid: "movies", date: new Date("2024-01-01") },
+      })
+      .render(),
+    "/blog/en/category/movies/date/2024-01-01",
+    "should pass context to bind method"
+  );
+  t.equal(
+    routes
+      .from("blog", "blog/de", { path: { lang: "en" } })
+      .from("category", "category/music", {
+        query: {},
+        path: { cid: "movies" },
+      })
+      .from("date", "date/2023-12-31")
+      .render(),
+    "/blog/en/category/movies/date/2023-12-31",
+    "should chain multiple from calls"
+  );
+  t.equal(
+    routes
       .from("blog/_category/date", "category/music/date/2023-12-31", {
         query: { page: 1, search: "abc" },
         path: { cid: "movies", date: new Date("2024-01-01") },
@@ -420,7 +475,7 @@ test("replace", (t) => {
       { path: { cid: "art" }, query: {} }
     ),
     "category/art/date/2012-12-28?search=batman&page=1",
-    "should replace params in relative paths"
+    "should replace params in relative path"
   );
 
   t.equal(
@@ -447,7 +502,7 @@ test("replace", (t) => {
         path: { date: undefined },
         query: {},
       }),
-    "required path parameter date was not specified"
+    "throws when deleting a required parameter"
   );
 
   t.end();
