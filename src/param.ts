@@ -28,35 +28,53 @@ export const param: ParamFn = (parser) => (name) => ({
   } as Param<any, any, "optional">,
 });
 
+export const str = param({
+  parse: (value: string) => value,
+  serialize: (value: string) => value,
+});
+
 export const int = param({
   parse: (value: string) => {
     const result = parseInt(value, 10);
-    if (result !== result) {
-      throw new Error(`parameter value is invalid: "${result}"`);
+    if (isNaN(result)) {
+      throw new Error(`parameter value is invalid: "${value}"`);
     }
     return result;
   },
   serialize: (value: number) => value.toString(),
 });
 
-export const str = param({
-  parse: (value: string) => value,
-  serialize: (value: string) => value,
-});
-
 export const float = (fractionDigits?: number) =>
   param({
-    parse: (value: string) => parseFloat(value),
+    parse: (value: string) => {
+      const result = parseFloat(value);
+      if (isNaN(result)) {
+        throw new Error(`parameter value is invalid: "${value}"`);
+      }
+      return result;
+    },
     serialize: (value: number) => value.toFixed(fractionDigits),
   });
 
 export const isoDate = param({
-  parse: (value: string) => new Date(value),
+  parse: (value: string) => {
+    const timestamp = Date.parse(value);
+    if (isNaN(timestamp)) {
+      throw new Error(`parameter value is invalid: "${value}"`);
+    }
+    return new Date(timestamp);
+  },
   serialize: (value: Date) => value.toISOString(),
 });
 
 export const date = param({
-  parse: (value: string) => new Date(value),
+  parse: (value: string) => {
+    const timestamp = Date.parse(value);
+    if (isNaN(timestamp)) {
+      throw new Error(`parameter value is invalid: "${value}"`);
+    }
+    return new Date(timestamp);
+  },
   serialize: (value: Date) => value.toISOString().slice(0, 10),
 });
 
@@ -76,20 +94,20 @@ export const oneOf = (...list: string[]) =>
     serialize: (value: string) => value,
   });
 
-export const list = (_: string[], separator = ";") =>
+export const list = (allowedItems: string[], separator = ";") =>
   param({
-    parse: (value: string) => value.split(separator),
-    serialize: (options: string[]) => options.join(separator),
-  });
-
-export const json = <T>() =>
-  param({
-    parse: (value: string) => JSON.parse(value),
-    serialize: (value: T) => JSON.stringify(value),
-  });
-
-export const base64 = <T>() =>
-  param({
-    parse: (value) => JSON.parse(window.btoa(value)),
-    serialize: (value: T) => window.atob(JSON.stringify(value)),
+    parse: (value: string) => {
+      const items = value.split(separator);
+      items.forEach((item) => {
+        if (!allowedItems.includes(item)) {
+          throw new Error(
+            `"${item}" in ${value} is unknown. The allowed items are ${allowedItems.join(
+              ","
+            )}`
+          );
+        }
+      });
+      return items;
+    },
+    serialize: (items: string[]) => items.join(separator),
   });
