@@ -2,7 +2,7 @@
 
 # Typesafe Routes
 
-Enhance your preferred routing library by incorporating powerful path generation.
+Enhance your preferred routing library by incorporating powerful path generation including:
 
 - Path & template rendering
 - Nested, absolute, and relative paths
@@ -26,12 +26,10 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   
 ## Installation (npm/yarn examples)
 
+> Version 11 is currently under development. Please don't use it in production yet. The official release will happen soon. If you want to try typesafe-routes, you can install it right from github:
+
 ``` sh
-npm i typesafe-routes
-
-# or
-
-yarn add typesafe-routes
+npm i kruschid/typesafe-routes # or any npm alternatives
 ```
 
 ## How to Contribute
@@ -46,7 +44,8 @@ yarn add typesafe-routes
 
 ## Roadmap
 
-- check for duplicate param names in route tree
+- v11 migration guide
+- check for duplicate param names in the route tree
 - context caching
 - customizable parsing of search params 
 - demos & utils
