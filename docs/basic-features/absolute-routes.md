@@ -6,13 +6,13 @@ The method `createRoutes` takes a routes object as the first argument, where pro
 import { createRoutes } from "typesafe-routes";
 
 const routes = createRoutes({
-  // route segment name: "about"
+  // route segment: "about"
   about: { 
-    // single semgent path array
+    // single segment path
     path: ["about-us"]
   },
   blogCategories: {
-    // multiple string segments
+    // multiple segments
     path: ["blog", "categories", "all"]
   }
 });

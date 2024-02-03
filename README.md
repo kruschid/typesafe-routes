@@ -2,17 +2,27 @@
 
 # Typesafe Routes
 
-- 14Kb bundle size
-- 11Kb minified
-- 2.6Kb gz compressed
+Enhance your preferred routing library by incorporating powerful path generation.
 
-Enhance your preferred routing library by incorporating type-safety into string-based route definitions. Allow TypeScript to identify broken links during the compilation process, enabling you to develop easily maintainable software.
+- Path & template rendering
+- Nested, absolute, and relative paths
+- Parameter parsing and serialization
+- Type-safe, customizable, and extendable
+- Also useful with JavaScript
 
-- [Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
-- [Recursive Conditional Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#recursive-conditional-types).
-- [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html)
-- [Template Literal Types](https://devblogs.microsoft.com/typescript/announcing-typescript-4-1-beta/#template-literal-types) 
-- [Tail-Recursion Elimination on Conditional Types](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-5.html#tail-recursion-elimination-on-conditional-types)
+## Quick Reference
+
+The complete [documentation can be found here](https://kruschid.github.io/typesafe-routes).
+
+- Methods
+  - `render`: renders a path with parameters
+  - `template`: renders a route template
+  - `parseParams`: parses dynamic segments in a path
+  - `parseQuery`: parses parameters in a search query
+- Chainable operators:
+  - `bind`: binds parameters to a route for later rendering
+  - `from`: creates a new route based on a string-based path (i.e. `location.path`)
+  - `replace`: replaces segments in a path
   
 ## Installation (npm/yarn examples)
 
@@ -38,6 +48,7 @@ yarn add typesafe-routes
 
 - check for duplicate param names in route tree
 - context caching
+- customizable parsing of search params 
 - demos & utils
   - react-router
   - refinejs
