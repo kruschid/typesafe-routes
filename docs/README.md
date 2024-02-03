@@ -30,7 +30,7 @@ const routes = createRoutes({
 ### 3. Path Rendering
 
 ``` js
-// only required param
+// only required params
 routes.render("groups/users", {
   path: { gid: 123 },
 }); // => "/groups/123/users"

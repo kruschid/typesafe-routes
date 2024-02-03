@@ -24,7 +24,7 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   - `from`: creates a new route based on a string-based path (i.e. `location.path`)
   - `replace`: replaces segments in a path
   
-## Installation (npm/yarn examples)
+## Installation
 
 > Version 11 is currently under development. Please don't use it in production yet. The official release will happen soon. If you want to try typesafe-routes, you can install it right from github:
 
