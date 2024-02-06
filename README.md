@@ -1,5 +1,3 @@
-<img title="logo" src="logo.png" />
-
 # Typesafe Routes
 
 Enhance your preferred routing library by incorporating powerful path generation including:
