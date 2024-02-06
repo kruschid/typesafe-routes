@@ -1,18 +1,20 @@
-name: Publish Package to npmjs
+name: pre-release to npm
 on:
   release:
-    types: [published]
+    types: [prereleased]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
       - run: yarn
       - run: yarn build
-      - run: yarn npm publish // for Yarn version 1, use `yarn publish` instead
+      - run: yarn publish --tag next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  
