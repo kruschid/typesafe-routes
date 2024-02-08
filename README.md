@@ -24,10 +24,10 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   
 ## Installation
 
-> Version 11 is currently under development. Please don't use it in production yet. The official release will happen soon. If you want to try typesafe-routes, you can install it right from github:
+> Version 11 is currently under development. Please don't use it in production yet. The official release will happen soon. [The v10 documentation can be found here](https://github.com/kruschid/typesafe-routes/tree/v10.0.6).
 
 ``` sh
-npm i kruschid/typesafe-routes # or any npm alternatives
+npm i typesafe-routes@next # or any npm alternatives
 ```
 
 ## How to Contribute
