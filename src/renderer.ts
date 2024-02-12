@@ -2,10 +2,7 @@ import { RenderContext } from "./createRoutes";
 import { CreateRoutesOptions } from "./routes";
 
 export interface Renderer<RenderType> {
-  template: (
-    ctx: RenderContext,
-    options?: CreateRoutesOptions<RenderType>
-  ) => string;
+  template: (ctx: RenderContext, options?: CreateRoutesOptions<any>) => string;
   render: (ctx: RenderContext) => RenderType;
 }
 

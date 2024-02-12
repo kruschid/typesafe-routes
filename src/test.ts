@@ -10,6 +10,7 @@ import {
   list,
   oneOf,
   str,
+  defaultRenderer,
 } from ".";
 
 test("templates with default renderer", (t) => {
@@ -567,31 +568,16 @@ test("params", (t) => {
 test("renderer customization", (t) => {
   const renderer: Renderer<{ href: string; pathname: string; search: string }> =
     {
-      template: ({ pathSegments, isRelative }, options) => {
-        const template = pathSegments
-          .map((pathSegment) =>
-            typeof pathSegment === "string"
-              ? pathSegment
-              : `:${pathSegment.name}${
-                  pathSegment.kind === "optional" ? "?" : ""
-                }`
-          )
-          .join("/");
-
-        return isRelative || options?.templatePrefix
-          ? template //relative
-          : `/${template}`; // absolute
-      },
+      ...defaultRenderer,
       render: ({ pathSegments, isRelative, pathParams, queryParams }) => {
-        const path: string[] = [];
         // path params
-        pathSegments.forEach((pathSegment) => {
-          if (typeof pathSegment === "string") {
-            path.push(pathSegment);
-          } else if (pathParams[pathSegment.name] != null) {
-            path.push(pathParams[pathSegment.name]);
-          }
-        });
+        const path = pathSegments.flatMap((pathSegment) =>
+          typeof pathSegment === "string"
+            ? pathSegment
+            : pathParams[pathSegment.name] != null
+            ? pathParams[pathSegment.name]
+            : []
+        );
 
         const searchParams = new URLSearchParams(queryParams).toString();
 
