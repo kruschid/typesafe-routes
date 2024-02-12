@@ -1,12 +1,16 @@
 import { RenderContext } from "./createRoutes";
+import { CreateRoutesOptions } from "./routes";
 
-export type Renderer = {
-  template: (ctx: RenderContext) => string;
-  render: (ctx: RenderContext) => string;
-};
+export interface Renderer<RenderType> {
+  template: (
+    ctx: RenderContext,
+    options?: CreateRoutesOptions<RenderType>
+  ) => string;
+  render: (ctx: RenderContext) => RenderType;
+}
 
-export const defaultRenderer: Renderer = {
-  template: ({ pathSegments, isRelative }) => {
+export const defaultRenderer: Renderer<string> = {
+  template: ({ pathSegments, isRelative }, options) => {
     const template = pathSegments
       .map((pathSegment) =>
         typeof pathSegment === "string"
@@ -15,7 +19,7 @@ export const defaultRenderer: Renderer = {
       )
       .join("/");
 
-    return isRelative
+    return isRelative || options?.templatePrefix
       ? template //relative
       : `/${template}`; // absolute
   },
@@ -32,11 +36,10 @@ export const defaultRenderer: Renderer = {
 
     const searchParams = new URLSearchParams(queryParams).toString();
 
-    return (
-      (isRelative ? "" : "/") +
-      path.join("/") +
-      (searchParams ? `?` : "") +
-      searchParams
-    );
+    const pathname = (isRelative ? "" : "/") + path.join("/");
+    const search = (searchParams ? `?` : "") + searchParams;
+    const href = pathname + search;
+
+    return href;
   },
 };

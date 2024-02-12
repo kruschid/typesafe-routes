@@ -157,7 +157,7 @@ export type ExtractRouteNodeMapByPath<
   ? Route[Segment]["children"] & {}
   : Route[Path]["children"] & {};
 
-export type RoutesContext<Routes extends RouteNodeMap> = {
+export type RoutesContext<Routes extends RouteNodeMap, RendererResult> = {
   template: (path: ExtractPathSuggestions<Routes, true>) => string;
   render: <Path extends ExtractPathSuggestions<Routes>>(
     ...args:
@@ -168,7 +168,7 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
           >
         ]
       | []
-  ) => string;
+  ) => RendererResult;
   parseParams: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     params: Record<string, any>
@@ -182,7 +182,7 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
     params: A.Compute<
       ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
     >
-  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
+  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>, RendererResult>;
   from: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     location: string,
@@ -192,7 +192,7 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
         query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
       }>
     >
-  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>>;
+  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>, RendererResult>;
   replace: <Path extends ExtractPathSuggestions<Routes>>(
     path: Path,
     location: string,
@@ -205,8 +205,13 @@ export type RoutesContext<Routes extends RouteNodeMap> = {
   ) => string;
 };
 
-export type CreateRoutes = <Routes extends RouteNodeMap>(
+export interface CreateRoutesOptions<RenderType> {
+  renderer?: Renderer<RenderType>;
+  templatePrefix?: boolean;
+}
+
+export type CreateRoutes = <Routes extends RouteNodeMap, RenderType = string>(
   routes: Routes,
-  renderer?: Renderer,
+  options?: CreateRoutesOptions<RenderType>,
   parentContext?: RenderContext
-) => RoutesContext<Routes>;
+) => RoutesContext<Routes, RenderType>;

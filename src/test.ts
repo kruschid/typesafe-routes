@@ -1,5 +1,6 @@
 import test from "tape";
 import {
+  Renderer,
   bool,
   createRoutes,
   date,
@@ -559,6 +560,76 @@ test("params", (t) => {
   t.deepEqual(l.parse("b|c"), ["b", "c"], "list should parse");
   t.equal(l.serialize(["a", "c"]), "a|c", "list should serialize");
   t.throws(() => l.parse("d|e|f"), "list should validate");
+
+  t.end();
+});
+
+test("renderer customization", (t) => {
+  const renderer: Renderer<{ href: string; pathname: string; search: string }> =
+    {
+      template: ({ pathSegments, isRelative }, options) => {
+        const template = pathSegments
+          .map((pathSegment) =>
+            typeof pathSegment === "string"
+              ? pathSegment
+              : `:${pathSegment.name}${
+                  pathSegment.kind === "optional" ? "?" : ""
+                }`
+          )
+          .join("/");
+
+        return isRelative || options?.templatePrefix
+          ? template //relative
+          : `/${template}`; // absolute
+      },
+      render: ({ pathSegments, isRelative, pathParams, queryParams }) => {
+        const path: string[] = [];
+        // path params
+        pathSegments.forEach((pathSegment) => {
+          if (typeof pathSegment === "string") {
+            path.push(pathSegment);
+          } else if (pathParams[pathSegment.name] != null) {
+            path.push(pathParams[pathSegment.name]);
+          }
+        });
+
+        const searchParams = new URLSearchParams(queryParams).toString();
+
+        const pathname = (isRelative ? "" : "/") + path.join("/");
+        const search = (searchParams ? `?` : "") + searchParams;
+        const href = pathname + search;
+
+        return { pathname, search, href };
+      },
+    };
+
+  const routes = createRoutes(
+    {
+      home: {},
+      blog: {
+        path: ["blog", str("lang")],
+        children: {
+          category: {
+            path: ["category", str("cid").optional],
+            query: [str("search").optional],
+          },
+        },
+      },
+    },
+    { renderer }
+  );
+
+  t.deepEqual(
+    routes.render("blog/category", {
+      path: { lang: "en" },
+      query: { search: "hello" },
+    }),
+    {
+      pathname: "/blog/en/category",
+      search: "?search=hello",
+      href: "/blog/en/category?search=hello",
+    }
+  );
 
   t.end();
 });

@@ -1,5 +1,6 @@
 import {
   CreateRoutes,
+  CreateRoutesOptions,
   ParamRecordMap,
   RouteNode,
   RouteNodeMap,
@@ -22,7 +23,7 @@ export type RenderContext = {
 
 export const createRoutes: CreateRoutes = (
   routeMap,
-  renderer = defaultRenderer,
+  options,
   parentContext
 ) => {
   const render = (
@@ -36,7 +37,7 @@ export const createRoutes: CreateRoutes = (
       addQueryParams(params?.query)
     );
 
-    return renderer.render(ctx);
+    return (options?.renderer ?? defaultRenderer).render(ctx);
   };
 
   const bind = (path: string, params: ParamRecordMap<any>) => {
@@ -48,11 +49,14 @@ export const createRoutes: CreateRoutes = (
 
     const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
-    return createRoutes(pathChildren, renderer, ctx);
+    return createRoutes(pathChildren, options, ctx);
   };
 
   const template = (path: string) =>
-    renderer.template(createRenderContext(routeMap, path));
+    (options?.renderer ?? defaultRenderer).template(
+      createRenderContext(routeMap, path),
+      options as CreateRoutesOptions<any> | undefined
+    );
 
   const parseParams = (
     path: string,
@@ -92,7 +96,7 @@ export const createRoutes: CreateRoutes = (
 
     const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
 
-    return createRoutes(pathChildren, renderer, ctx);
+    return createRoutes(pathChildren, options, ctx);
   };
 
   // basically the same as the from method but returns rendered path with remaining segments appended
@@ -110,7 +114,7 @@ export const createRoutes: CreateRoutes = (
       overrideParams(params)
     );
 
-    return renderer.render(ctx);
+    return (options?.renderer ?? defaultRenderer).render(ctx);
   };
 
   return {
@@ -121,7 +125,7 @@ export const createRoutes: CreateRoutes = (
     parseQuery,
     from,
     replace,
-  } as RoutesContext<any>;
+  } as RoutesContext<any, any>;
 };
 
 const createRenderContext = (
