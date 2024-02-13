@@ -1,6 +1,6 @@
 node_modules
-dist
 .cache
 *.log
 .parcel-cache
 .DS_Store
+build
