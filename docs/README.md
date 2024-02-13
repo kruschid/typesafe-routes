@@ -7,7 +7,7 @@
 > This package is currently under development. Please don't use it in production yet. The official release will happen soon. If you want to try typesafe-routes, you can install it right from github:
 
 ``` sh
-npm install kruschid/typesafe-routes # or any npm alternatives
+npm install typesafe-routes@next # or any npm alternatives
 ```
 
 ### 2. Route Tree Definition
