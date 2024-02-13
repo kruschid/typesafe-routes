@@ -1,0 +1,29 @@
+{
+  "name": "stackblitz-starters-eug1wc",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "17.1.2",
+    "@angular/common": "17.1.2",
+    "@angular/compiler": "17.1.2",
+    "@angular/core": "17.1.2",
+    "@angular/forms": "17.1.2",
+    "@angular/platform-browser": "17.1.2",
+    "@angular/router": "17.1.2",
+    "rxjs": "7.8.1",
+    "tslib": "2.6.2",
+    "typesafe-routes": "^11.0.0-beta.2",
+    "zone.js": "0.14.3"
+  },
+  "scripts": {
+    "start": "ng serve"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.1.3",
+    "@angular/cli": "^17.1.3",
+    "@angular/compiler-cli": "^17.1.3",
+    "@types/node": "^20.11.17",
+    "ts-node": "~8.3.0",
+    "typescript": ">=4.5.0"
+  }
+}
