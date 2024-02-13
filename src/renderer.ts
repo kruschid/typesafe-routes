@@ -16,7 +16,7 @@ export const defaultRenderer: Renderer<string> = {
       )
       .join("/");
 
-    return isRelative || options?.templatePrefix
+    return isRelative || !options?.templatePrefix
       ? template //relative
       : `/${template}`; // absolute
   },
