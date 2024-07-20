@@ -5,7 +5,7 @@ This section provides an example of a customized route renderer. The code fragme
 ``` js
 import { defaultRenderer, Renderer } from "typesafe-routes";
 
-export const defaultRenderer: Renderer = {
+export const customRenderer: Renderer = {
   // 1.
   ...defaultRenderer,
 
