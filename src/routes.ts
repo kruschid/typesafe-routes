@@ -3,7 +3,7 @@ import { RenderContext } from "./createRoutes";
 import type { AnyParam } from "./param";
 import type { Renderer } from "./renderer";
 
-type If<Condition, Then> = Condition extends true ? Then : never;
+// type If<Condition, Then> = Condition extends true ? Then : never;
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
 
 /**
@@ -15,7 +15,7 @@ type Unwrap<T> = T extends unknown[] ? T[number] : never;
  *  query: never,
  * }
  */
-type ExcludeEmptyProperties<T> = Pick<
+export type ExcludeEmptyProperties<T> = Pick<
   T,
   {
     [K in keyof T]: keyof T[K] extends never ? never : K;
@@ -67,151 +67,55 @@ export type ExtractParamRecord<Params extends AnyParam> = {
   >;
 };
 
-/**
- * ExtractPathSuggestions<{
- *  childA: {
- *    ...,
- *    childrend: {
- *      childB: {
- *        ...
- *      }
- *    }
- *  }
- * }> =>
- *  | "childA"
- *  | "childA/childB"
- *  | "childA/_childB"
- */
-export type ExtractPathSuggestions<
-  T extends RouteNodeMap,
-  IsTemplate = false,
-  IsAbsolute = true
-> = {
-  // K = NodeName
-  [K in keyof T]: K extends string // filters out symbol and number
-    ? T[K]["children"] extends object // has children
-      ?
-          | K
-          | `${K}/${ExtractPathSuggestions<T[K]["children"], IsTemplate>}`
-          | If<
-              IsAbsolute,
-              `${K}/_${ExtractPathSuggestions<
-                T[K]["children"],
-                IsTemplate,
-                false
-              >}`
-            >
-      : T[K]["template"] extends string
-      ? If<IsTemplate, K>
-      : K
-    : never;
-}[keyof T];
-
-/**
- * PathToParamRecordMap<
- *  "segement/segment/segment",
- *  {segment: {..., children: {segment: {..., children: {segment}}}}},
- *  {path: {...}, query: {...}}
- * > => { param: type, ...}
- */
-export type PathToParamRecordMap<
-  Path extends string,
-  Route extends RouteNodeMap,
-  Params extends ParamRecordMap = ParamRecordMap
-> = Path extends `_${infer Segment}/${infer Rest}` // partial route segment (drop all previous options)
-  ? PathToParamRecordMap<
-      Rest,
-      Route[Segment]["children"] & {}, // shortcut to exclude undefined
-      RouteNodeToParamRecordMap<Route[Segment]>
-    >
-  : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
-  ? PathToParamRecordMap<
-      Rest,
-      Route[Segment]["children"] & {}, // shortcut to exclude undefined
-      Params & RouteNodeToParamRecordMap<Route[Segment]>
-    >
-  : Path extends `_${infer Segment}` // partial route in the final segment (drop previous options and discontinue)
-  ? RouteNodeToParamRecordMap<Route[Segment]>
-  : Params & RouteNodeToParamRecordMap<Route[Path]>;
-
-/**
- * ExtractRouteNodeMapByPath<
- *  "segement/segment",
- *  {segment: {..., children: {segment: {..., children: {segment: { ... }}}}}},
- * > => {segment: { ... }},
- */
-export type ExtractRouteNodeMapByPath<
-  Path extends string,
-  Route extends RouteNodeMap
-> = Path extends `_${infer Segment}/${infer Rest}` // partial route segment (drop all previous options)
-  ? ExtractRouteNodeMapByPath<
-      Rest,
-      Route[Segment]["children"] & {} // shortcut to exclude undefined
-    >
-  : Path extends `${infer Segment}/${infer Rest}` // regular segment (concat options)
-  ? ExtractRouteNodeMapByPath<
-      Rest,
-      Route[Segment]["children"] & {} // shortcut to exclude undefined
-    >
-  : Path extends `_${infer Segment}` // partial route in the final segment (drop previous options and discontinue)
-  ? Route[Segment]["children"] & {}
-  : Route[Path]["children"] & {};
-
-export type RoutesContext<Routes extends RouteNodeMap, RendererResult> = {
-  template: (path: ExtractPathSuggestions<Routes, true>) => string;
-  render: <Path extends ExtractPathSuggestions<Routes>>(
-    ...args:
-      | [
-          path: Path,
-          params: A.Compute<
-            ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
-          >
-        ]
-      | []
-  ) => RendererResult;
-  parseParams: <Path extends ExtractPathSuggestions<Routes>>(
-    path: Path,
-    params: Record<string, any>
-  ) => PathToParamRecordMap<Path, Routes>["path"];
-  parseQuery: <Path extends ExtractPathSuggestions<Routes>>(
-    path: Path,
-    params: Record<string, any>
-  ) => PathToParamRecordMap<Path, Routes>["query"];
-  bind: <Path extends ExtractPathSuggestions<Routes>>(
-    path: Path,
-    params: A.Compute<
-      ExcludeEmptyProperties<PathToParamRecordMap<Path, Routes>>
-    >
-  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>, RendererResult>;
-  from: <Path extends ExtractPathSuggestions<Routes>>(
-    path: Path,
-    location: string,
-    params?: A.Compute<
-      ExcludeEmptyProperties<{
-        path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
-        query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
-      }>
-    >
-  ) => RoutesContext<ExtractRouteNodeMapByPath<Path, Routes>, RendererResult>;
-  replace: <Path extends ExtractPathSuggestions<Routes>>(
-    path: Path,
-    location: string,
-    params: A.Compute<
-      ExcludeEmptyProperties<{
-        path: Partial<PathToParamRecordMap<Path, Routes>["path"]>;
-        query: Partial<PathToParamRecordMap<Path, Routes>["query"]>;
-      }>
-    >
-  ) => string;
-};
-
-export interface CreateRoutesOptions<RenderType> {
-  renderer?: Renderer<RenderType>;
+export interface CreateRoutesOptions<RendererOutput> {
+  renderer?: Renderer<RendererOutput>;
   templatePrefix?: boolean;
 }
 
-export type CreateRoutes = <Routes extends RouteNodeMap, RenderType = string>(
+type ComputeParamRecordMap<Params extends ParamRecordMap> = A.Compute<
+  ExcludeEmptyProperties<Params>
+>;
+
+type ComputePartialParamRecordMap<Params extends ParamRecordMap> = A.Compute<
+  ExcludeEmptyProperties<{
+    path: Partial<Params["path"]>;
+    query: Partial<Params["query"]>;
+  }>
+>;
+
+export type RoutesContext<
+  Routes extends RouteNodeMap,
+  RendererOutput,
+  Params extends ParamRecordMap = ParamRecordMap
+> = {
+  _: RoutesContext<Routes, RendererOutput>;
+  $template: () => string;
+  $render: (params: ComputeParamRecordMap<Params>) => RendererOutput;
+  $parseParams: (params: Record<string, any>) => Params["path"];
+  $parseQuery: (params: Record<string, any>) => Params["query"];
+  $bind: (
+    params: ComputeParamRecordMap<Params>
+  ) => RoutesContext<Routes, RendererOutput>;
+  $from: (
+    location: string,
+    params: ComputePartialParamRecordMap<Params>
+  ) => RoutesContext<Routes, RendererOutput>;
+  $replace: (
+    location: string,
+    params: ComputePartialParamRecordMap<Params>
+  ) => string;
+} & {
+  [Segment in keyof Routes]: RoutesContext<
+    Routes[Segment]["children"] & {}, // shortcut to exclude undefined
+    RendererOutput,
+    Params & RouteNodeToParamRecordMap<Routes[Segment]>
+  >;
+};
+
+export type CreateRoutes = <
+  Routes extends RouteNodeMap,
+  RendererOutput = string
+>(
   routes: Routes,
-  options?: CreateRoutesOptions<RenderType>,
-  parentContext?: RenderContext
-) => RoutesContext<Routes, RenderType>;
+  options?: CreateRoutesOptions<RendererOutput>
+) => RoutesContext<Routes, RendererOutput>;

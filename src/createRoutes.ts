@@ -21,116 +21,154 @@ export type RenderContext = {
   queryParams: Record<string, string>;
 };
 
-export const createRoutes: CreateRoutes = (
-  routeMap,
-  options,
-  parentContext
-) => {
-  const render = (
-    path?: string,
-    params?: ParamRecordMap<any>,
-    context?: RenderContext
-  ) => {
-    const ctx = pipe(
-      context ?? createRenderContext(routeMap, path, parentContext),
-      addPathParams(params?.path),
-      addQueryParams(params?.query)
-    );
+export const createRoutes: CreateRoutes = (routeMap, options) => {
+  const methods = (path: string[], relativePathStartIdx: number) => ({
+    $template: () => "",
+    $render: (params: ParamRecordMap<any>) => {
+      console.log(path, relativePathStartIdx, routeMap);
+      const ctx = pipe(
+        createRenderContext(
+          routeMap,
+          path,
+          relativePathStartIdx
+          // parentContext
+        ),
+        addPathParams(params?.path),
+        addQueryParams(params?.query)
+      );
 
-    return (options?.renderer ?? defaultRenderer).render(ctx);
-  };
+      return (options?.renderer ?? defaultRenderer).render(ctx);
+    },
+    // and so on ...
+  });
 
-  const bind = (path: string, params: ParamRecordMap<any>) => {
-    const ctx = pipe(
-      createRenderContext(routeMap, path, parentContext),
-      addPathParams(params.path),
-      addQueryParams(params.query)
-    );
+  const proxy = (path: string[], relativePathStartIdx: number): any =>
+    new Proxy(methods(path, relativePathStartIdx), {
+      get(target, p, receiver) {
+        if (p === "_") {
+          return proxy(path, path.length); // start relative path
+        }
+        if (typeof p === "string" && p[0] !== "$") {
+          return proxy([...path, p], relativePathStartIdx);
+        }
+        return Reflect.get(target, p, receiver);
+      },
+    });
 
-    const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
-
-    return createRoutes(pathChildren, options, ctx);
-  };
-
-  const template = (path: string) =>
-    (options?.renderer ?? defaultRenderer).template(
-      createRenderContext(routeMap, path),
-      options as CreateRoutesOptions<any> | undefined
-    );
-
-  const parseParams = (
-    path: string,
-    paramsOrLocation: Record<string, string> | string
-  ) =>
-    parsePathParams(
-      pipe(
-        createRenderContext(routeMap, path, parentContext),
-        typeof paramsOrLocation === "string"
-          ? addPathParamsFromLocationPath(paramsOrLocation)
-          : addRawPathParams(paramsOrLocation)
-      )
-    );
-
-  const parseQuery = (path: string, query: Record<string, string> | string) =>
-    parseQueryParams(
-      pipe(
-        createRenderContext(routeMap, path, parentContext),
-        typeof query === "string"
-          ? addQueryParamsFromUrlSearch(query)
-          : addRawQueryParams(query)
-      )
-    );
-
-  const from = (
-    path: string,
-    location: string,
-    params?: ParamRecordMap<Record<string, unknown>>
-  ) => {
-    const [locationPath, locationQuery] = location.split("?");
-    const ctx = pipe(
-      createRenderContext(routeMap, path, parentContext),
-      addPathParamsFromLocationPath(locationPath),
-      addQueryParamsFromUrlSearch(locationQuery),
-      overrideParams(params)
-    );
-
-    const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
-
-    return createRoutes(pathChildren, options, ctx);
-  };
-
-  // basically the same as the from method but returns rendered path with remaining segments appended
-  // appends query string as well (if available)
-  const replace = (
-    path: string,
-    location: string,
-    params: ParamRecordMap<Record<string, unknown>>
-  ) => {
-    const [locationPath, locationQuery] = location.split("?");
-    const ctx = pipe(
-      createRenderContext(routeMap, path, parentContext),
-      addPathParamsFromLocationPath(locationPath, true),
-      addQueryParamsFromUrlSearch(locationQuery, true),
-      overrideParams(params)
-    );
-
-    return (options?.renderer ?? defaultRenderer).render(ctx);
-  };
-
-  return {
-    render,
-    bind,
-    template,
-    parseParams,
-    parseQuery,
-    from,
-    replace,
-  } as RoutesContext<any, any>;
+  return proxy([], 0);
 };
+
+// export const createRoutes: CreateRoutes = (
+//   routeMap,
+//   options,
+//   parentContext
+// ) => {
+//   const render = (
+//     path?: string,
+//     params?: ParamRecordMap<any>,
+//     context?: RenderContext
+//   ) => {
+//     const ctx = pipe(
+//       context ?? createRenderContext(routeMap, path, parentContext),
+//       addPathParams(params?.path),
+//       addQueryParams(params?.query)
+//     );
+
+//     return (options?.renderer ?? defaultRenderer).render(ctx);
+//   };
+
+//   const bind = (path: string, params: ParamRecordMap<any>) => {
+//     const ctx = pipe(
+//       createRenderContext(routeMap, path, parentContext),
+//       addPathParams(params.path),
+//       addQueryParams(params.query)
+//     );
+
+//     const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+
+//     return createRoutes(pathChildren, options, ctx);
+//   };
+
+//   const template = (path: string) =>
+//     (options?.renderer ?? defaultRenderer).template(
+//       createRenderContext(routeMap, path),
+//       options as CreateRoutesOptions<any> | undefined
+//     );
+
+//   const parseParams = (
+//     path: string,
+//     paramsOrLocation: Record<string, string> | string
+//   ) =>
+//     parsePathParams(
+//       pipe(
+//         createRenderContext(routeMap, path, parentContext),
+//         typeof paramsOrLocation === "string"
+//           ? addPathParamsFromLocationPath(paramsOrLocation)
+//           : addRawPathParams(paramsOrLocation)
+//       )
+//     );
+
+//   const parseQuery = (path: string, query: Record<string, string> | string) =>
+//     parseQueryParams(
+//       pipe(
+//         createRenderContext(routeMap, path, parentContext),
+//         typeof query === "string"
+//           ? addQueryParamsFromUrlSearch(query)
+//           : addRawQueryParams(query)
+//       )
+//     );
+
+//   const from = (
+//     path: string,
+//     location: string,
+//     params?: ParamRecordMap<Record<string, unknown>>
+//   ) => {
+//     const [locationPath, locationQuery] = location.split("?");
+//     const ctx = pipe(
+//       createRenderContext(routeMap, path, parentContext),
+//       addPathParamsFromLocationPath(locationPath),
+//       addQueryParamsFromUrlSearch(locationQuery),
+//       overrideParams(params)
+//     );
+
+//     const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
+
+//     return createRoutes(pathChildren, options, ctx);
+//   };
+
+//   // basically the same as the from method but returns rendered path with remaining segments appended
+//   // appends query string as well (if available)
+//   const replace = (
+//     path: string,
+//     location: string,
+//     params: ParamRecordMap<Record<string, unknown>>
+//   ) => {
+//     const [locationPath, locationQuery] = location.split("?");
+//     const ctx = pipe(
+//       createRenderContext(routeMap, path, parentContext),
+//       addPathParamsFromLocationPath(locationPath, true),
+//       addQueryParamsFromUrlSearch(locationQuery, true),
+//       overrideParams(params)
+//     );
+
+//     return (options?.renderer ?? defaultRenderer).render(ctx);
+//   };
+
+//   return {
+//     render,
+//     bind,
+//     template,
+//     parseParams,
+//     parseQuery,
+//     from,
+//     replace,
+//   } as RoutesContext<any, any>;
+// };
 
 const createRenderContext = (
   routeMap: RouteNodeMap,
-  path?: string,
+  path: string[],
+  relativePathStartIdx: number,
   parentCtx?: RenderContext
 ): RenderContext => {
   let ctx: RenderContext = parentCtx ?? {
@@ -145,13 +183,15 @@ const createRenderContext = (
     queryParams: {},
   };
 
-  if (!path) {
+  if (path.length <= 0) {
     return ctx;
   }
 
-  const [absolutePath, relativePath] = path.split("/_");
-  const isRelative = typeof relativePath === "string";
+  const absolutePath = path.slice(0, path.length - relativePathStartIdx);
+  const relativePath = path.slice(path.length - relativePathStartIdx);
+  const isRelative = relativePath.length > 0;
 
+  // reset context
   if (isRelative) {
     ctx = {
       ...ctx,
@@ -167,7 +207,7 @@ const createRenderContext = (
 
   // skip leading segments in relative path
   if (isRelative) {
-    absolutePath.split("/").forEach((nodeName) => {
+    absolutePath.forEach((nodeName) => {
       if (!nextNodeMap?.[nodeName]) {
         throw Error(`unknown path segment "${nodeName}" in ${path}`);
       }
@@ -186,7 +226,7 @@ const createRenderContext = (
     currentQuerySegments: [],
   };
 
-  (relativePath ?? absolutePath).split("/").forEach((nodeName, i) => {
+  (relativePath ?? absolutePath).forEach((nodeName, i) => {
     if (!nextNodeMap) {
       throw Error(`unknown segment ${nodeName}`);
     }
@@ -372,7 +412,7 @@ const addQueryParams =
       },
       querySegments: includeExtraQuery
         ? ctx.querySegments.concat(
-            Object.keys(remaining).map((name) => str(name).optional)
+            Object.keys(remaining).map((name) => str.optional(name))
           )
         : ctx.querySegments,
     };
