@@ -117,5 +117,6 @@ export type CreateRoutes = <
   RendererOutput = string
 >(
   routes: Routes,
-  options?: CreateRoutesOptions<RendererOutput>
+  options?: CreateRoutesOptions<RendererOutput>,
+  parentContext?: RenderContext
 ) => RoutesContext<Routes, RendererOutput>;
