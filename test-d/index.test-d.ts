@@ -1,19 +1,5 @@
-import { A, Test } from "ts-toolbelt";
 import { expectType } from "tsd";
-import {
-  Param,
-  Parser,
-  PathSegment,
-  PathToParamMap,
-  SegmentToParamMap,
-  ToParamsRecord,
-  bool,
-  int,
-  createRoutes,
-  str,
-} from "../src";
-
-const { checks, check } = Test;
+import { bool, createRoutes, int, str } from "../src";
 
 const r = createRoutes({
   home: {},
@@ -26,7 +12,7 @@ const r = createRoutes({
         children: {
           show: {
             path: ["show", int("userId")],
-            query: [bool("filter").optional],
+            query: [bool.optional("filter")],
           },
         },
       },
@@ -37,262 +23,169 @@ const r = createRoutes({
 //
 // template
 //
-expectType<
-  (
-    path:
-      | "home"
-      | "language"
-      | "language/*"
-      | "language/users"
-      | "language/users/*"
-      | "language/_users"
-      | "language/_users/*"
-      | "language/_users/show"
-      | "language/users/show"
-      | "language/users/_show"
-  ) => string
->(r.template);
+expectType<() => string>(r.language.users.$template);
 
 //
 // render
 //
-expectType<(path: "home", options: {}) => string>(r.render);
-expectType<(path: "language", options: { path: { lang: string } }) => string>(
-  r.render
-);
+expectType<(params: {}) => string>(r.$render);
 expectType<
-  (
-    path: "language/users",
-    options: { path: { lang: string }; query: { page: number } }
-  ) => string
->(r.render);
+  (params: {
+    path: {
+      lang: string;
+    };
+  }) => string
+>(r.language.$render);
+
 expectType<
-  (path: "language/_users", options: { query: { page: number } }) => string
->(r.render);
+  (params: {
+    path: {
+      lang: string;
+    };
+    query: {
+      page: number;
+    };
+  }) => string
+>(r.language.users.$render);
+
 expectType<
-  (
-    path: "language/users/show",
-    options: {
-      path: { lang: string; userId: number };
-      query: { filter?: boolean; page: number };
-    }
-  ) => string
->(r.render);
+  (params: {
+    query: {
+      page: number;
+    };
+  }) => string
+>(r.language._.users.$render);
+
 expectType<
-  (
-    path: "language/_users/show",
-    options: {
-      path: { userId: number };
-      query: { filter?: boolean; page: number };
-    }
-  ) => string
->(r.render);
+  (params: {
+    path: {
+      lang: string;
+      userId: number;
+    };
+    query: {
+      page: number;
+      filter?: boolean | undefined;
+    };
+  }) => string
+>(r.language.users.show.$render);
+
 expectType<
-  (
-    path: "language/users/_show",
-    options: {
-      path: { userId: number };
-      query: { filter?: boolean };
-    }
-  ) => string
->(r.render);
+  (params: {
+    path: {
+      userId: number;
+    };
+    query: {
+      page: number;
+      filter?: boolean | undefined;
+    };
+  }) => string
+>(r.language._.users.show.$render);
+
+expectType<
+  (params: {
+    path: {
+      userId: number;
+    };
+    query: {
+      filter?: boolean | undefined;
+    };
+  }) => string
+>(r.language.users._.show.$render);
 
 //
 // params
 //
-expectType<{}>(r.params("home", {}));
-expectType<{ lang: string }>(r.params("language", {}));
-expectType<{ lang: string }>(r.params("language/users", {}));
-expectType<{ lang: string; userId: number }>(
-  r.params("language/users/show", {})
+expectType<(params: Record<string, any>) => unknown>(r.$parseParams);
+
+expectType<
+  (params: Record<string, any>) => {
+    lang: string;
+  }
+>(r.language.$parseParams);
+
+expectType<
+  (params: Record<string, any>) => {
+    lang: string;
+  }
+>(r.language.users.$parseParams);
+
+expectType<
+  (params: Record<string, any>) => {
+    lang: string;
+    userId: number;
+  }
+>(r.language.users.show.$parseParams);
+
+expectType<(params: Record<string, any>) => {}>(
+  r.language._.users.$parseParams
 );
-expectType<{}>(r.params("language/_users", {}));
-expectType<{ userId: number }>(r.params("language/_users/show", {}));
-expectType<{ userId: number }>(r.params("language/users/_show", {}));
+
+expectType<
+  (params: Record<string, any>) => {
+    userId: number;
+  }
+>(r.language._.users.show.$parseParams);
+
+expectType<
+  (params: Record<string, any>) => {
+    userId: number;
+  }
+>(r.language.users._.show.$parseParams);
 
 //
 // query
 //
-expectType<{}>(r.query("home", {}));
-expectType<{}>(r.query("language", {}));
-expectType<{}>(r.query("language/users", {}));
-expectType<{ filter?: boolean; page: number }>(
-  r.query("language/users/show", {})
-);
-expectType<{ page: number }>(r.query("language/_users", {}));
-expectType<{ filter?: boolean; page: number }>(
-  r.query("language/_users/show", {})
-);
-expectType<{ filter?: boolean }>(r.query("language/users/_show", {}));
+expectType<(params: Record<string, any>) => {}>(r.home.$parseQuery);
+
+expectType<(params: Record<string, any>) => {}>(r.language.$parseQuery);
+
+expectType<
+  (params: Record<string, any>) => {
+    page: number;
+  }
+>(r.language.users.$parseQuery);
+
+expectType<
+  (params: Record<string, any>) => {
+    page: number;
+    filter?: boolean | undefined;
+  }
+>(r.language.users.show.$parseQuery);
+
+expectType<
+  (params: Record<string, any>) => {
+    page: number;
+  }
+>(r.language._.users.$parseQuery);
+
+expectType<
+  (params: Record<string, any>) => {
+    page: number;
+    filter?: boolean | undefined;
+  }
+>(r.language._.users.show.$parseQuery);
+
+expectType<
+  (params: Record<string, any>) => {
+    filter?: boolean | undefined;
+  }
+>(r.language.users._.show.$parseQuery);
 
 //
 // bind
 //
-r.bind("language", { path: { lang: "" } })
-  .bind("users", { query: { page: 1 } })
-  .render("show", { path: { userId: 1 }, query: { filter: true } });
+// r.bind("language", { path: { lang: "" } })
+//   .bind("users", { query: { page: 1 } })
+//   .render("show", { path: { userId: 1 }, query: { filter: true } });
 
 //
 // from
 //
-r.from("language/users", "de/users/5?page=2", {
-  path: { lang: "" },
-  query: { page: 1 },
-}).render("show", { path: { userId: 2 }, query: {} });
+// r.from("language/users", "de/users/5?page=2", {
+//   path: { lang: "" },
+//   query: { page: 1 },
+// }).render("show", { path: { userId: 2 }, query: {} });
 
 //
-// SegmentToParamMap
+// replace
 //
-checks([
-  // required and optional path params
-  check<
-    A.Compute<
-      SegmentToParamMap<{
-        path: [
-          "user",
-          Param<"uid", string, "required">,
-          Param<"gid", number, "optional">
-        ];
-      }>
-    >,
-    {
-      path: {
-        uid: string;
-        gid?: number;
-      };
-      query: {};
-    },
-    Test.Pass
-  >(),
-  // required and optional query param
-  check<
-    A.Compute<
-      SegmentToParamMap<{
-        path: [
-          "user",
-          Param<"uid", string, "required">,
-          Param<"gid", number, "optional">
-        ];
-        query: [
-          Param<"filter", string, "required">,
-          Param<"page", number, "optional">
-        ];
-      }>
-    >,
-    {
-      path: {
-        uid: string;
-        gid?: number;
-      };
-      query: {
-        filter: string;
-        page?: number;
-      };
-    },
-    Test.Pass
-  >(),
-]);
-
-//
-// ToParamsRecord
-//
-checks([
-  // required
-  check<
-    A.Compute<
-      ToParamsRecord<{ name: "uid"; kind: "required"; parser: Parser<string> }>
-    >,
-    { uid: string },
-    Test.Pass
-  >(),
-  // optional
-  check<
-    A.Compute<
-      ToParamsRecord<{ name: "gid"; kind: "optional"; parser: Parser<string> }>
-    >,
-    { gid?: string },
-    Test.Pass
-  >(),
-  // mixed
-  check<
-    A.Compute<
-      ToParamsRecord<
-        | { name: "uid"; kind: "required"; parser: Parser<string> }
-        | { name: "gid"; kind: "optional"; parser: Parser<string> }
-      >
-    >,
-    { uid: string; gid?: string },
-    Test.Pass
-  >(),
-]);
-
-//
-// PathSegment
-//
-checks([
-  // template
-  check<
-    PathSegment<
-      {
-        blog: {};
-        home: { children: { user: { children: { settings: {} } } } };
-      },
-      true
-    >,
-    | "blog"
-    | "home"
-    | "home/user"
-    | "home/user/settings"
-    | "home/user/*"
-    | "home/user/_settings"
-    | "home/*"
-    | "home/_user"
-    | "home/_user/settings"
-    | "home/_user/*",
-    Test.Pass
-  >(),
-  // path
-  check<
-    PathSegment<{
-      blog: {};
-      home: { children: { user: { children: { settings: {} } } } };
-    }>,
-    | "blog"
-    | "home"
-    | "home/user"
-    | "home/user/settings"
-    | "home/user/_settings"
-    | "home/_user"
-    | "home/_user/settings",
-    Test.Pass
-  >(),
-]);
-
-//
-// PathToParamMap
-//
-checks([
-  check<
-    A.Compute<
-      PathToParamMap<
-        "home/user",
-        {
-          home: {
-            path: ["home"];
-            query: [Param<"q", string, "optional">];
-            children: { user: { path: ["user", Param<"uid", string>] } };
-          };
-        }
-      >
-    >,
-    {
-      path: {
-        uid: string;
-      };
-      query: {
-        q?: string;
-      };
-    },
-    Test.Pass
-  >(),
-]);

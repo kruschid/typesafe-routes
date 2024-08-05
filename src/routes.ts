@@ -3,7 +3,6 @@ import { RenderContext } from "./createRoutes";
 import type { AnyParam } from "./param";
 import type { Renderer } from "./renderer";
 
-// type If<Condition, Then> = Condition extends true ? Then : never;
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
 
 /**
@@ -108,7 +107,7 @@ export type RoutesContext<
   [Segment in keyof Routes]: RoutesContext<
     Routes[Segment]["children"] & {}, // shortcut to exclude undefined
     RendererOutput,
-    Params & RouteNodeToParamRecordMap<Routes[Segment]>
+    A.Compute<Params & RouteNodeToParamRecordMap<Routes[Segment]>>
   >;
 };
 
