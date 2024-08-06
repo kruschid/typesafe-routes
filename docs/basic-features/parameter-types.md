@@ -2,7 +2,7 @@
 
 <!-- tabs:start -->
 ## **str**
-``` js
+``` ts
 import { createRoutes, str } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -15,7 +15,7 @@ routes.parseParams("home",  "/home/en"); // => {lang: "en"}
 
 ## **int**
 
-``` js
+``` ts
 import { createRoutes, int } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -28,7 +28,7 @@ routes.parseParams("home", "/home/55"); // => {id: 55}
 
 ## **float**
 
-``` js
+``` ts
 import { createRoutes, float } from "typesafe-routes";
 
 const f2 = float(2); // renders 2 fraction digits
@@ -43,7 +43,7 @@ routes.parseParams("home", "/home/55.12"); // => {x: 55.12}
 
 ## **isoDate**
 
-``` js
+``` ts
 import { createRoutes, isoDate } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -56,7 +56,7 @@ routes.parseParams("home", "/home/2024-01-29T17:27:22.302Z"); // => {date: Date(
 
 ## **date**
 
-``` js
+``` ts
 import { createRoutes, date } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -69,7 +69,7 @@ routes.parseParams("home", "/home/2024-01-29"); // => {date: Date(...)}
 
 ## **bool**
 
-``` js
+``` ts
 import { createRoutes, bool } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -82,7 +82,7 @@ routes.parseParams("home", "/home/false"); // => {isVisible: false}
 
 ## **oneOf**
 
-``` js
+``` ts
 import { createRoutes, oneOf } from "typesafe-routes";
 
 const options = oneOf("movies", "music", "art")
@@ -97,7 +97,7 @@ routes.parseParams("home", "/home/art"); // => {category: "art"}
 
 ## **list**
 
-``` js
+``` ts
 import { createRoutes, list } from "typesafe-routes";
 
 const options = list(["movies", "music", "art"], ","); // second argument is optional, default is ";"

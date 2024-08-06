@@ -6,7 +6,7 @@ It is intended fur use cases where you want to partially modify a path. For exam
 
 It is intended for use cases in which you want to partially modify a path. For example, given the location `/groups/42/users/1337`, you only want to change the first route node to create the new path `/groups/24/users/1337`.
 
-``` js
+``` ts
 import { createRoutes, int } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -27,7 +27,7 @@ const routes = createRoutes({
 
 In the provided path, one dynamic segment is altered while the other trailing segments remain unchanged. The only search parameter has also been modified.
 
-``` js
+``` ts
 const locationPath = "/groups/32/extra/segments?page=2&offset=2";
 
 routes.replace("groups", locationPath, {
@@ -40,7 +40,7 @@ routes.replace("groups", locationPath, {
 
 `replace` also allows the simultaneous replacement of multiple nested routes. Here we change dynamic segments that belong to `group` and `users`. 
 
-``` js
+``` ts
 const locationPath = "/groups/32/users/33/extra/segments";
 
 routes.replace("groups/users", locationPath, {
@@ -52,7 +52,7 @@ routes.replace("groups/users", locationPath, {
 
 `replace` is fully compatible with the underscore `_` prefix for indicating a relative route.
 
-``` js
+``` ts
 const locationPath = "users/32/extra/segments";
 
 routes.replace("groups/_users", locationPath, {
@@ -64,7 +64,7 @@ routes.replace("groups/_users", locationPath, {
 
 To remove an optional parameter from the resulting path, simply assign `undefined` as a value.
 
-``` js
+``` ts
 const locationPath = "/groups/users/32/extra/segments";
 
 routes.replace("groups/users", locationPath, {

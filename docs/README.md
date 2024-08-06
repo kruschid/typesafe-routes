@@ -12,7 +12,7 @@ npm install typesafe-routes@next # or any npm alternatives
 
 ### 2. Route Tree Definition
 
-``` js
+``` ts
 import { createRoutes, int } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -29,7 +29,7 @@ const routes = createRoutes({
 
 ### 3. Path Rendering
 
-``` js
+``` ts
 // only required params
 routes.render("groups/users", {
   path: { gid: 123 },
