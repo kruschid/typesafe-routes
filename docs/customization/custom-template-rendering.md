@@ -19,7 +19,7 @@ segment/:param/:optional?
 
 The following implementation alters the default template renderer by putting curly braces around dynamic segments.
 
-``` js
+``` ts
 import { defaultRenderer, Renderer, int, bool } from "typesafe-routes";
 
 const customRenderer: Renderer = {
@@ -56,7 +56,7 @@ const customRenderer: Renderer = {
 
 The `customRenderer` object can be passed to `createRoutes` as the second argument.
 
-``` js
+``` ts
 const routes = createRoutes({
   users: {
     path: ["users", int("uid"), bool("edit").optional]
@@ -68,7 +68,7 @@ const routes = createRoutes({
 
 The `template` method automatically used the new renderer and creates templates with dynamic segments enclosed in curly braces.
 
-``` js
+``` ts
 routes.template("users"); // => "/users/{uid}/{edit?}"
 ```
 <!-- tabs:end -->

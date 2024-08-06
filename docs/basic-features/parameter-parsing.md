@@ -6,7 +6,7 @@ This section explains how to parse path and query parameter values. Parsing conv
 
 Path parameter values are dynamic segments in a location path. For example, if we look at the path `"/blog/35/category/movies/date/2023-12-28"` using the route definition below, we can find three dynamic segments: `"35"`,`"movies"`, and `"2023-12-28"`.
 
-``` js
+``` ts
 import { createRoutes, int, str, date } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -31,7 +31,7 @@ const routes = createRoutes({
 
 Frameworks such as React Router offer a feature where they supply a record containing parameter values. These parameters, typically in string format, can be efficiently processed using the `parseParams` method. This method transforms these string values into their respective JavaScript types, enhancing data handling within the application.
 
-``` js
+``` ts
 // this object might be provided by a routing library
 const params = {
   blogId: "35",
@@ -61,7 +61,7 @@ routes.parseParams("blog/categories/_date", {
 
 Alternatively, parsing parameters from string paths, like `location.pathname`, is also supported.
 
-``` js
+``` ts
 // with absolute path location
 routes.parseParams(
   "blog/categories/date",
@@ -92,7 +92,7 @@ routes.parseParams(
 
 The `parseQuery` method converts search parameter values from string format to their corresponding types. The first argument accepts the route path, which defines the context of the conversion. The second argument is the source, which contains the string-based parameter values that need to be parsed. A source can be an object `{name: "value",...}` or a search string `"?name=value&..."`.
 
-``` js
+``` ts
 import { createRoutes, int, bool, date } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -118,7 +118,7 @@ Note that in the example the `options` node lacks a `path` property, indicating 
 
 <!-- tabs:start -->
 ## **Basic Usage**
-``` js
+``` ts
 // this could come from a router library:
 const params = { page: "1", showModal: "false" };
 
@@ -126,7 +126,7 @@ route.parseQuery("blog/categories/options", params); // => { page: 1, showModal:
 ```
 
 ## **Relative Routes**
-``` js
+``` ts
 route.parseQuery("blog/_categories/options", {
   date: "2023-12-28",
   showModal: "false",
@@ -134,7 +134,7 @@ route.parseQuery("blog/_categories/options", {
 ```
 
 ## **String Source**
-``` js
+``` ts
 // string; absolute route path
 route.parseQuery(
   "blog/categories/options",
@@ -152,7 +152,7 @@ route.parseQuery(
 
 Parameters that are not specified in any of the route nodes will not be included in the parsing result. This means that only parameters defined within the route nodes are considered and processed, ensuring a focused and relevant parsing outcome.
 
-``` js
+``` ts
 // ignores addional parameters 
 route.parseQuery(
   "blog/categories",

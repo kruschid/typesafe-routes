@@ -2,7 +2,7 @@
 
 The method `createRoutes` takes a routes object as the first argument, where property names represent route names. Each route may specify a `path` using a string array.
 
-``` js
+``` ts
 import { createRoutes } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -25,7 +25,7 @@ The `render` method is versatile, taking a variable number of arguments.
 
 Calling the `render` method without arguments returns the path of the current context. In this example the context is empty so the method returns the root path: `"/"`
 
-``` js
+``` ts
 routes.render(); // => "/"
 ```
 
@@ -33,7 +33,7 @@ routes.render(); // => "/"
 
 The first argument holds a string path with the name of the route segment to be rendered. The second argument can be used for passing route parameters. Refer to other sections for detailed examples illustrating the effective utilization of parameters.
 
-``` js
+``` ts
 routes.render("about", {}); // => "/about-us"
 routes.render("blogCategories", {}); // => "/blog/categories/all"
 ```

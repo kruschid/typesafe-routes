@@ -6,7 +6,7 @@ In addition to static path segments, `path` segment arrays can also accommodate 
 
 The example showcases the import of string (`str`) and integer (`int`) parameter functions for defining typed parameters. For details on other built-in parameter types, please refer to the relevant section.
 
-``` js
+``` ts
 import { createRoutes, str, int } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -19,7 +19,7 @@ const routes = createRoutes({
 
 <!-- tabs:start -->
 ### **Required Only**
-``` js
+``` ts
 routes.render("blog", {
   path: {
     category: "movies",
@@ -28,7 +28,7 @@ routes.render("blog", {
 ```
 
 ### **With Optional**
-``` js
+``` ts
 routes.render("blog", {
   path: {
     category: "movies",
@@ -42,7 +42,7 @@ routes.render("blog", {
 
 Query parameters can be defined by setting a `query` property in a route segment. Query parameters can be made `optional` to avoid mandatory inclusion. If an `optional` query parameter is missing during rendering or parsing, no exception will be thrown.
 
-``` js
+``` ts
 import { createRoutes, str, int, bool } from "typesafe-routes";
 
 const routes = createRoutes({
@@ -57,7 +57,7 @@ Pass the parameter values to the `render` method using the second argument, whic
 
 <!-- tabs:start -->
 ### **Required Only**
-``` js
+``` ts
 routes.render("blog", {
   query: {
     search: "batman",
@@ -66,7 +66,7 @@ routes.render("blog", {
 ```
 
 ### **With Optional**
-``` js
+``` ts
 routes.render("blog/categories/year", {
   query: {
     search: "batman",

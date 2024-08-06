@@ -2,7 +2,7 @@
 
 This section provides an example of a customized route renderer. The code fragment below is identical to the implementation of the `defaultRenderer.render` method. Some lines are highlighted with a comment. Each comment refers to a brief description below the code sample.
 
-``` js
+``` ts
 import { defaultRenderer, Renderer } from "typesafe-routes";
 
 export const customRenderer: Renderer = {
