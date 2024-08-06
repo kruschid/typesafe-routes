@@ -23,7 +23,7 @@ const r = createRoutes({
 //
 // template
 //
-expectType<() => string>(r.language.users.$template);
+expectType<() => string>(r.language.users.show.$template);
 
 //
 // render
@@ -174,18 +174,54 @@ expectType<
 //
 // bind
 //
-// r.bind("language", { path: { lang: "" } })
-//   .bind("users", { query: { page: 1 } })
-//   .render("show", { path: { userId: 1 }, query: { filter: true } });
+expectType<
+  (params: {
+    path: {
+      userId: number;
+    };
+    query: {
+      filter?: boolean | undefined;
+    };
+  }) => string
+>(
+  r.language.$bind({ path: { lang: "" } }).users.$bind({ query: { page: 1 } })
+    .show.$render
+);
 
 //
 // from
 //
-// r.from("language/users", "de/users/5?page=2", {
-//   path: { lang: "" },
-//   query: { page: 1 },
-// }).render("show", { path: { userId: 2 }, query: {} });
+expectType<
+  (params: {
+    path: {
+      userId: number;
+    };
+    query: {
+      filter?: boolean | undefined;
+    };
+  }) => string
+>(
+  r.language.users.$from("de/users/5?page=2", {
+    path: { lang: "" },
+    query: { page: 1 },
+  }).show.$render
+);
 
 //
 // replace
 //
+expectType<
+  (
+    location: string,
+    params: {
+      path: {
+        lang?: string | undefined;
+        userId?: number | undefined;
+      };
+      query: {
+        page?: number | undefined;
+        filter?: boolean | undefined;
+      };
+    }
+  ) => string
+>(r.language.users.show.$replace);
