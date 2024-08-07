@@ -1,6 +1,6 @@
  # Absolute routes
 
-The method `createRoutes` takes a routes object as the first argument, where property names represent route names. Each route may specify a `path` using a string array.
+The method `createRoutes` takes an object as the first argument, where property names represent route names. Each route may specify a `path` using a string array.
 
 ``` ts
 import { createRoutes } from "typesafe-routes";
@@ -11,6 +11,7 @@ const routes = createRoutes({
     // single segment path
     path: ["about-us"]
   },
+  // route segment: "blogCategories"
   blogCategories: {
     // multiple segments
     path: ["blog", "categories", "all"]
@@ -18,23 +19,28 @@ const routes = createRoutes({
 });
 ```
 
-The `render` method is versatile, taking a variable number of arguments.
+The paths defined using the `createRoutes` function can be rendered using the `$render` method. 
 
 <!-- tabs:start -->
 ## **Root Path**
 
-Calling the `render` method without arguments returns the path of the current context. In this example the context is empty so the method returns the root path: `"/"`
+The root path `"/"` is returned when the `$render` method is used applied on `routes`.
 
 ``` ts
-routes.render(); // => "/"
+routes.$render({}); // => "/"
 ```
 
-## **Named Paths**
+An empty object is `$render`'s first argument. It shows that there are no parameters that require rendering. Refer to other sections for detailed examples illustrating the effective utilization of parameters.
 
-The first argument holds a string path with the name of the route segment to be rendered. The second argument can be used for passing route parameters. Refer to other sections for detailed examples illustrating the effective utilization of parameters.
+## **Route Segments**
+
+When the `$render` method is called on a route segment that was specified with the `createRoutes` function call above, the matching path is rendered.
 
 ``` ts
-routes.render("about", {}); // => "/about-us"
-routes.render("blogCategories", {}); // => "/blog/categories/all"
+routes.about.$render({}); // => "/about-us"
+routes.blogCategorie.$render({}); // => "/blog/categories/all"
 ```
+
+An empty object is `$render`'s first argument. It shows that there are no parameters that require rendering. Refer to other sections for detailed examples illustrating the effective utilization of parameters.
+
 <!-- tabs:end -->
