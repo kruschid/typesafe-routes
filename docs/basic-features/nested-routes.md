@@ -5,7 +5,7 @@ Nested route segments are defined through the `children` property, containing an
 ``` ts
 import { createRoutes } from "typesafe-routes";
 
-const routes = createRoutes({
+const r = createRoutes({
   blog: {
     path: ["blog"],
     children: {
@@ -22,23 +22,12 @@ const routes = createRoutes({
 });
 ```
 
-The `render` method's first argument is a path with route segment names separated by a slash `/`.
+To render nested segments, chain the corresponding route-nodes based on their hierarchy and use `$render` on them.
 
 ``` ts
-routes.render("blog", {}); // => "/blog"
+r.blog.$render({}); // => "/blog"
 
-routes.render("blog/categories", {}); // => "/blog/categories"
+r.blog.categories.$render({}); // => "/blog/categories"
 
-routes.render("blog/categories/movies", {}); // => "/blog/categories/movies"
-```
-
-When supplying multiple segment names, include all corresponding parameters in the second argument as a unified object. For improved clarity in assigning parameters, refer to other sections for guidance on utilizing the `bind` method.
-
-``` ts
-routes.render("parent/child", {
-  // specify parameter values here for "parent" and "child"
-  path: {...},
-  query: {...},
-}); // => "/blog"
-
+r.blog.categories.movies.$render({}); // => "/blog/categories/movies"
 ```

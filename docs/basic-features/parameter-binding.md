@@ -1,11 +1,13 @@
 # Parameter binding
 
-The `bind` method can be used for a clearer assignment between routes and parameters. The `bind` method creates a new context that can be passed around without rendering. Eventually, a route can be rendered with the `render` method, which can be chained after binding.
+The `$render` method aggregates all parameters for every route node in the sequence. However, there are times when identifying the parameter associated with each node can prove challenging. Furthermore, in certain instances, the route may be shared among various components, resulting in a multi-step build-up process. To manage these situations more efficiently, the `$bind` method can be invoked for streamlining the binding of parameters for later rendering. This also simplifies the correlation between specific routes and their corresponding parameters.
+
+Internally, the `$bind` method generates a new context that can be shared or moved between different components before it is rendered by the `$render` method.
 
 ``` ts
 import { createRoutes, str, int } from "typesafe-routes";
 
-const routes = createRoutes({
+const r = createRoutes({
   blog: {
     path: ["blog"],
     children: {
@@ -27,39 +29,28 @@ const routes = createRoutes({
 ## **Basic Usage**
 
 ``` ts
-routes
-  .bind("blog/categories", {
-    path: { category: "movies" },
-  })
-  .render("year", {
-    path: { year: 2024 },
-  }); // => "/blog/categories/movies/year/2024"
+r.blog
+  .categories.$bind({ path: { category: "movies" }})
+  .year
+  .$render({ path: { year: 2024 }}); // => "/blog/categories/movies/year/2024"
+```
+
+## **Multiple Binds**
+
+``` ts
+r.blog
+  .categories.$bind({ path: { category: "movies" }})
+  .year.$bind({ path: { year: 2024 } })
+  .$render({}); // => "/blog/categories/movies/year/2024"
 ```
 
 ## **Relative Routes**
 
 ``` ts
-routes
-  .bind("blog/_categories", {
-    path: { category: "movies" },
-  })
-  .bind("year", {
-    path: { year: 2024 },
-  })
-  .render(); // => "categories/movies/year/2024"
-```
-
-## **Deeply Nested Routes**
-
-``` ts
-routes
-  .bind("blog")
-  .bind("categories", {
-    path: { category: "movies" },
-  })
-  .bind("year", {
-    path: { year: 2024 },
-  })
-  .render(); // => "/blog/categories/movies/year/2024"
+r.blog
+  ._
+  .categories.$bind({ path: { category: "movies" }})
+  .year.$bind("year", {path: { year: 2024 }})
+  .$render({}); // => "categories/movies/year/2024"
 ```
 <!-- tabs:end -->
