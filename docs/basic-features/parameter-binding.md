@@ -46,11 +46,13 @@ routes.blog
 
 ## **Relative Routes**
 
+The `$bind` method can also be appliead on [relative routes](basic-features/relative-routes.md) that are initiated with `_`.
+
 ``` ts
 routes.blog
+  .categories
   ._
-  .categories.$bind({ path: { category: "movies" }})
   .year.$bind("year", {path: { year: 2024 }})
-  .$render({}); // => "categories/movies/year/2024"
+  .$render({}); // => "year/2024"
 ```
 <!-- tabs:end -->
