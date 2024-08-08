@@ -1,6 +1,8 @@
 # Relative routes
 
-Create relative routes by prefixing a route segment with an underscore `_` within the `render` method's path argument. The relative path returned begins without a leading `/` character and excludes any route nodes specified before the `_`. You can modify this default behavior using a custom renderer. Refer to the customization section for more examples.
+The 'relative routes' feature is used for generating subpaths. With the default renderer, absolute paths are prefixed with a leading `/`. However, when using the default renderer, relative paths are rendered without this prefix. To initiate a relative path, the underscore `_` link can be used to specify the starting segment.
+
+You can modify this default behavior using a custom renderer. Refer to the [Custom Path Rendering](customization/custom-path-rendering.md) section for more examples.
 
 ``` ts
 import { createRoutes } from "typesafe-routes";
@@ -28,7 +30,7 @@ const routes = createRoutes({
 With the default renderer an absolute path contains a leading `/` character.
 
 ``` ts
-routes.render("blog/categories/music", {}); // => "/blog/categories/music"
+routes.blog.categories.music.$render({}); // => "/blog/categories/music"
 ```
 
 ## **Relative Routes**
@@ -36,10 +38,10 @@ routes.render("blog/categories/music", {}); // => "/blog/categories/music"
 Relative paths don't start with a leading `/` character. 
 
 ``` ts
-routes.render("blog/_categories", {}); // => "categories" (a relative path without the leading "/blog" path segment)
+routes.blog._.categories.$render({}); // => "categories" (a relative path without the leading "/blog" path segment)
 
-routes.render("blog/_categories/music", {}); // => "categories/music"
+routes.blog._.categories.music.$render({}); // => "categories/music"
 
-routes.render("blog/categories/_year", {}); // => "music" (we skipped two route nodes here)
+routes.blog.categories._.music.$render({}); // => "music" (we omitted two route nodes here)
 ```
 <!-- tabs:end -->
