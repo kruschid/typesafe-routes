@@ -1,8 +1,8 @@
 # Extending String Location
 
-The `extend` method creates paths based on an existing location path (such as `location.pathname` and `location.search`) in a typesafe manner. 
+The `$from` method creates paths based on an existing path string (such as `location.pathname`) in a typesafe manner. 
 
-Example: Extending a path, such as `/groups/42` to `/groups/42/users/24`, and possibly changing the parameter in the second segment to render `/groups/1337/users/24`, without compromising typesafety.
+Example: Extending a path, such as `/groups/42` to `/groups/42/users/24` without compromising typesafety.
 
 ``` ts
 import { createRoutes, int } from "typesafe-routes";
@@ -10,10 +10,10 @@ import { createRoutes, int } from "typesafe-routes";
 const routes = createRoutes({
   groups: {
     path: ["groups", int("gid")],
-    query: [int(page).optional],
+    query: [int.optional(page)],
     children: {
       users: {
-        path: ["users", int("uid").optional],
+        path: ["users", int.optional("uid")],
         children: {
           settings: {
             path: ["settings"]
@@ -29,89 +29,110 @@ const routes = createRoutes({
 
 ## **Basic Usage**
 
-Here, we compose and render a new path that is based on an existing path. `from` creates a new context for the given `locationPath` based on the route nodes specified in the first argument. The final argument is for passing new parameter values that will override those in the provided path.
+`$from` creates a new path based for the given `locationPath` string.
 
 ``` ts
 // location.path + location.search
 const locationPath = "/groups/42?page=7";
 
 routes
-  .from("groups", locationPath, {})
-  .bind("users", {})
-  .render(); // => "/groups/42/users?page=7"
+  .goups
+  .$from(locationPath, {})
+  .users
+  .$render({}); // => "/groups/42/users?page=7"
+```
 
+The second argument is for passing new parameter values that will override those in the provided path.
+
+``` ts
 routes
-  .from("groups", locationPath, {})
-  .bind("users", { path: { uid: 1337 }})
-  .render(); // => "/groups/42/users/1337?page=7"
+  .groups
+  .$from(locationPath, { path: { gid: 10 } })
+  .users
+  .$render({ path: { uid: 1337 }}); // => "/groups/10/users/1337?page=7"
 ```
 
 ## **Nested Routes**
 
-The `from` method can also parse deeply nested paths. In this example, the first argument, `"groups/users"`, contains a path made up of two route nodes.
+The `$from` method can also parse deeply nested paths. In this example `routes.groups.users`, contains a path made up of two route nodes.
 
 ``` ts
 // location.path
 const locationPath = "/groups/42/users/1337";
 
 routes
-  .from("groups/users", locationPath, {})
-  .render(); // => "/groups/42/users/1337"
+  .groups
+  .users
+  .$from(locationPath, {})
+  .settings
+  .$render({}); // => "/groups/42/users/1337/settings"
 ```
 
 ## **Relative Routes**
 
-`locationPath` contains a relative path that can be parsed by prefixing the route node in the first argument with an underscore `_` sign. After using the `from` method an additional node `settings` is added to the context, and the path is rendered using `render`. 
+In this example `locationPath` contains a relative path that can be parsed by initiating a subroutewith an underscore `_` link. After using the `$from` method an additional node `settings` is added to the context, and the path is rendered using `$render`. 
 
 ``` ts
 // relative location path
 const locationPath = "users/1337";
-// extends relative path with bind
+
+// extends relative path
 routes
-  .from("groups/_users", locationPath, {})
-  .bind("settings", {})
-  .render(); // => "users/1337/settings"
+  .groups
+  ._
+  .users
+  .$from(locationPath, {})
+  .settings
+  .$render({}); // => "users/1337/settings"
 ```
 
 ## **Parameter Override**
 
-The last argument of the `from` method can be used to selectively override parameter values in a typesafe manner. 
+The last argument of the `$from` method can be used to selectively override parameter values in a typesafe manner. 
 
 ``` ts
 const locationPath = "/groups/42/users/1337?page=7";
 // extends relative path with bind
 routes
-  .from("groups/users", locationPath, {
-    path: {uid: 42},
+  .group
+  .users
+  .$from(locationPath, {
+    path: {uid: 24},
     query: {page: 4},
   })
-  .render(); // => "/groups/42/users/42?page=4"
+  .$render({}); // => "/groups/42/users/24?page=4"
 ```
 
 ## **Parameter Deletion**
 
-Optional parameters can be deleted by setting their value to `undefined`
+Optional parameters can be deleted by setting their value to `undefined`.
  
 ``` ts
 const locationPath = "/groups/42/users/24?page=7"
 
-routes.from("groups/users", locationPath, {
-  path: { uid: undefined },
-  query: { page: undefined },
-})
-.render(); // => "/groups/42/users"
+routes
+  .groups
+  .users
+  .$from(locationPath, {
+    path: { uid: undefined },
+    query: { page: undefined },
+  })
+  .$render({}); // => "/groups/42/users"
 ```
 
 ## **Extra Segments**
 
-If the location path includes additional segments, the `from` will omit these trailing segments, leaving only the matching path in the context.
+If the location path includes additional segments, the `$from` method will omit these trailing segments, leaving only the matching path.
 
-However, if the provided location path does not match the route nodes, `from` will throw an `Error`.
+However, if the provided location path does not match the route nodes, `$from` will throw an `Error`.
 
 ``` ts
 const locationPath = "/groups/42/users/24/extra/segments"
 
-routes.from("groups/users", locationPath, {})
-.render(); // => "/groups/42/users/24"
+routes
+  .groups
+  .users
+  .$from(locationPath, {})
+  .$render({}); // => "/groups/42/users/24"
 ```
 <!-- tabs:end -->
