@@ -14,7 +14,7 @@ const routes = createRoutes({
     path: ["blog", int("blogId")],
     children: {
       categories: {
-        path: ["category", str("category").optional],
+        path: ["category", str.optional("category")],
         children: {
           date: {
             path: ["date", date("date")],
@@ -101,7 +101,7 @@ const routes = createRoutes({
     children: {
       categories: {
         path: ["category"],
-        query: [date("date").optional]
+        query: [date.optional("date")]
         children: {
           options: {
             query: [bool("showModal")]
