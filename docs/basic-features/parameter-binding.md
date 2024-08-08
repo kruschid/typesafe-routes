@@ -7,7 +7,7 @@ Internally, the `$bind` method generates a new context that can be shared or mov
 ``` ts
 import { createRoutes, str, int } from "typesafe-routes";
 
-const r = createRoutes({
+const routes = createRoutes({
   blog: {
     path: ["blog"],
     children: {
@@ -29,7 +29,7 @@ const r = createRoutes({
 ## **Basic Usage**
 
 ``` ts
-r.blog
+routes.blog
   .categories.$bind({ path: { category: "movies" }})
   .year
   .$render({ path: { year: 2024 }}); // => "/blog/categories/movies/year/2024"
@@ -38,7 +38,7 @@ r.blog
 ## **Multiple Binds**
 
 ``` ts
-r.blog
+routes.blog
   .categories.$bind({ path: { category: "movies" }})
   .year.$bind({ path: { year: 2024 } })
   .$render({}); // => "/blog/categories/movies/year/2024"
@@ -47,7 +47,7 @@ r.blog
 ## **Relative Routes**
 
 ``` ts
-r.blog
+routes.blog
   ._
   .categories.$bind({ path: { category: "movies" }})
   .year.$bind("year", {path: { year: 2024 }})
