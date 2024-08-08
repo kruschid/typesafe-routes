@@ -46,7 +46,7 @@ The `params` object's string-based values are all converted to the corresponding
 
 ## **Relative Routes**
 
-`$parseParams` is also able to handle [relative route](basic-features/relative-routes.md) paths inlined with the `_` link.
+`$parseParams` is also able to handle [relative route](basic-features/relative-routes.md) paths initiated with the `_` link.
 
 ```js
 routes.blog._.categories.date.$parseParams({
@@ -77,7 +77,7 @@ routes.blog.categories.date.$parseParams(
 
 ## **Relative Location Path**
 
-It is also possible to parse parameters from [relative route](basic-features/relative-routes.md) paths that are inlined with `_`.
+It is also possible to parse parameters from [relative route](basic-features/relative-routes.md) paths that are initiated with `_`.
 
 ```js
 // with relative location path
@@ -126,7 +126,7 @@ route.blog.categories.options.$parseQuery(params); // => { page: 1, showModal: f
 
 ## **Relative Routes**
 
-[Relative Routes](basic-features/relative-routes.md) are compatible with the parsing of query parameters, causing `$parseQuery` to parse only those parameters that belong to the routes that are inlined with `_`.
+[Relative Routes](basic-features/relative-routes.md) are compatible with the parsing of query parameters, causing `$parseQuery` to parse only those parameters that belong to the routes that are initiated with `_`.
 
 ``` ts
 route.blog._.categories.options.$parseQuery({
