@@ -1,16 +1,20 @@
 # Parameter Types
 
+This section contains a list of parameter types that are included with the library. Refer to the [Custom Parameter Types](customization/custom-parameter-types.md) section to learn how to register parsers and serializers for other types.
+
 <!-- tabs:start -->
 ## **str**
 ``` ts
 import { createRoutes, str } from "typesafe-routes";
 
 const routes = createRoutes({
-  home: ["home", str("lang")]
+  myRoute: {
+    ["path", str("lang")]
+  }
 });
 
-routes.render("home", {path: {lang: "en"}}); // => "/home/en"
-routes.parseParams("home",  "/home/en"); // => {lang: "en"}
+routes.myRoute.$render({path: {lang: "en"}}); // => "/path/en"
+routes.myRoute.$parseParams("/path/en"); // => {lang: "en"}
 ```
 
 ## **int**
@@ -19,11 +23,13 @@ routes.parseParams("home",  "/home/en"); // => {lang: "en"}
 import { createRoutes, int } from "typesafe-routes";
 
 const routes = createRoutes({
-  home: ["home", int("id")]
+  myRoute: {
+    ["path", int("id")]
+  }
 });
 
-routes.render("home", {path: {id: 55}}); // => "/home/55"
-routes.parseParams("home", "/home/55"); // => {id: 55}
+routes.myRoute.$render({path: {id: 55}}); // => "/path/55"
+routes.myRoute.$parseParams("/path/55"); // => {id: 55}
 ```
 
 ## **float**
@@ -34,11 +40,13 @@ import { createRoutes, float } from "typesafe-routes";
 const f2 = float(2); // renders 2 fraction digits
 
 const routes = createRoutes({
-  home: ["home", f2("x")]
+  myRoute: {
+    ["path", f2("x")]
+  }
 });
 
-routes.render("home", {path: {x: 55.1234}}); // => "/home/55.12"
-routes.parseParams("home", "/home/55.12"); // => {x: 55.12}
+routes.myRoute.$render({path: {x: 55.1234}}); // => "/path/55.12"
+routes.myRoute.$parseParams("/path/55.12"); // => {x: 55.12}
 ```
 
 ## **isoDate**
@@ -47,11 +55,13 @@ routes.parseParams("home", "/home/55.12"); // => {x: 55.12}
 import { createRoutes, isoDate } from "typesafe-routes";
 
 const routes = createRoutes({
-  home: ["home", isoDate("date")]
+  myRoute: {
+    ["path", isoDate("date")]
+  }
 });
 
-routes.render("home", {path: {date: new Date(1706549242302)}}); // => "/home/2024-01-29T17:27:22.302Z"
-routes.parseParams("home", "/home/2024-01-29T17:27:22.302Z"); // => {date: Date(...)}
+routes.myRoute.$render({path: {date: new Date(1706549242302)}}); // => "/path/2024-01-29T17:27:22.302Z"
+routes.myRoute.$parseParams("/path/2024-01-29T17:27:22.302Z"); // => {date: Date("2024-01-29T17:27:22.302Z")}
 ```
 
 ## **date**
@@ -60,11 +70,13 @@ routes.parseParams("home", "/home/2024-01-29T17:27:22.302Z"); // => {date: Date(
 import { createRoutes, date } from "typesafe-routes";
 
 const routes = createRoutes({
-  home: ["home", date("date")]
+  myRoute: {
+    ["path", date("date")]
+  }
 });
 
-routes.render("home", {path: {date: new Date(1706549242302)}}); // => "/home/2024-01-29"
-routes.parseParams("home", "/home/2024-01-29"); // => {date: Date(...)}
+routes.myRoute.$render({path: {date: new Date(1706549242302)}}); // => "/path/2024-01-29"
+routes.myRoute.$parseParams("/path/2024-01-29"); // => {date: Date("2024-01-29")}
 ```
 
 ## **bool**
@@ -73,11 +85,13 @@ routes.parseParams("home", "/home/2024-01-29"); // => {date: Date(...)}
 import { createRoutes, bool } from "typesafe-routes";
 
 const routes = createRoutes({
-  home: ["home", bool("isVisible")]
+  myRoute: {
+    ["path", bool("isVisible")]
+  }
 });
 
-routes.render("home", {path: {isVisible: true}}); // => "/home/true"
-routes.parseParams("home", "/home/false"); // => {isVisible: false}
+routes.myRoute.$render({path: {isVisible: true}}); // => "/path/true"
+routes.myRoute.$parseParams("/path/false"); // => {isVisible: false}
 ```
 
 ## **oneOf**
@@ -88,11 +102,13 @@ import { createRoutes, oneOf } from "typesafe-routes";
 const options = oneOf("movies", "music", "art")
 
 const routes = createRoutes({
-  home: ["home", options("category")]
+  myRoute: {
+    ["path", options("category")]
+  }
 });
 
-routes.render("home", {path: {category: "music"}}); // => "/home/music"
-routes.parseParams("home", "/home/art"); // => {category: "art"}
+routes.myRoute.$render({path: {category: "music"}}); // => "/path/music"
+routes.myRoute.$parseParams("/path/art"); // => {category: "art"}
 ```
 
 ## **list**
@@ -103,11 +119,13 @@ import { createRoutes, list } from "typesafe-routes";
 const options = list(["movies", "music", "art"], ","); // second argument is optional, default is ";"
 
 const routes = createRoutes({
-  home: ["home", options("categories")]
+  myRoute: {
+    ["path", options("categories")]
+  }
 });
 
-routes.render("home", {path: {categories: ["music", "art"]}}); // => "/home/music,art"
-routes.parseParams("home", "/home/art,movies,music"); // => {categories: ["art", "movies", "music"]}
+routes.myRoute.$render({path: {categories: ["music", "art"]}}); // => "/path/music,art"
+routes.myRoute.$parseParams("/path/art,movies,music"); // => {categories: ["art", "movies", "music"]}
 ```
 
 <!-- tabs:end -->
