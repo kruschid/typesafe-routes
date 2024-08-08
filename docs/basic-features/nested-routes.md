@@ -5,7 +5,7 @@ Nested route segments are defined through the `children` property, containing an
 ``` ts
 import { createRoutes } from "typesafe-routes";
 
-const r = createRoutes({
+const routes = createRoutes({
   blog: {
     path: ["blog"],
     children: {
@@ -25,9 +25,9 @@ const r = createRoutes({
 To render nested segments, chain the corresponding route-nodes based on their hierarchy and use `$render` on them.
 
 ``` ts
-r.blog.$render({}); // => "/blog"
+routes.blog.$render({}); // => "/blog"
 
-r.blog.categories.$render({}); // => "/blog/categories"
+routes.blog.categories.$render({}); // => "/blog/categories"
 
-r.blog.categories.movies.$render({}); // => "/blog/categories/movies"
+routes.blog.categories.movies.$render({}); // => "/blog/categories/movies"
 ```

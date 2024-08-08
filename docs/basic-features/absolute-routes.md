@@ -1,6 +1,6 @@
  # Absolute routes
 
-The method `createRoutes` takes an object as the first argument, where property names represent route names. Each route may specify a `path` using a string array.
+The method `createRoutes` takes an object, where property names represent route names. Each route may specify a `path` using a string array. The string array can contain a variable number of segments.
 
 ``` ts
 import { createRoutes } from "typesafe-routes";
