@@ -48,7 +48,7 @@ The `params` object's string-based values are all converted to the corresponding
 
 `$parseParams` is also able to handle [relative route](basic-features/relative-routes.md) paths initiated with the `_` link.
 
-```js
+``` ts
 routes.blog._.categories.date.$parseParams({
   category: "movies",
   date: "2023-12-28",
@@ -79,7 +79,7 @@ routes.blog.categories.date.$parseParams(
 
 It is also possible to parse parameters from [relative route](basic-features/relative-routes.md) paths that are initiated with `_`.
 
-```js
+``` ts
 // with relative location path
 routes.blog._.categories.date.$parseParams(
   "category/date/2023-12-28"
