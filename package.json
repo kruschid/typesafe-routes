@@ -11,8 +11,7 @@
   "scripts": {
     "docs": "docsify serve ./docs",
     "build": "yarn test && parcel build",
-    "test": "yarn tape -r ts-node/register src/test.ts",
-    "testTypes": "yarn tsd"
+    "test": "yarn tape -r ts-node/register src/test.ts && yarn tsd"
   },
   "engines": {
     "node": ">=20.0.0"
