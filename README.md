@@ -36,7 +36,7 @@ npm i typesafe-routes@next # or any npm alternatives
 - report a bug 🐞
 - open a pull request 🏗️
 - help others ❤️
-- buy me a coffee ☕
+- [buy me a coffee ☕](https://www.buymeacoffee.com/kruschid)
   
 <a href="https://www.buymeacoffee.com/kruschid" target="_blank"><img width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" ></a>
 
@@ -51,3 +51,29 @@ npm i typesafe-routes@next # or any npm alternatives
   - refinejs
   - vue router
   - angular router
+
+## Tasks: PRs Welcome!
+
+- [x] quickstart
+- basic-features
+  - [x] absolute-routes
+  - [x] parameters
+  - [x] nested-routes
+  - [x] relative-routes
+  - [x] route-templates
+  - [x] parameter-parsing
+  - [x] parameter-binding
+  - [x] parameter-types
+- advanced-features
+  - [x] extend-string-location
+  - [x] replace-dynamic-segments
+  - [ ] global-query-parameters
+- customization
+  - [x] custom-parameter-types
+  - [x] custom-template-rendering
+  - [x] custom-path-rendering
+- tutorials
+  - [ ] angular router
+  - [ ] react router
+  - [ ] vue router
+  - [ ] refine
