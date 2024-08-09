@@ -1,9 +1,20 @@
 # Custom Parameter Types
 
+The `param` helper facilitates the easy creation of custom parameters when default ones such as `str`, `int`, or `bool` do not fully meet your application's requirements. It requires two methods: one for serialization and another for parsing. In JavaScript, you can disregard type annotations. However, in TypeScript, they are necessary as the parameter types are inferred from them.
+
+``` ts
+const myParam = param({
+  serialize: (value: MyType) => stringify(value),
+  parse: (value: MyType) => parse(value),
+});
+```
+
+Here are more examples:
+
 <!-- tabs:start -->
 ## **TypeScript**
 
-```js
+``` ts
 import { createRoutes, param } from "typesafe-routes";
 
 interface Pos {
@@ -11,7 +22,6 @@ interface Pos {
   lon: number
 }
 
-// simplified version without validation
 const pt = param({
   serialize: (value: Point) => JSON.stringify(value),
   parse: (value: string) => JSON.parse(value),
@@ -24,7 +34,7 @@ const routes = createRoutes({
   }
 });
 
-routes.render("map", { query: {
+routes.map.$render({ query: {
   coordinates: {
     lat: 51.386998452,
     lon: 30.092666296,
@@ -33,7 +43,8 @@ routes.render("map", { query: {
 ```
 
 ## **JavaScript**
-```js
+
+``` js
 import { createRoutes, param } from "typesafe-routes";
 
 // simplified version without validation
@@ -49,7 +60,7 @@ const routes = createRoutes({
   }
 });
 
-routes.render("map", { query: {
+routes.map.$render({ query: {
   coordinates: {
     lat: 51.386998452,
     lon: 30.092666296,
@@ -59,7 +70,7 @@ routes.render("map", { query: {
 
 ## **Paramaterized Params**
 
-```js
+``` ts
 import { createRoutes, param } from "typesafe-routes";
 
 const float = (fractionDigits?: number) =>
@@ -77,7 +88,7 @@ const routes = createRoutes({
   }
 });
 
-routes.render("video", {
+routes.video.$render({
   query: { time: 13.3745 },
 }) // => "/video?time=13.37"
 ```
