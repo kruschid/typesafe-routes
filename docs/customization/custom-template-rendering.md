@@ -51,7 +51,6 @@ const customRenderer: Renderer = {
 
 <!-- tabs:start -->
 
-
 ## **Custom Renderer Registration**
 
 The `customRenderer` object can be passed to `createRoutes` as the second argument.

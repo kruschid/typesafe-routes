@@ -43,3 +43,26 @@ export const customRenderer: Renderer = {
 3. A `pathSegment` may be either be a static string segment or a dynamic segment (parameter). Static segments are added to the resulting `path` without no changes. Parameters are added only when they are defined. Every parameter is piped through `encodeURI` before being added to the result `path`.
 4. `queryParams` are rendered using `URLSearchParams`. Alternatively, they could be rendered by using a library like [qs](https://github.com/ljharb/qs).
 5. Depending on the value of `isRelative`, the return value could be an absolute path with a leading `/` or a relative path with no prefix. The path segments are joined with a `/` separator. If `searchParams` is truthy, it is concatenated with a prefix `?`.
+
+<!-- tabs:start -->
+
+## **Custom Renderer Registration**
+
+The `customRenderer` object can be passed to `createRoutes` as the second argument.
+
+``` ts
+const routes = createRoutes({
+  users: {
+    path: ["users", int("uid"), bool.optional("edit")]
+  }
+}, customRenderer);
+```
+
+## **Custom Renderer Usage**
+
+The `$render` method adapts the new renderer and creates paths using the described alogirthm.
+
+``` ts
+routes.users.$render({path: { uid: 123, edit: true }}); // => "/users/123/true"
+```
+<!-- tabs:end -->
