@@ -1,8 +1,10 @@
 # Extending String Location
 
-The `$from` method creates paths based on an existing path string (such as `location.pathname`) in a typesafe manner. 
+The `$from` method creates paths based on an existing path string (such as `location.pathname`) in a typesafe manner.
 
-Example: Extending a path, such as `/groups/42` to `/groups/42/users/24` without compromising typesafety.
+It's a convenient shortcut for reproducing paths from individual parameters because you can grab all the necessary information from a single string in one step.
+
+Example: Building a new path, such as `/groups/42/users/24` based on another path `/groups/42`  without compromising typesafety.
 
 ``` ts
 import { createRoutes, int } from "typesafe-routes";
@@ -29,8 +31,6 @@ const routes = createRoutes({
 
 ## **Basic Usage**
 
-`$from` creates a new path based for the given `locationPath` string.
-
 ``` ts
 // location.path + location.search
 const locationPath = "/groups/42?page=7";
@@ -42,7 +42,7 @@ routes
   .$render({}); // => "/groups/42/users?page=7"
 ```
 
-The second argument is for passing new parameter values that will override those in the provided path.
+`$from` creates a new path based for the given `locationPath` string.
 
 ``` ts
 routes
@@ -51,6 +51,8 @@ routes
   .users
   .$render({ path: { uid: 1337 }}); // => "/groups/10/users/1337?page=7"
 ```
+
+The second argument of `$from` is for passing new parameter values that will override those in the provided path.
 
 ## **Nested Routes**
 
