@@ -4,10 +4,10 @@
 
 ### 1. Installation
 
-> This package is currently under development. Please don't use it in production yet. The official release will happen soon. If you want to try typesafe-routes, you can install it right from github:
+> This package is currently under development. Please don't use it in production yet. The official release will happen soon.
 
-``` sh
-npm install typesafe-routes@next # or any npm alternatives
+``` bash
+npm install typesafe-routes@next # or any npm alternative
 ```
 
 ### 2. Route Tree Definition
@@ -20,7 +20,7 @@ const routes = createRoutes({
     path: ["groups", int("gid")],
     children: {
       users: {
-        path: ["users", int("uid").optional],
+        path: ["users", int.optional("uid")],
       }
     }
   }
@@ -31,12 +31,12 @@ const routes = createRoutes({
 
 ``` ts
 // only required params
-routes.render("groups/users", {
+routes.groups.users.$render({
   path: { gid: 123 },
 }); // => "/groups/123/users"
 
 // with optional param
-routes.render("groups/users", {
+routes.groups.users.$render({
   path: { gid: 123, uid: 456 },
 }); // => "/groups/123/users/456"
 ```
