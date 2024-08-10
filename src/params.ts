@@ -1,17 +1,4 @@
-export type ParamKind = "optional" | "required";
-
-export type AnyParam = Param<string, any, any>;
-
-export type Param<N = string, T = any, K extends ParamKind = "required"> = {
-  name: N;
-  kind: K;
-  parser: Parser<T>;
-};
-
-export interface Parser<T> {
-  parse: (value: string) => T;
-  serialize: (value: T) => string;
-}
+import type { Param, Parser } from "./types";
 
 export const param = <T>(parser: Parser<T>) => {
   const fn = <N extends string>(name: N): Param<N, T, "required"> => ({

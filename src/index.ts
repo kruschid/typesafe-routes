@@ -1,4 +1,4 @@
-export * from "./param";
+export * from "./params";
+export * from "./types";
 export * from "./routes";
-export * from "./createRoutes";
-export * from "./renderer";
+export * from "./options";

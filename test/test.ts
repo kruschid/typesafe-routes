@@ -1,17 +1,17 @@
 import test from "tape";
 import {
-  Renderer,
   bool,
   createRoutes,
   date,
+  defaultOptions,
   float,
   int,
   isoDate,
   list,
   oneOf,
+  RenderContext,
   str,
-  defaultRenderer,
-} from ".";
+} from "../src";
 
 test("templates with default renderer", (t) => {
   const routes = createRoutes({
@@ -565,28 +565,29 @@ test("params", (t) => {
 });
 
 test("renderer customization", (t) => {
-  const renderer: Renderer<{ href: string; pathname: string; search: string }> =
-    {
-      ...defaultRenderer,
-      render: ({ pathSegments, isRelative, pathParams, queryParams }) => {
-        // path params
-        const path = pathSegments.flatMap((pathSegment) =>
-          typeof pathSegment === "string"
-            ? pathSegment
-            : pathParams[pathSegment.name] != null
-            ? pathParams[pathSegment.name]
-            : []
-        );
+  const renderPath = ({
+    pathSegments,
+    isRelative,
+    pathParams,
+    queryParams,
+  }: RenderContext) => {
+    // path params
+    const path = pathSegments.flatMap((pathSegment) =>
+      typeof pathSegment === "string"
+        ? pathSegment
+        : pathParams[pathSegment.name] != null
+        ? pathParams[pathSegment.name]
+        : []
+    );
 
-        const searchParams = new URLSearchParams(queryParams).toString();
+    const searchParams = new URLSearchParams(queryParams).toString();
 
-        const pathname = (isRelative ? "" : "/") + path.join("/");
-        const search = (searchParams ? `?` : "") + searchParams;
-        const href = pathname + search;
+    const pathname = (isRelative ? "" : "/") + path.join("/");
+    const search = (searchParams ? `?` : "") + searchParams;
+    const href = pathname + search;
 
-        return { pathname, search, href };
-      },
-    };
+    return { pathname, search, href };
+  };
 
   const routes = createRoutes(
     {
@@ -601,7 +602,7 @@ test("renderer customization", (t) => {
         },
       },
     },
-    { renderer }
+    { ...defaultOptions, renderPath }
   );
 
   t.deepEqual(

@@ -225,3 +225,37 @@ expectType<
     }
   ) => string
 >(r.language.users.show.$replace);
+
+//
+// render options
+//
+
+const withOptions = createRoutes(
+  {
+    home: {},
+    language: {
+      path: [str("lang")],
+      children: {
+        users: {
+          path: ["users"],
+        },
+      },
+    },
+  },
+  {
+    renderPath: () => ({ path: "", query: "" }),
+    renderTemplate: () => ({ path: [""], query: [""] }),
+  }
+);
+expectType<
+  (params: {}) => {
+    path: string;
+    query: string;
+  }
+>(withOptions.home.$render);
+expectType<
+  () => {
+    path: string[];
+    query: string[];
+  }
+>(withOptions.home.$template);
