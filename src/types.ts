@@ -78,15 +78,6 @@ export type ExtractParamRecord<Params extends AnyParam> = {
   >;
 };
 
-export interface RoutesOptions<PathType, TemplateType> {
-  renderPath: (ctx: RenderContext) => PathType;
-  renderTemplate: (
-    ctx: RenderContext,
-    options?: RoutesOptions<PathType, TemplateType>
-  ) => TemplateType;
-  templatePrefix?: boolean;
-}
-
 type ComputeParamRecordMap<Params extends ParamRecordMap> = A.Compute<
   ExcludeEmptyProperties<Params>
 >;
@@ -98,38 +89,40 @@ type ComputePartialParamRecordMap<Params extends ParamRecordMap> = A.Compute<
   }>
 >;
 
-export type RoutesContext<
+export type RoutesProps<
   Routes extends RouteNodeMap,
-  Options extends RoutesOptions<any, any>,
+  Context extends AnyRenderContext,
   Params extends ParamRecordMap = ParamRecordMap
 > = {
-  _: RoutesContext<Routes, Options>;
-  $template: () => ReturnType<Options["renderTemplate"]>;
+  _: RoutesProps<Routes, Context>;
+  $template: () => ReturnType<Context["renderTemplate"]>;
   $render: (
     params: ComputeParamRecordMap<Params>
-  ) => ReturnType<Options["renderPath"]>;
+  ) => ReturnType<Context["renderPath"]>;
   $parseParams: (params: Record<string, any>) => Params["path"];
   $parseQuery: (params: Record<string, any>) => Params["query"];
   $bind: (
     params: ComputeParamRecordMap<Params>
-  ) => RoutesContext<Routes, Options>;
+  ) => RoutesProps<Routes, Context>;
   $from: (
     location: string,
     params: ComputePartialParamRecordMap<Params>
-  ) => RoutesContext<Routes, Options>;
+  ) => RoutesProps<Routes, Context>;
   $replace: (
     location: string,
     params: ComputePartialParamRecordMap<Params>
   ) => string;
 } & {
-  [Segment in keyof Routes]: RoutesContext<
+  [Segment in keyof Routes]: RoutesProps<
     Routes[Segment]["children"] & {}, // shortcut to exclude undefined
-    Options,
+    Context,
     A.Compute<Params & RouteNodeToParamRecordMap<Routes[Segment]>>
   >;
 };
 
-export type RenderContext = {
+export type RenderContext<TemplateType, PathType> = {
+  renderTemplate: (ctx: RenderContext<TemplateType, PathType>) => TemplateType;
+  renderPath: (ctx: RenderContext<TemplateType, PathType>) => PathType;
   // contains leading nodes that were skipped in a relative path
   skippedNodes: RouteNode[];
   nodes: RouteNode[];
@@ -144,11 +137,12 @@ export type RenderContext = {
   currentQuerySegments: Exclude<RouteNode["query"], undefined>;
 };
 
+export type AnyRenderContext = RenderContext<any, any>;
+
 export type CreateRoutes = <
   Routes extends RouteNodeMap,
-  Options extends RoutesOptions<any, any> = RoutesOptions<string, string>
+  Context extends AnyRenderContext = RenderContext<string, string>
 >(
   routes: Routes,
-  options?: Options,
-  parentContext?: RenderContext
-) => RoutesContext<Routes, Options>;
+  context?: Context
+) => RoutesProps<Routes, Context>;

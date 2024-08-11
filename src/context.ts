@@ -1,9 +1,9 @@
-import type { RenderContext, RoutesOptions } from "./types";
+import type { AnyRenderContext, RenderContext } from "./types";
 
-export const renderTemplate = (
-  { pathSegments, isRelative }: RenderContext,
-  options?: RoutesOptions<any, any>
-) => {
+export const renderTemplate = ({
+  pathSegments,
+  isRelative,
+}: AnyRenderContext) => {
   const template = pathSegments
     .map((pathSegment) =>
       typeof pathSegment === "string"
@@ -12,9 +12,7 @@ export const renderTemplate = (
     )
     .join("/");
 
-  const hasPrefix = options?.templatePrefix ?? true;
-
-  return isRelative || !hasPrefix
+  return isRelative
     ? template //relative
     : `/${template}`; // absolute
 };
@@ -24,7 +22,7 @@ export const renderPath = ({
   isRelative,
   pathParams,
   queryParams,
-}: RenderContext) => {
+}: AnyRenderContext) => {
   const path: string[] = [];
   // path params
   pathSegments.forEach((pathSegment) => {
@@ -44,7 +42,16 @@ export const renderPath = ({
   return href;
 };
 
-export const defaultOptions: RoutesOptions<string, string> = {
+export const defaultContext: RenderContext<string, string> = {
   renderTemplate,
   renderPath,
+  skippedNodes: [],
+  nodes: [],
+  pathSegments: [],
+  querySegments: [],
+  isRelative: false,
+  pathParams: {},
+  queryParams: {},
+  currentPathSegments: [],
+  currentQuerySegments: [],
 };

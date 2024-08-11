@@ -1,9 +1,10 @@
 import test from "tape";
 import {
+  AnyRenderContext,
   bool,
   createRoutes,
   date,
-  defaultOptions,
+  defaultContext,
   float,
   int,
   isoDate,
@@ -570,7 +571,7 @@ test("renderer customization", (t) => {
     isRelative,
     pathParams,
     queryParams,
-  }: RenderContext) => {
+  }: AnyRenderContext) => {
     // path params
     const path = pathSegments.flatMap((pathSegment) =>
       typeof pathSegment === "string"
@@ -602,7 +603,7 @@ test("renderer customization", (t) => {
         },
       },
     },
-    { ...defaultOptions, renderPath }
+    { ...defaultContext, renderPath }
   );
 
   t.deepEqual(

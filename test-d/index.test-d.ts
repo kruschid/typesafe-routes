@@ -1,5 +1,12 @@
 import { expectType } from "tsd";
-import { bool, createRoutes, int, str } from "../src";
+import {
+  AnyRenderContext,
+  bool,
+  createRoutes,
+  defaultContext,
+  int,
+  str,
+} from "../src";
 
 const r = createRoutes({
   home: {},
@@ -243,8 +250,12 @@ const withOptions = createRoutes(
     },
   },
   {
-    renderPath: () => ({ path: "", query: "" }),
-    renderTemplate: () => ({ path: [""], query: [""] }),
+    ...defaultContext,
+    renderPath: (ctx: AnyRenderContext) => ({ path: "", query: "" }),
+    renderTemplate: (ctx: AnyRenderContext) => ({
+      path: [""],
+      query: [""],
+    }),
   }
 );
 expectType<
