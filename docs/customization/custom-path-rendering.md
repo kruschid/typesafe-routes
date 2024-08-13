@@ -3,33 +3,6 @@
 This section provides an example of a customized route renderer. The code fragment below is identical to the implementation of the default `renderPath` function. Some lines are highlighted with a comment. Each comment refers to a brief description below the code sample.
 
 ``` ts
-import { RenderContext } from "typesafe-routes";
-
-export const renderPath = (
-  { pathSegments, isRelative, pathParams, queryParams }: RenderContext // 1.
-) => {
-  const path: string[] = [];
-  // path params
-  pathSegments.forEach((pathSegment) => { // 3.
-    if (typeof pathSegment === "string") {
-      path.push(pathSegment);
-    } else if (pathParams[pathSegment.name] != null) {
-      path.push(encodeURI(pathParams[pathSegment.name]));
-    }
-  });
-
-  // 4.
-  const searchParams = new URLSearchParams(queryParams).toString();
-
-  // 5.
-  return (
-    (isRelative ? "" : "/") +
-    path.join("/") +
-    (searchParams ? `?` : "") +
-    searchParams
-  );
-};
-
 import { AnyRenderContext } from "typesafe-routes";
 
 export const renderPath = (
@@ -63,10 +36,6 @@ export const renderPath = (
   return href;
 };
 ```
-
-
-
-
 
 1. The `renderPath` function accepts the a `AnyRenderContext` object as its first argument. From the context it requires the properties `pathSegments`, `isRelative`, `pathParams`, and `queryParams`.
    - `pathSegments` includes the static and dynamic segments of the resulting path 
