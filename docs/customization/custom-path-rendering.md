@@ -1,66 +1,106 @@
 # Custom Path Rendering
 
-This section provides an example of a customized route renderer. The code fragment below is identical to the implementation of the `defaultRenderer.render` method. Some lines are highlighted with a comment. Each comment refers to a brief description below the code sample.
+This section provides an example of a customized route renderer. The code fragment below is identical to the implementation of the default `renderPath` function. Some lines are highlighted with a comment. Each comment refers to a brief description below the code sample.
 
 ``` ts
-import { defaultRenderer, Renderer } from "typesafe-routes";
+import { RenderContext } from "typesafe-routes";
 
-export const customRenderer: Renderer = {
+export const renderPath = (
+  { pathSegments, isRelative, pathParams, queryParams }: RenderContext // 1.
+) => {
+  const path: string[] = [];
+  // path params
+  pathSegments.forEach((pathSegment) => { // 3.
+    if (typeof pathSegment === "string") {
+      path.push(pathSegment);
+    } else if (pathParams[pathSegment.name] != null) {
+      path.push(encodeURI(pathParams[pathSegment.name]));
+    }
+  });
+
+  // 4.
+  const searchParams = new URLSearchParams(queryParams).toString();
+
+  // 5.
+  return (
+    (isRelative ? "" : "/") +
+    path.join("/") +
+    (searchParams ? `?` : "") +
+    searchParams
+  );
+};
+
+import { AnyRenderContext } from "typesafe-routes";
+
+export const renderPath = (
   // 1.
-  ...defaultRenderer,
+  { pathSegments, isRelative, pathParams, queryParams }: AnyRenderContext
+) => {
+  const path: string[] = [];
 
-  // 2. 
-  render: ({ pathSegments, isRelative, pathParams, queryParams }) => {
-    const path: string[] = [];
-    // path params
-    pathSegments.forEach((pathSegment) => { // 3.
-      if (typeof pathSegment === "string") {
-        path.push(pathSegment);
-      } else if (pathParams[pathSegment.name] != null) {
-        path.push(encodeURI(pathParams[pathSegment.name]));
-      }
-    });
+  // 2.
+  pathSegments.forEach((pathSegment) => { // 2.
+    if (typeof pathSegment === "string") {
+      path.push(pathSegment);
+    } else if (pathParams[pathSegment.name] != null) {
+      path.push(pathParams[pathSegment.name]);
+    }
+  });
 
-    // 4.
-    const searchParams = new URLSearchParams(queryParams).toString();
+  // 3.
+  const searchParams = new URLSearchParams(queryParams).toString();
 
-    // 5.
-    return (
-      (isRelative ? "" : "/") +
-      path.join("/") +
-      (searchParams ? `?` : "") +
-      searchParams
-    );
-  },
+  // 4.
+  const pathname = (isRelative ? "" : "/") + path.join("/");
+
+  // 5.
+  const search = (searchParams ? `?` : "") + searchParams;
+
+  // 6.
+  const href = pathname + search;
+
+  // 7.
+  return href;
 };
 ```
 
-1. The `customRenderer` object implements the `Renderer` interface. Because the goal is only to change the path rendering, the renderer object inherits the remaining methods from the `defaultRenderer` object.
-2. The `render` method accepts the current `RenderContext` as its first argument. From the context it requires the properties `pathSegments`, `isRelative`, `pathParams`, and `queryParams`.
+
+
+
+
+1. The `renderPath` function accepts the a `AnyRenderContext` object as its first argument. From the context it requires the properties `pathSegments`, `isRelative`, `pathParams`, and `queryParams`.
    - `pathSegments` includes the static and dynamic segments of the resulting path 
    - `isRelative` property determines whether a leading `/` should be rendered
    - `pathParams` and `queryParams` are parameter objects with key-value pairs of type `Record<string, string>`
-3. A `pathSegment` may be either be a static string segment or a dynamic segment (parameter). Static segments are added to the resulting `path` without no changes. Parameters are added only when they are defined. Every parameter is piped through `encodeURI` before being added to the result `path`.
-4. `queryParams` are rendered using `URLSearchParams`. Alternatively, they could be rendered by using a library like [qs](https://github.com/ljharb/qs).
-5. Depending on the value of `isRelative`, the return value could be an absolute path with a leading `/` or a relative path with no prefix. The path segments are joined with a `/` separator. If `searchParams` is truthy, it is concatenated with a prefix `?`.
+2. A `pathSegment` may be either a static string segment or a dynamic segment (parameter). Static segments are pushed to the resulting `path` array without no changes. Parameters are added only when they are defined in the `pathParams` object that was provided by the context.
+3. `queryParams` are rendered using `URLSearchParams`. Alternatively, they could be rendered by using a library like [qs](https://github.com/ljharb/qs).
+4. Depending on the value of `isRelative`, the return value could be an absolute path with a leading `/` or a relative path with no prefix. The path segments are joined with a `/` separator.
+5. If `searchParams` is truthy, it is prefixed with a `?`.
+6. `pathname` and `search` are concatenated and saved in `href`, the return value of the `renderPath` function.
+7. In this example, `renderPath` returns a value of string type. However, it could also return any other types of values without compromising type safety. This could be a [URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL) or an array of string segments. The type of the returned value will be reflected in the `$render` function.
 
 <!-- tabs:start -->
 
-## **Custom Renderer Registration**
+## **Render Function Registration**
 
-The `customRenderer` object can be passed to `createRoutes` as the second argument.
+The `renderPath` function can be wrapped in an object along with the `defaultContext` object and provided as the second argument when calling the `createRoutes` function.
 
 ``` ts
+import { defaultContext, createRoutes, int, bool } from "typesafe-routes";
+
 const routes = createRoutes({
   users: {
     path: ["users", int("uid"), bool.optional("edit")]
   }
-}, customRenderer);
+}, {
+  ...defaultContext, // default context needs to be included
+  renderPath, // this is the custom render function from above
+});
 ```
 
-## **Custom Renderer Usage**
+## **Renderer Function Usage**
 
-The `$render` method adapts the new renderer and creates paths using the described alogirthm.
+The `$render` method adapts the new `renderPath` function and creates paths using the demonstrated implementation.
 
 ``` ts
 routes.users.$render({path: { uid: 123, edit: true }}); // => "/users/123/true"
