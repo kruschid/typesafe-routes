@@ -131,3 +131,4 @@ Because we are using the `angularRouter` preset, the `$render` method will retur
 
 ## Parameter Parsing
 
+to be continued...
