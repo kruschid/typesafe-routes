@@ -1,3 +1,7 @@
+![](https://badgen.net/bundlephobia/minzip/typesafe-routes@next)
+![](https://badgen.net/bundlephobia/min/typesafe-routes@next)
+![](https://badgen.net/bundlephobia/tree-shaking/typesafe-routes@next)
+
 # Typesafe Routes
 
 Enhance your preferred routing library by incorporating powerful path generation including:
@@ -6,7 +10,7 @@ Enhance your preferred routing library by incorporating powerful path generation
 - Nested, absolute, and relative paths
 - Parameter parsing and serialization
 - Type-safe, customizable, and extendable
-- Also useful with JavaScript
+- Also works with JavaScript (apart from type safety)
 
 ## Quick Reference
 
@@ -24,10 +28,10 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   
 ## Installation
 
-> Version 11 is currently under development. Please don't use it in production yet. The official release will happen soon. [The v10 documentation can be found here](https://github.com/kruschid/typesafe-routes/tree/v10.0.6).
+> Version 12 is currently under development. Please don't use it in production yet. The official release will happen soon. [The v10 documentation can be found here](https://github.com/kruschid/typesafe-routes/tree/v10.0.6).
 
 ``` sh
-npm i typesafe-routes@next # or any npm alternatives
+npm i typesafe-routes@next # or any npm alternative
 ```
 
 ## How to Contribute
@@ -42,17 +46,16 @@ npm i typesafe-routes@next # or any npm alternatives
 
 ## Roadmap
 
-- v11 migration guide
+- v12 migration guide
 - check for duplicate param names in the route tree
-- context caching
-- customizable parsing of search params 
+- customizable parsing of search params (for example with qs)
 - demos & utils
   - react-router
   - refinejs
   - vue router
   - angular router
 
-## Tasks: PRs Welcome!
+## Docs
 
 - [x] quickstart
 - basic-features
