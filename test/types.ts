@@ -1,4 +1,3 @@
-import { expectType } from "tsd";
 import {
   AnyRenderContext,
   bool,
@@ -7,6 +6,8 @@ import {
   int,
   str,
 } from "../src";
+
+const expectType = <T>(_: T) => {};
 
 const r = createRoutes({
   home: {},
@@ -269,4 +270,12 @@ expectType<
     path: string[];
     query: string[];
   }
+>(withOptions.home.$template);
+
+expectType<
+  () => {
+    path: number[];
+    query: number[];
+  }
+  // @ts-expect-error
 >(withOptions.home.$template);
