@@ -17,12 +17,12 @@ import { r } from "../routes";
 })
 export class SecondComponent {
   name = "Second Component";
-  relativeLink = r.render("secondComponent/_nestedComponent", {
-    path: { bparam: 456 },
+  relativeLink = r.secondComponent._.nestedComponent.$render({
+    path: { paramB: 456 },
     query: { page: 24 },
   });
   params = JSON.stringify(
-    r.parseParams("secondComponent", this.route.snapshot.params)
+    r.secondComponent.$parseParams(this.route.snapshot.params)
   );
 
   constructor(private route: ActivatedRoute) {}

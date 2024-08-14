@@ -6,13 +6,13 @@ import { SecondComponent } from "./components/SecondComponent";
 import { r } from "./routes";
 
 export const routes: Routes = [
-  { path: r.template("firstComponent"), component: FirstComponent },
+  { path: r.firstComponent.$template(), component: FirstComponent },
   {
-    path: r.template("secondComponent"),
+    path: r.secondComponent.$template(),
     component: SecondComponent,
     children: [
       {
-        path: r.template("secondComponent/_nestedComponent"),
+        path: r.secondComponent._.nestedComponent.$template(),
         component: NestedComponent,
       },
     ],

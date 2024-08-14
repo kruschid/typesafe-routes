@@ -20,14 +20,12 @@ export class NestedComponent {
 
   syncParams() {
     this.query = JSON.stringify(
-      r.parseQuery(
-        "secondComponent/_nestedComponent",
+      r.secondComponent._.nestedComponent.$parseQuery(
         this.route.snapshot.queryParams
       )
     );
     this.params = JSON.stringify(
-      r.parseParams(
-        "secondComponent/_nestedComponent",
+      r.secondComponent._.nestedComponent.$parseParams(
         this.route.snapshot.params
       )
     );

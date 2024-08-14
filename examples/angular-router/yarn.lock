@@ -5700,10 +5700,10 @@ typed-assert@^1.0.8:
   resolved "https://registry.yarnpkg.com/typed-assert/-/typed-assert-1.0.9.tgz#8af9d4f93432c4970ec717e3006f33f135b06213"
   integrity sha512-KNNZtayBCtmnNmbo5mG47p1XsCyrx6iVqomjcZnec/1Y5GGARaxPs6r49RnSPeUP3YjNYiU9sQHAtY4BBvnZwg==
 
-typesafe-routes@^11.0.0-beta.2:
-  version "11.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/typesafe-routes/-/typesafe-routes-11.0.0-beta.2.tgz#645490be02cfb828aa9a2e303936af8415399ab4"
-  integrity sha512-cJ5jiX/D1ICjFPdMqd8KjCADzsWd/z9FIIoB6t2vjvKFPeoct/LwjT9N/5WdsLCk0pyuJ6smUflrkgHM1G8NYw==
+typesafe-routes@^12.0.0-beta.0:
+  version "12.0.0-beta.0"
+  resolved "https://registry.yarnpkg.com/typesafe-routes/-/typesafe-routes-12.0.0-beta.0.tgz#c06e51ef9d9bad090f73fe0b1e62c276673c3b44"
+  integrity sha512-GA9awEL5Mce1WTSOiAI2r42M+/Dw8MJ5OAGBLYN26dR+YGCy2ibBih1746Kltcg9UrBWQNkUyGSM1wUTnYZuhQ==
   dependencies:
     ts-toolbelt "^9.6.0"
 

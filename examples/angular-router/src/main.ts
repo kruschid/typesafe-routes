@@ -28,12 +28,12 @@ import { r } from "./routes";
   `,
 })
 export class App {
-  firstComponentLink = r.render("firstComponent", {});
-  secondComponentLink = r.render("secondComponent", {
-    path: { aparam: 123 },
+  firstComponentLink = r.firstComponent.$render({});
+  secondComponentLink = r.secondComponent.$render({
+    path: { paramA: 123 },
   });
-  nestedComponentLink = r.render("secondComponent/nestedComponent", {
-    path: { aparam: 321, bparam: 654 },
+  nestedComponentLink = r.secondComponent.nestedComponent.$render({
+    path: { paramA: 321, paramB: 654 },
     query: { page: 42 },
   });
 }
