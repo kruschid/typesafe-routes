@@ -26,9 +26,7 @@ export const renderPath = ({
 export const renderTemplate = ({ pathSegments }: AnyRenderContext) => {
   const template = pathSegments
     .map((pathSegment) =>
-      typeof pathSegment === "string"
-        ? pathSegment
-        : `:${pathSegment.name}${pathSegment.kind === "optional" ? "?" : ""}`
+      typeof pathSegment === "string" ? pathSegment : `:${pathSegment.name}`
     )
     .join("/");
 
