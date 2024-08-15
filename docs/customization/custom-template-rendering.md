@@ -68,7 +68,7 @@ const routes = createRoutes({
   }
 }, {
   ...defaultContext, // default context needs to be included
-  renderPath, // this is the custom render function from above
+  renderTemplate, // this is the custom render function from above
 });
 ```
 
