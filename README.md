@@ -17,14 +17,14 @@ Enhance your preferred routing library by incorporating powerful path generation
 The complete [documentation can be found here](https://kruschid.github.io/typesafe-routes).
 
 - Methods
-  - `render`: renders a path with parameters
-  - `template`: renders a route template
-  - `parseParams`: parses dynamic segments in a path
-  - `parseQuery`: parses parameters in a search query
+  - `$render`: renders a path with parameters
+  - `$template`: renders a route template
+  - `$parseParams`: parses dynamic segments in a path
+  - `$parseQuery`: parses parameters in a search query
 - Chainable operators:
-  - `bind`: binds parameters to a route for later rendering
-  - `from`: creates a new route based on a string-based path (i.e. `location.path`)
-  - `replace`: replaces segments in a path
+  - `$bind`: binds parameters to a route for later rendering
+  - `$from`: creates a new route based on a string-based path (i.e. `location.path`)
+  - `$replace`: replaces segments in a location path
   
 ## Installation
 
