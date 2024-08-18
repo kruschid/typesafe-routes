@@ -12,6 +12,62 @@ Enhance your preferred routing library by incorporating powerful path generation
 - Type-safe, customizable, and extendable
 - Also works with JavaScript (apart from type safety)
 
+## Example (Default Renderer)
+
+``` ts
+import { createRoutes, int } from "typesafe-routes";
+
+const routes = createRoutes({
+  users: {
+    path: ["users"],
+    children: {
+      create: { path: ["create"] }
+      edit: { path: ["edit", int("uid")] },
+      show: {
+        path: ["show", int("uid")],
+        children: {
+          groups: { path: ["groups", int.optional("gid")] }
+        }
+      },
+    }
+  }
+});
+
+// absolute paths
+routes.users.$render({}); // => "/users"
+routes.users.create.$render({}); // => "/users/create"
+routes.users.show.$render({path: {uid: 123}}); // => "/users/show/123"
+
+// relative paths ("_" indicates the start segment)
+routes._.users.$render({}); // => "users"
+routes.users._.create.$render({}); // => "create"
+routes.users._.show.$render({path: {uid: 321}}); // => "show/321"
+
+// parse path params
+routes.users.show.$parseParams({uid: "42"}); // => {uid: 42}
+routes.users.show.$parseParams("/users/show/99"); // => {uid: 99}
+routes.users._.show.$parseParams("show/99"); // => {uid: 99}
+
+// create from location string
+routes
+  .users
+  .show
+  .$from("/users/show/1", {path: {uid: 11}}) // replaces parameters 
+  .groups
+  .$render({path: {gid: 2}}); // => "/users/show/11/groups/2"
+
+// templates 
+routes.users.show.groups.$template(); // => "/users/show/:uid/groups/:gid?"
+routes._.users.show.groups.$template(); // => "users/show/:uid/groups/:gid?"
+routes.users._show.groups.$template(); // => "show/:uid/groups/:gid?"
+
+// template examples with a custom renderer
+routes.users.show.groups.$template(); // => "users/show/{:uid}/groups/{:gid}"
+
+// array based custom templates:
+routes.users.show.$template(); // => ["users", "show", {name: "uid", type: "number"}]
+```
+
 ## Quick Reference
 
 The complete [documentation can be found here](https://kruschid.github.io/typesafe-routes).
@@ -22,9 +78,9 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   - `$parseParams`: parses dynamic segments in a path
   - `$parseQuery`: parses parameters in a search query
 - Chainable operators:
-  - `$bind`: binds parameters to a route for later rendering
-  - `$from`: creates a new route based on a string-based path (i.e. `location.path`)
-  - `$replace`: replaces segments in a location path
+  - `$bind`: binds parameters to a path for later rendering
+  - `$from`: creates a new path based on a string-based path (i.e. `location.path`)
+  - `$replace`: replaces segments in a string-based path (i.e. `location.path`)
   
 ## Installation
 
