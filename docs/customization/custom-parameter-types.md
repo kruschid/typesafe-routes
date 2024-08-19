@@ -47,7 +47,6 @@ routes.map.$render({ query: {
 ``` js
 import { createRoutes, param } from "typesafe-routes";
 
-// simplified version without validation
 const pt = param({
   serialize: (value) => JSON.stringify(value),
   parse: (value) => JSON.parse(value),
