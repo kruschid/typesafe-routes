@@ -659,3 +659,48 @@ test("render global query params", (t) => {
 
   t.end();
 });
+
+test("route composition", (t) => {
+  const usersRoutes = createRoutes({
+    list: {
+      path: ["list"],
+    },
+    detail: {
+      path: ["detail", int("uid")],
+    },
+  });
+
+  const cartRoutes = createRoutes({
+    detail: {
+      path: ["detail"],
+    },
+  });
+
+  const globalRoutes = createRoutes({
+    home: {
+      path: ["home"],
+    },
+  });
+
+  const routes = createRoutes({
+    ...globalRoutes.$routes,
+    user: {
+      path: ["user"],
+      children: usersRoutes.$routes,
+    },
+    cart: {
+      path: ["cart"],
+      children: cartRoutes.$routes,
+    },
+  });
+
+  t.equals(routes.home.$render({}), "/home");
+  t.equals(routes.user.list.$render({}), "/user/list");
+  t.equals(
+    routes.user.detail.$render({ path: { uid: 123 } }),
+    "/user/detail/123"
+  );
+  t.equals(routes.cart.detail.$render({}), "/cart/detail");
+
+  t.end();
+});

@@ -4,6 +4,7 @@ import {
   createRoutes,
   defaultContext,
   int,
+  RouteNodeMap,
   str,
 } from "../src";
 
@@ -234,6 +235,9 @@ expectType<
   ) => string
 >(r.language.users.show.$replace);
 
+// @ts-expect-error
+expectType<null>(r.language.users.show.$replace);
+
 //
 // render options
 //
@@ -279,3 +283,29 @@ expectType<
   }
   // @ts-expect-error
 >(withOptions.home.$template);
+
+//
+// composition
+//
+
+const extraRoutes = {
+  ...r.$routes,
+  extra: {
+    path: ["extra"],
+    children: r.$routes,
+  },
+} satisfies RouteNodeMap;
+
+const extra = createRoutes(extraRoutes);
+
+expectType<typeof extraRoutes>(extra.$routes);
+// @ts-expect-error
+expectType<never>(extra.$routes);
+// @ts-expect-error
+expectType<string>(extra.$routes);
+expectType<typeof r.$routes.language>(extra.$routes.language);
+// @ts-expect-error
+expectType<never>(extra.$routes.language);
+// @ts-expect-error
+expectType<string>(extra.$routes.language);
+expectType<typeof r.$routes>(extra.$routes.extra.children);

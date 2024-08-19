@@ -94,6 +94,8 @@ export type RoutesProps<
   Context extends AnyRenderContext,
   Params extends ParamRecordMap = ParamRecordMap
 > = {
+  $routes: Routes;
+  $context: Context;
   _: RoutesProps<Routes, Context>;
   $template: () => ReturnType<Context["renderTemplate"]>;
   $render: (

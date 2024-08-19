@@ -13,7 +13,9 @@ export const createRoutes: CreateRoutes = (
   routeMap,
   context?: AnyRenderContext
 ) => {
-  const methods = (path: string[]) => ({
+  const props = (path: string[]) => ({
+    $routes: routeMap,
+    $context: context ?? defaultContext,
     $template: () =>
       (context?.renderTemplate ?? renderTemplate)(
         createRenderContext(routeMap, path)
@@ -91,7 +93,7 @@ export const createRoutes: CreateRoutes = (
   });
 
   const proxy = (path: string[]): any =>
-    new Proxy(methods(path), {
+    new Proxy(props(path), {
       get: (target, maybeSegment, receiver) =>
         typeof maybeSegment === "string" && maybeSegment[0] !== "$"
           ? proxy([...path, maybeSegment]) // add segment to path
