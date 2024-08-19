@@ -12,6 +12,7 @@
   * [Extend String Location](advanced-features/extend-string-location.md)
   * [Replace Dynamic Segments](advanced-features/replace-dynamic-segments.md)
   * [Global Query Parameters](advanced-features/global-query-parameters.md)
+  * [Composing Routes](advanced-features/composing-routes.md)
 * Customization
   * [Custom Parameter Types](customization/custom-parameter-types.md)
   * [Custom Template Rendering](customization/custom-template-rendering.md)
