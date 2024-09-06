@@ -107,36 +107,36 @@ expectType<
 expectType<(params: Record<string, any>) => unknown>(r.$parseParams);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     lang: string;
   }
 >(r.language.$parseParams);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     lang: string;
   }
 >(r.language.users.$parseParams);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     lang: string;
     userId: number;
   }
 >(r.language.users.show.$parseParams);
 
-expectType<(params: Record<string, any>) => {}>(
+expectType<(params: Record<string, any> | string) => {}>(
   r.language._.users.$parseParams
 );
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     userId: number;
   }
 >(r.language._.users.show.$parseParams);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     userId: number;
   }
 >(r.language.users._.show.$parseParams);
@@ -144,38 +144,40 @@ expectType<
 //
 // query
 //
-expectType<(params: Record<string, any>) => {}>(r.home.$parseQuery);
+expectType<(params: Record<string, any> | string) => {}>(r.home.$parseQuery);
 
-expectType<(params: Record<string, any>) => {}>(r.language.$parseQuery);
+expectType<(params: Record<string, any> | string) => {}>(
+  r.language.$parseQuery
+);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     page: number;
   }
 >(r.language.users.$parseQuery);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     page: number;
     filter?: boolean | undefined;
   }
 >(r.language.users.show.$parseQuery);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     page: number;
   }
 >(r.language._.users.$parseQuery);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     page: number;
     filter?: boolean | undefined;
   }
 >(r.language._.users.show.$parseQuery);
 
 expectType<
-  (params: Record<string, any>) => {
+  (params: Record<string, any> | string) => {
     filter?: boolean | undefined;
   }
 >(r.language.users._.show.$parseQuery);

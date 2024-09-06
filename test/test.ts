@@ -200,9 +200,20 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
+    routes.blog.category.date.$parseParams(
+      "blog/false/category/24/date/2024-11-29"
+    ),
+    {
+      lang: false,
+      cid: 24,
+      date: new Date("2024-11-29T00:00:00.000Z"),
+    }
+  );
+
+  t.deepEqual(
     routes.blog.category.date.$parseParams({
       lang: "true",
-      cid: "0",
+      cid: "0", // potentially falsy
       date: "2023-12-28",
     }),
     {
@@ -213,17 +224,45 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog._.category.date.$parseParams({
-      cid: "42",
-    }),
-    { cid: 42 }
+    routes.blog.category.date.$parseParams(
+      "blog/true/category/0/date/2024-11-29"
+    ),
+    {
+      lang: true,
+      cid: 0,
+      date: new Date("2024-11-29T00:00:00.000Z"),
+    }
   );
 
   t.deepEqual(
     routes.blog._.category.date.$parseParams({
       cid: "42",
     }),
-    { cid: 42 }
+    { cid: 42 },
+    "relative path with optional params"
+  );
+
+  t.deepEqual(
+    routes.blog._.category.date.$parseParams("category/42/date"),
+    {
+      cid: 42,
+    },
+    "relative path with omitted optional params in string path"
+  );
+
+  t.deepEqual(
+    routes.blog._.category.date.$parseParams("category/244/date/2024-10-29"),
+    {
+      cid: 244,
+      date: new Date("2024-10-29T00:00:00.000Z"),
+    },
+    "relative path with all optional params in string path"
+  );
+
+  t.throws(
+    () =>
+      routes.blog.category._.date.$parseParams("category/244/date/2024-10-29"),
+    "string path mismatch"
   );
 
   t.end();
@@ -266,8 +305,20 @@ test("parsing query params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog._.category.date.$parseQuery({
+    routes.blog.category.date.$parseQuery(
+      "lang=en&category=drama&shortmovie=true&month=feb"
+    ),
+    {
       lang: "en",
+      category: "drama",
+      shortmovie: true,
+      month: "feb",
+    }
+  );
+
+  t.deepEqual(
+    routes.blog._.category.date.$parseQuery({
+      lang: "en", // ignores additional params
       category: "drama",
       shortmovie: "true",
       month: "feb",
@@ -279,8 +330,20 @@ test("parsing query params", (t) => {
     }
   );
 
+  t.deepEqual(
+    routes.blog._.category.date.$parseQuery(
+      "category=drama&shortmovie=true&month=feb"
+    ),
+    {
+      category: "drama",
+      shortmovie: true,
+      month: "feb",
+    }
+  );
+
   t.throws(() => routes.blog.category._.date.$parseQuery({}));
   t.throws(() => routes.blog.category._.date.$parseQuery({ month: "jun" }));
+  t.throws(() => routes.blog._.category.date.$parseQuery("lang=en&category"));
 
   t.end();
 });

@@ -101,8 +101,8 @@ export type RoutesProps<
   $render: (
     params: ComputeParamRecordMap<Params>
   ) => ReturnType<Context["renderPath"]>;
-  $parseParams: (params: Record<string, any>) => Params["path"];
-  $parseQuery: (params: Record<string, any>) => Params["query"];
+  $parseParams: (params: Record<string, any> | string) => Params["path"];
+  $parseQuery: (params: Record<string, any> | string) => Params["query"];
   $bind: (
     params: ComputeParamRecordMap<Params>
   ) => RoutesProps<Routes, Context>;
