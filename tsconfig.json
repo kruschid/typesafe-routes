@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "build",
     "strict": true,
     "sourceMap": true,
     "declaration": true,
@@ -8,10 +7,12 @@
     "jsx": "react",
     "skipLibCheck": true,
     "downlevelIteration": true,
-    "lib": ["ES2019", "DOM", "DOM.Iterable"],
+    "target": "ES6",
+    "module": "node16",
+    "moduleResolution": "node16",
   },
   "files": [
     "src/index.ts",
-    "src/react-router.tsx",
+    "src/angular-router/index.ts",
   ]
 }

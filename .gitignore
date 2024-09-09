@@ -3,4 +3,5 @@ node_modules
 *.log
 .parcel-cache
 .DS_Store
-build
+dist
+*.tgz
