@@ -13,22 +13,31 @@
       "require": "./dist/index.js"
     },
     "./angular-router": {
-      "import": "./dist/angular-router/index.mjs",
-      "require": "./dist/angular-router/index.js"
+      "import": "./dist/adapters/angular-router.mjs",
+      "require": "./dist/adapters/angular-router.js"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.js"
     }
   },
   "typesVersions": {
     ">=4.5": {
       "angular-router": [
-        "dist/angular-router/index.d.mts",
-        "dist/angular-router/index.d.ts"
+        "dist/adapters/angular-router.d.mts",
+        "dist/adapters/angular-router.d.ts"
+      ],
+      "utils": [
+        "dist/utils/index.d.mts",
+        "dist/utils/index.d.ts"
       ]
     }
   },
   "tsup": {
     "entry": [
       "src/index.ts",
-      "src/angular-router/index.ts"
+      "src/adapters/angular-router.ts",
+      "src/utils/index.ts"
     ],
     "splitting": false,
     "sourcemap": true,
