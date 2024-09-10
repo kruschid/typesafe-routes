@@ -1,15 +1,24 @@
-import type { Param, Parser } from "./types";
+import type { Param, ParamOptions, Parser } from "./types";
 
 export const param = <T>(parser: Parser<T>) => {
-  const fn = <N extends string>(name: N): Param<N, T, "required"> => ({
+  const fn = <N extends string>(
+    name: N,
+    options?: ParamOptions
+  ): Param<N, T, "required"> => ({
     name,
     parser,
     kind: "required",
+    options,
   });
-  fn.optional = <N extends string>(name: N): Param<N, T, "optional"> => ({
+
+  fn.optional = <N extends string>(
+    name: N,
+    options?: ParamOptions
+  ): Param<N, T, "optional"> => ({
     name,
     parser,
     kind: "optional",
+    options,
   });
   return fn;
 };

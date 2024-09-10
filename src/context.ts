@@ -8,7 +8,8 @@ export const renderTemplate = ({
     .map((pathSegment) =>
       typeof pathSegment === "string"
         ? pathSegment
-        : `:${pathSegment.name}${pathSegment.kind === "optional" ? "?" : ""}`
+        : pathSegment.options?.template ??
+          `:${pathSegment.name}${pathSegment.kind === "optional" ? "?" : ""}`
     )
     .join("/");
 

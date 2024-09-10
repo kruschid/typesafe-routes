@@ -6,8 +6,13 @@ export type ParamKind = "optional" | "required";
 
 export type AnyParam = Param<string, any, any>;
 
+export interface ParamOptions {
+  template?: string;
+}
+
 export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;
+  options?: ParamOptions;
   kind: K;
   parser: Parser<T>;
 };

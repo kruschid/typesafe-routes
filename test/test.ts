@@ -47,6 +47,23 @@ test("templates with default renderer", (t) => {
   t.equal(routes.blog._.category._wildcard.$template(), "category/:cid/**");
   t.equal(routes.blog._.category.date.$template(), "category/:cid/:date");
   t.equal(routes.blog.category._.date.$template(), ":date");
+
+  t.end();
+});
+
+test("custom templates with default renderer ", (t) => {
+  const routes = createRoutes({
+    customTemplate: {
+      template: "segment/:param/segment",
+    },
+    customParamTemplate: {
+      path: ["segment", str("title", { template: ":title.(mp4|mov)" })],
+    },
+  });
+
+  t.equal(routes.customTemplate.$template(), "/segment/:param/segment");
+  t.equal(routes.customParamTemplate.$template(), "/segment/:title.(mp4|mov)");
+
   t.end();
 });
 
