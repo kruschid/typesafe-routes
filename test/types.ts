@@ -7,6 +7,7 @@ import {
   RouteNodeMap,
   str,
 } from "../src";
+import { safeCall } from "../src/utils";
 
 const expectType = <T>(_: T) => {};
 
@@ -311,3 +312,18 @@ expectType<never>(extra.$routes.language);
 // @ts-expect-error
 expectType<string>(extra.$routes.language);
 expectType<typeof r.$routes>(extra.$routes.extra.children);
+
+//
+// safeCall
+//
+expectType<
+  (params: Record<string, any> | string) =>
+    | {
+        success: true;
+        result: {
+          lang: string;
+          userId: number;
+        };
+      }
+    | { success: false; error: Error }
+>(safeCall(r.language.users.show.$parseParams));
