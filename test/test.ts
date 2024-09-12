@@ -289,7 +289,7 @@ test("parsing path params", (t) => {
     ),
     {
       success: true,
-      result: {
+      data: {
         lang: true,
         cid: 0,
         date: new Date("2024-11-29T00:00:00.000Z"),
@@ -395,7 +395,7 @@ test("parsing query params", (t) => {
     ),
     {
       success: true,
-      result: {
+      data: {
         lang: "en",
         category: "drama",
         shortmovie: true,
@@ -412,7 +412,7 @@ test("parsing query params", (t) => {
     }),
     {
       success: true,
-      result: {
+      data: {
         category: "drama",
         shortmovie: true,
         month: "feb",

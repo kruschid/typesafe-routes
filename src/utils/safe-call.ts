@@ -1,5 +1,5 @@
 export type SafeParseResult<T> =
-  | { success: true; result: T }
+  | { success: true; data: T }
   | { success: false; error: Error };
 
 export const safeCall =
@@ -9,7 +9,7 @@ export const safeCall =
       const result = fn(...params);
       return {
         success: true,
-        result,
+        data: result,
       };
     } catch (err: unknown) {
       return {

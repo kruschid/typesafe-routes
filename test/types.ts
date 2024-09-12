@@ -320,7 +320,7 @@ expectType<
   (params: Record<string, any> | string) =>
     | {
         success: true;
-        result: {
+        data: {
           lang: string;
           userId: number;
         };

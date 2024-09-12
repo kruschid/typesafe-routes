@@ -27,7 +27,7 @@ const routes = createRoutes({
 ```
 <!-- tabs:start -->
 
-## **Parameter Record**
+### **Parameter Record**
 
 Frameworks such as [React Router](https://reactrouter.com) provide a [record](https://reactrouter.com/en/main/hooks/use-params#useparams) containing parameter values. These parameters, typically in string format, can be processed using the `$parseParams` method. This method transforms these string values into their respective JavaScript types, enhancing data handling within the application.
 
@@ -44,7 +44,7 @@ routes.blog.categories.date.$parseParams(params); // => { blogId: 35, category: 
 
 The `params` object's string-based values are all converted to the corresponding type that was previously defined with `createRoutes`.
 
-## **Relative Routes**
+### **Relative Routes**
 
 `$parseParams` is also able to handle [relative route](basic-features/relative-routes.md) paths initiated with the `_` link.
 
@@ -59,7 +59,7 @@ routes.blog.categories._.date.$parseParams({
 }); // => { date: Date("2023-12-28T00:00:00.000Z") }
 ```
 
-## **Absolute Location Path**
+### **Absolute Location Path**
 
 Alternatively, parsing parameters from string paths, like `location.pathname`, is also supported.
 
@@ -75,7 +75,7 @@ routes.blog.categories.date.$parseParams(
 ); // => { blogId: 35, date: Date("2023-12-28T00:00:00.000Z") }
 ```
 
-## **Relative Location Path**
+### **Relative Location Path**
 
 It is also possible to parse parameters from [relative route](basic-features/relative-routes.md) paths that are initiated with `_`.
 
@@ -87,7 +87,7 @@ routes.blog._.categories.date.$parseParams(
 ```
 <!-- tabs:end -->
 
-### Query Parameters
+## Query Parameters
 
 The `$parseQuery` method converts [search parameter](https://developer.mozilla.org/en-US/docs/Web/API/URL/searchParams) values from string format to their corresponding types. It takes one argument that is the source, which contains the string-based parameter values that need to be parsed. A source can be an object with string values `{name: "value",...}` or a search string `"?name=value&..."`.
 
@@ -116,7 +116,7 @@ const routes = createRoutes({
 Note that in the example the `options` node lacks a `path` property, indicating that this node is exclusively used for handling query parameters. 
 
 <!-- tabs:start -->
-## **Basic Usage**
+### **Basic Usage**
 ``` ts
 // this could come from a router library:
 const params = { page: "1", showModal: "false" };
@@ -124,7 +124,7 @@ const params = { page: "1", showModal: "false" };
 route.blog.categories.options.$parseQuery(params); // => { page: 1, showModal: false }
 ```
 
-## **Relative Routes**
+### **Relative Routes**
 
 [Relative Routes](basic-features/relative-routes.md) are compatible with the parsing of query parameters, causing `$parseQuery` to parse only those parameters that belong to the routes that are initiated with `_`.
 
@@ -134,7 +134,7 @@ route.blog._.categories.options.$parseQuery({
 }); // => { showModal: false }
 ```
 
-## **String-Based Source**
+### **String-Based Source**
 
 ``` ts
 // absolute route path
@@ -148,7 +148,7 @@ route.blog.categories._.options.$parseQuery(
 ); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
 ```
 
-## **Unknown Params**
+### **Unknown Params**
 
 Parameters that are not specified in any of the route nodes will not be included in the parsing result. This means that only parameters defined within the route nodes are processed.
 
@@ -159,3 +159,23 @@ route.blog.categories.$parseQuery(
 ); // => { page: 5 } // does not include "a" and "b" because they are not specified.
 ```
 <!-- tabs:end -->
+
+## Safe Parsing
+
+Parsing libraries, such as [Zod](https://github.com/colinhacks/zod/blob/3032e240a0c227692bb96eedf240ed493c53f54c/README.md#safeparse), provide a method for safe parsing that doesn't trigger an error when validation fails. Following this example, typesafe-routes includes a utility function, `safeCall`, which returns an object containing information about the parsing result.
+
+``` ts
+import { safeCall } from "typesafe-routes/utils";
+
+const parseCategoriesQuery = safeCall(route.blog.categories.$parseQuery);
+
+parseCategoriesQuery("?page=5");
+// => { success: true; data: { page: 5 }}
+
+parseCategoriesQuery("?offset=10");
+// => { success: false; error: Error }
+
+safeCall(route.blog.categories.$parseQuery)("?page=42");
+// => { success: true; data: { page: 42 }}
+
+```
