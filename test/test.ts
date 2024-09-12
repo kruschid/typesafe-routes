@@ -12,6 +12,7 @@ import {
   oneOf,
   str,
 } from "../src";
+import { safeCall } from "../src/utils";
 
 test("templates with default renderer", (t) => {
   const routes = createRoutes({
@@ -282,6 +283,32 @@ test("parsing path params", (t) => {
     "string path mismatch"
   );
 
+  t.deepEqual(
+    safeCall(routes.blog.category.date.$parseParams)(
+      "blog/true/category/0/date/2024-11-29"
+    ),
+    {
+      success: true,
+      result: {
+        lang: true,
+        cid: 0,
+        date: new Date("2024-11-29T00:00:00.000Z"),
+      },
+    }
+  );
+  t.deepEqual(
+    safeCall(routes.blog.category._.date.$parseParams)(
+      "category/244/date/2024-10-29"
+    ),
+    {
+      success: false,
+      error: Error(
+        `"category/244/date/2024-10-29" doesn't match "date/:date?", missing segment "date"`
+      ),
+    },
+    "safeCall failed"
+  );
+
   t.end();
 });
 
@@ -361,6 +388,47 @@ test("parsing query params", (t) => {
   t.throws(() => routes.blog.category._.date.$parseQuery({}));
   t.throws(() => routes.blog.category._.date.$parseQuery({ month: "jun" }));
   t.throws(() => routes.blog._.category.date.$parseQuery("lang=en&category"));
+
+  t.deepEqual(
+    safeCall(routes.blog.category.date.$parseQuery)(
+      "lang=en&category=drama&shortmovie=true&month=feb"
+    ),
+    {
+      success: true,
+      result: {
+        lang: "en",
+        category: "drama",
+        shortmovie: true,
+        month: "feb",
+      },
+    }
+  );
+  t.deepEqual(
+    safeCall(routes.blog._.category.date.$parseQuery)({
+      lang: "en", // ignores additional params
+      category: "drama",
+      shortmovie: "true",
+      month: "feb",
+    }),
+    {
+      success: true,
+      result: {
+        category: "drama",
+        shortmovie: true,
+        month: "feb",
+      },
+    }
+  );
+  t.deepEqual(
+    safeCall(routes.blog.category.date.$parseQuery)(""),
+    {
+      success: false,
+      error: Error(
+        'addQueryParams: required path parameter "lang" was not provided in "/blog/movies/2023"'
+      ),
+    },
+    "safeCall failed"
+  );
 
   t.end();
 });
