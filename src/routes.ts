@@ -1,13 +1,11 @@
-import {
+import { defaultContext } from "./context";
+import { str } from "./params";
+import type {
   AnyRenderContext,
-  type CreateRoutes,
-  type ParamRecordMap,
-  type RouteNodeMap,
-  defaultContext,
-  renderPath,
-  renderTemplate,
-  str,
-} from ".";
+  CreateRoutes,
+  ParamRecordMap,
+  RouteNodeMap,
+} from "./types";
 
 export const createRoutes: CreateRoutes = (
   routeMap,
@@ -17,7 +15,7 @@ export const createRoutes: CreateRoutes = (
     $routes: routeMap,
     $context: context ?? defaultContext,
     $template: () =>
-      (context?.renderTemplate ?? renderTemplate)(
+      (context?.renderTemplate ?? defaultContext.renderTemplate)(
         createRenderContext(routeMap, path)
       ),
     $render: (params: ParamRecordMap<any>) => {
@@ -27,7 +25,7 @@ export const createRoutes: CreateRoutes = (
         addQueryParams(params.query)
       );
 
-      return (context?.renderPath ?? renderPath)(ctx);
+      return (context?.renderPath ?? defaultContext.renderPath)(ctx);
     },
     $bind: (params: ParamRecordMap<any>) => {
       const ctx = pipe(
@@ -88,7 +86,7 @@ export const createRoutes: CreateRoutes = (
         overrideParams(params)
       );
 
-      return (context?.renderPath ?? renderPath)(ctx);
+      return (context?.renderPath ?? defaultContext.renderPath)(ctx);
     },
   });
 
@@ -194,7 +192,7 @@ const addPathParamsFromLocationPath =
           }
           if (!foundMatch) {
             throw new Error(
-              `"${locationPath}" doesn't match "${renderTemplate(
+              `"${locationPath}" doesn't match "${defaultContext.renderTemplate(
                 ctx
               )}", missing segment "${segment}"`
             );
@@ -210,7 +208,7 @@ const addPathParamsFromLocationPath =
           }
         } else if (segment.kind === "required") {
           throw new Error(
-            `"${locationPath}" doesn't match "${renderTemplate(
+            `"${locationPath}" doesn't match "${defaultContext.renderTemplate(
               ctx
             )}", missing parameter "${segment.name}"`
           );
@@ -244,7 +242,7 @@ const addPathParams =
         throw Error(
           `required path parameter "${
             segment.name
-          }" was not provided in "${renderTemplate(ctx)}"`
+          }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
         );
       }
     });
@@ -275,7 +273,7 @@ const parsePathParams = (ctx: AnyRenderContext): Record<string, unknown> => {
       throw Error(
         `parsePathParams: required path parameter "${
           segment.name
-        }" was not provided in "${renderTemplate(ctx)}"`
+        }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
       );
     }
   });
@@ -305,7 +303,7 @@ const addQueryParams =
         delete remaining[name];
       } else if (kind === "required") {
         throw Error(
-          `parsePathParams: required path parameter "${name}" was not provided in "${renderTemplate(
+          `addQueryParams: required path parameter "${name}" was not provided in "${defaultContext.renderTemplate(
             ctx
           )}"`
         );
@@ -347,7 +345,7 @@ const parseQueryParams = (ctx: AnyRenderContext): Record<string, unknown> => {
       throw Error(
         `parseQueryParams: required query parameter "${
           segment.name
-        }" was not provided in "${renderTemplate(ctx)}"`
+        }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
       );
     }
   });
@@ -372,7 +370,9 @@ const overrideParams =
             throw Error(
               `overrideParams: required path parameter "${
                 segment.name
-              }" can not be removed from "${renderTemplate(ctx)}"`
+              }" can not be removed from "${defaultContext.renderTemplate(
+                ctx
+              )}"`
             );
           }
         }
@@ -389,7 +389,7 @@ const overrideParams =
             delete queryParams[name];
           } else {
             throw Error(
-              `overrideParams: required query parameter "${name}" can not be removed from "${renderTemplate(
+              `overrideParams: required query parameter "${name}" can not be removed from "${defaultContext.renderTemplate(
                 ctx
               )}"`
             );
