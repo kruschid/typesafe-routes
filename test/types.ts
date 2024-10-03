@@ -3,11 +3,20 @@ import {
   bool,
   createRoutes,
   defaultContext,
+  InferParams,
   int,
   RouteNodeMap,
   str,
 } from "../src";
 import { safeCall } from "../src/utils";
+
+type AssertEqual<T, U> = T extends U
+  ? U extends T
+    ? true
+    : "Types are not equal"
+  : "Types are not equal";
+
+const assertEqual = <T, U>(value: AssertEqual<T, U>): void => {};
 
 const expectType = <T>(_: T) => {};
 
@@ -327,3 +336,30 @@ expectType<
       }
     | { success: false; error: Error }
 >(safeCall(r.language.users.show.$parseParams));
+
+//
+// infer params
+//
+
+assertEqual<
+  InferParams<typeof r.language>,
+  {
+    path: {
+      lang: string;
+    };
+  }
+>(true);
+
+assertEqual<
+  InferParams<typeof r.language.users.show>,
+  {
+    path: {
+      lang: string;
+      userId: number;
+    };
+    query: {
+      page: number;
+      filter?: boolean | undefined;
+    };
+  }
+>(true);

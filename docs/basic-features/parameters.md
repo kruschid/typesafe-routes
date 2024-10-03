@@ -107,3 +107,25 @@ routes.segmentA.segmentB.$render({
 ```
 
 <!-- tabs:end -->
+
+## Type inference
+
+Parameter types can be extraced with `InferParams`.
+
+``` ts
+import type { InferParams } from "typesafe-routes";
+
+type MyParams = InferParams<typeof routes.blog.categories.year>;
+
+const params: MyParams = {
+  query: {
+    search: "batman",
+    page: 0,
+    filter: true,
+  }
+} // compiles
+
+const params: MyParams = {
+  query: {},
+} // TypeError (search is not optional)
+```

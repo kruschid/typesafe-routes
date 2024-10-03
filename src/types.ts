@@ -153,3 +153,13 @@ export type CreateRoutes = <
   routes: Routes,
   context?: Context
 ) => RoutesProps<Routes, Context>;
+
+export type InferParams<
+  R extends {
+    $parseParams: (...p: any[]) => any;
+    $parseQuery: (...p: any[]) => any;
+  }
+> = ComputeParamRecordMap<{
+  path: ReturnType<R["$parseParams"]>;
+  query: ReturnType<R["$parseQuery"]>;
+}>;
