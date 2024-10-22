@@ -19,52 +19,36 @@ import { createRoutes, int } from "typesafe-routes";
 
 const routes = createRoutes({
   users: {
-    path: ["users"],
+    path: ["users", int("uid")],    // /users/:uid
     children: {
-      create: { path: ["create"] }
-      edit: { path: ["edit", int("uid")] },
-      show: {
-        path: ["show", int("uid")],
-        children: {
-          groups: { path: ["groups", int.optional("gid")] }
-        }
-      },
+      edit: { path: ["edit"] },     // /users/:uid/edit
+      delete: { path: ["delete"] }, // /users/:uid/delete
     }
   }
 });
 
 // absolute paths
-routes.users.$render({}); // => "/users"
-routes.users.create.$render({}); // => "/users/create"
-routes.users.show.$render({path: {uid: 123}}); // => "/users/show/123"
+routes.users.$render({ path: { uid: 123 }}); // => "/users/123"
 
-// relative paths ("_" indicates the start segment)
-routes._.users.$render({}); // => "users"
-routes.users._.create.$render({}); // => "create"
-routes.users._.show.$render({path: {uid: 321}}); // => "show/321"
+// nested paths
+routes.users.edit.$render({ path: { uid: 123 }}); // => "/users/123/edit"
+routes.users.delete.$render({ path: { uid: 123 }}); // => "/users/123/delete"
+
+// relative paths ("_" indicates the starting segment)
+routes._.users.$render({ path: { uid: 123 }}); // => "users/123"
+routes.users._.edit.$render({}); // => "edit"
 
 // parse path params
-routes.users.show.$parseParams({uid: "42"}); // => {uid: 42}
-routes.users.show.$parseParams("/users/show/99"); // => {uid: 99}
-routes.users._.show.$parseParams("show/99"); // => {uid: 99}
-
-// create from location string
-routes
-  .users
-  .show
-  .$from("/users/show/1", {path: {uid: 11}}) // replaces parameters 
-  .groups
-  .$render({path: {gid: 2}}); // => "/users/show/11/groups/2"
+routes.users.edit.$parseParams({ uid: "42" }); // => { uid: 42 }
+routes.users.edit.$parseParams("/users/99/edit"); // => { uid: 99 }
 
 // templates 
-routes.users.show.groups.$template(); // => "/users/show/:uid/groups/:gid?"
-routes._.users.show.groups.$template(); // => "users/show/:uid/groups/:gid?"
-routes.users._show.groups.$template(); // => "show/:uid/groups/:gid?"
+routes.users.edit.$template(); // => "/users/:uid/edit"
+routes._.users.edit.$template(); // => "users/:uid/edit"
+routes.users._.edit.$template(); // => "edit"
 
-// template examples with a custom renderer
-routes.users.show.groups.$template(); // => "users/show/{:uid}/groups/{:gid}"
-
-// array based custom templates:
+// template examples with different custom renderers
+routes.users.edit.$template(); // => "users/{:uid}/edit"
 routes.users.show.$template(); // => ["users", "show", {name: "uid", type: "number"}]
 ```
 
@@ -80,7 +64,7 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
 - Chainable operators:
   - `$bind`: binds parameters to a path for later rendering
   - `$from`: creates a new path based on a string-based path (i.e. `location.path`)
-  - `$replace`: replaces segments in a string-based path (i.e. `location.path`)
+  - `$replace`: replaces dynamic segments in a string-based path (i.e. `location.path`)
   
 ## Installation
 
