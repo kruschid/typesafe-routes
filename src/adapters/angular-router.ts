@@ -1,4 +1,41 @@
-import type { AnyRenderContext, RenderContext } from "../types";
+import { createRoutes } from "../routes";
+import type {
+  AnyRenderContext,
+  RenderContext,
+  RouteNodeMap,
+  RoutesProps,
+} from "../types";
+
+export type CreateAngularRoutes<Meta = any> = <
+  Routes extends RouteNodeMap<Meta>,
+  Context extends AnyRenderContext = RenderContext<string, string>
+>(
+  routes: Routes,
+  context?: Context
+) => RoutesProps<Routes, Context> & { $provider: Meta[] };
+
+export const createAngularRoutes: CreateAngularRoutes = (routes, context) => {
+  const r = createRoutes(routes, context ?? angularRouterContext) as any;
+  return {
+    ...r,
+    $provider: createRouterProvider(r),
+  };
+};
+
+const createRouterProvider = <Meta>(
+  routeProps: any,
+  node = routeProps.$routes
+): Meta[] => {
+  if (!routeProps || !node) return [];
+
+  return Object.keys(node).map((name) => ({
+    path: routeProps[name].$template(),
+    children: node[name].children
+      ? createRouterProvider(routeProps[name], node[name].children)
+      : undefined,
+    ...node[name].meta,
+  }));
+};
 
 const renderPath = ({
   pathSegments,
@@ -21,7 +58,6 @@ const renderPath = ({
   };
 };
 
-// renders template for angular router
 const renderTemplate = ({ pathSegments }: AnyRenderContext) => {
   const template = pathSegments
     .map((pathSegment) =>
@@ -29,7 +65,7 @@ const renderTemplate = ({ pathSegments }: AnyRenderContext) => {
     )
     .join("/");
 
-  return template; // path that doesn't start with a slash "/" character
+  return template;
 };
 
 export const angularRouterContext: RenderContext<

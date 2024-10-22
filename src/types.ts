@@ -38,13 +38,14 @@ export type ExcludeEmptyProperties<T> = Pick<
   }[keyof T]
 >;
 
-export type RouteNode = {
+export type RouteNode<Meta = any> = {
   path?: (string | AnyParam)[];
   template?: string;
   query?: AnyParam[];
-  children?: RouteNodeMap;
+  children?: RouteNodeMap<Meta>;
+  meta?: Meta;
 };
-export type RouteNodeMap = Record<string, RouteNode>;
+export type RouteNodeMap<Meta = any> = Record<string, RouteNode<Meta>>;
 
 /**
  * RouteNodeToParamRecordMap<{
@@ -146,8 +147,8 @@ export type RenderContext<TemplateType, PathType> = {
 
 export type AnyRenderContext = RenderContext<any, any>;
 
-export type CreateRoutes = <
-  Routes extends RouteNodeMap,
+export type CreateRoutes<Meta = any> = <
+  Routes extends RouteNodeMap<Meta>,
   Context extends AnyRenderContext = RenderContext<string, string>
 >(
   routes: Routes,

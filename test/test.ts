@@ -12,6 +12,10 @@ import {
   oneOf,
   str,
 } from "../src";
+import {
+  createAngularRoutes,
+  CreateAngularRoutes,
+} from "../src/adapters/angular-router";
 import { safeCall } from "../src/utils";
 
 test("templates with default renderer", (t) => {
@@ -850,5 +854,45 @@ test("route composition", (t) => {
   );
   t.equals(routes.cart.detail.$render({}), "/cart/detail");
 
+  t.end();
+});
+
+test("angular routes", (t) => {
+  const createRoute: CreateAngularRoutes<{ component: string }> =
+    createAngularRoutes;
+
+  const r = createRoute({
+    a: {
+      path: ["string", int("parm")],
+      meta: { component: "A" },
+      children: {
+        b: {
+          meta: { component: "B" },
+        },
+      },
+    },
+    c: {
+      path: ["string", int("lala")],
+    },
+  });
+
+  t.deepEquals(r.$routes.a.meta, { component: "A" });
+  t.deepEquals(r.$provider, [
+    {
+      path: "string/:parm",
+      component: "A",
+      children: [
+        {
+          path: "string/:parm",
+          children: undefined,
+          component: "B",
+        },
+      ],
+    },
+    {
+      path: "string/:lala",
+      children: undefined,
+    },
+  ]);
   t.end();
 });
