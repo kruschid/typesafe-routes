@@ -28,28 +28,28 @@ const routes = createRoutes({
 });
 
 // absolute paths
-routes.users.$render({ path: { uid: 123 }}); // => "/users/123"
+routes.users.$render({ path: { uid: 123 }}); // ~> "/users/123"
 
 // nested paths
-routes.users.edit.$render({ path: { uid: 123 }}); // => "/users/123/edit"
-routes.users.delete.$render({ path: { uid: 123 }}); // => "/users/123/delete"
+routes.users.edit.$render({ path: { uid: 123 }}); // ~> "/users/123/edit"
+routes.users.delete.$render({ path: { uid: 123 }}); // ~> "/users/123/delete"
 
 // relative paths ("_" indicates the starting segment)
-routes._.users.$render({ path: { uid: 123 }}); // => "users/123"
-routes.users._.edit.$render({}); // => "edit"
+routes._.users.$render({ path: { uid: 123 }}); // ~> "users/123"
+routes.users._.edit.$render({}); // ~> "edit"
 
 // parse path params
-routes.users.edit.$parseParams({ uid: "42" }); // => { uid: 42 }
-routes.users.edit.$parseParams("/users/99/edit"); // => { uid: 99 }
+routes.users.edit.$parseParams({ uid: "42" }); // ~> { uid: 42 }
+routes.users.edit.$parseParams("/users/99/edit"); // ~> { uid: 99 }
 
 // templates 
-routes.users.edit.$template(); // => "/users/:uid/edit"
-routes._.users.edit.$template(); // => "users/:uid/edit"
-routes.users._.edit.$template(); // => "edit"
+routes.users.edit.$template(); // ~> "/users/:uid/edit"
+routes._.users.edit.$template(); // ~> "users/:uid/edit"
+routes.users._.edit.$template(); // ~> "edit"
 
 // template examples with different custom renderers
-routes.users.edit.$template(); // => "users/{:uid}/edit"
-routes.users.show.$template(); // => ["users", "show", {name: "uid", type: "number"}]
+routes.users.edit.$template(); // ~> "users/{:uid}/edit"
+routes.users.show.$template(); // ~> ["users", "show", {name: "uid", type: "number"}]
 ```
 
 ## Quick Reference
