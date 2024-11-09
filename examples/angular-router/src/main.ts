@@ -4,12 +4,13 @@ import { bootstrapApplication } from "@angular/platform-browser";
 import { RouterLink, RouterOutlet } from "@angular/router";
 import "zone.js";
 import { appConfig } from "./app.config";
+import { TypesafeRoutesModule } from "./renderer";
 import { r } from "./routes";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink],
+  imports: [CommonModule, RouterOutlet, RouterLink, TypesafeRoutesModule],
   template: `
     <h1>Absolute Links</h1>
     <ul>
@@ -23,11 +24,22 @@ import { r } from "./routes";
           Nested Component
         </a>
       </li>
+      <li>
+        <a
+          [typesafeRoutesLink]="routes.secondComponent.nestedComponent.$render({
+            path: { paramA: 321, paramB: 654 },
+            query: { page: 42 },
+          })"
+        >
+          Nested Component
+        </a>
+      </li>
     </ul>
     <router-outlet></router-outlet>
   `,
 })
-export class App {
+class App {
+  routes = r;
   firstComponentLink = r.firstComponent.$render({});
   secondComponentLink = r.secondComponent.$render({
     path: { paramA: 123 },

@@ -1,3 +1,5 @@
+import { Directive, Input, NgModule } from "@angular/core";
+import { RouterLinkWithHref, RouterModule } from "@angular/router";
 import { AnyRenderContext } from "typesafe-routes";
 
 // renders paths and query record for angular router
@@ -32,3 +34,50 @@ export const renderTemplate = ({ pathSegments }: AnyRenderContext) => {
 
   return template; // path that doesn't start with a slash "/" character
 };
+
+/**
+ * The RouterLinkWithHref is working as it should by setting the href correctly,
+ * but Angular needs to register a click handler for it to prevent the default
+ * behavior (which is the browser trying to navigate using a http request, as
+ * we're experiencing).
+ *
+ * Normally, Angular implicitly knows to do this when it sees the routerLink
+ * directive in your templates. When you set up the [routerLink] directive in
+ * the template, Angular implicitly registers a click event handler to override
+ * the default browser navigation.
+ *
+ * However, because we're setting up the router link via your custom directive,
+ * the necessary event handlers aren't set up, as this is done by Angular when
+ * it sees the routerLink in the template, not when we set it via your directive.
+ */
+
+@Directive({
+  selector: "[typesafeRoutesLink]",
+  providers: [RouterLinkWithHref],
+})
+export class TypesafeRoutesLinkDirective {
+  constructor(private routerLink: RouterLinkWithHref) {}
+
+  @Input() set typesafeRoutesLink(route: {
+    path: string;
+    query: Record<string, string>;
+  }) {
+    this.routerLink.routerLink = route.path;
+    this.routerLink.queryParams = route.query;
+  }
+}
+
+@NgModule({
+  declarations: [
+    // declare your directive here
+    TypesafeRoutesLinkDirective,
+  ],
+  imports: [
+    RouterModule, // importing as your directive relies on RouterLinkWithHref
+  ],
+  exports: [
+    // export your directive here
+    TypesafeRoutesLinkDirective,
+  ],
+})
+export class TypesafeRoutesModule {}

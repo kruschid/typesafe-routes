@@ -1,5 +1,14 @@
-import { createRoutes, defaultContext, int } from "typesafe-routes";
+import {
+  AnyRenderContext,
+  createRoutes,
+  defaultContext,
+  int,
+  RenderContext,
+  RouteNode,
+  RouteNodeMap,
+} from "typesafe-routes";
 import { renderPath, renderTemplate } from "./renderer";
+import { Route } from "@angular/router";
 
 export const r = createRoutes(
   {
@@ -18,3 +27,7 @@ export const r = createRoutes(
   },
   { ...defaultContext, renderPath, renderTemplate }
 );
+
+// const createAngularRoutes = () => {};
+
+// createRoutes = withMeta<Route>();
