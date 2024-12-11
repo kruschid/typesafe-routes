@@ -2,6 +2,7 @@ import test from "tape";
 import {
   AnyRenderContext,
   bool,
+  ComputeParamRecordMap,
   createRoutes,
   date,
   defaultContext,
@@ -10,6 +11,9 @@ import {
   isoDate,
   list,
   oneOf,
+  ParamRecordMap,
+  RouteNodeMap,
+  RoutesProps,
   str,
 } from "../src";
 import {
@@ -17,6 +21,13 @@ import {
   CreateAngularRoutes,
 } from "../src/adapters/angular-router";
 import { safeCall } from "../src/utils";
+
+type FN = <
+  Routes extends RouteNodeMap,
+  Context extends AnyRenderContext,
+  Params extends ParamRecordMap = ParamRecordMap
+>(props: RoutesProps<Routes, Context, Params>, params: ComputeParamRecordMap<Params>) => RoutesProps<Routes, Context>;
+
 
 test("templates with default renderer", (t) => {
   const routes = createRoutes({
@@ -37,6 +48,10 @@ test("templates with default renderer", (t) => {
       },
     },
   });
+
+  const bind: FN = null as any;
+
+  bind(bind(routes.blog.category, {path: {cid: "d", lang: "end"}}).date, {path: {date: new Date()}})
 
   t.equal(routes.home.$template(), "/");
   t.equal(routes.blog.$template(), "/blog/:lang");
