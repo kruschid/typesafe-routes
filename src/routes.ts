@@ -1,7 +1,6 @@
 import { defaultContext } from "./context";
 import { str } from "./params";
 import type {
-  AnyRenderContext,
   CreateRoutes,
   ParamRecordMap,
   RouteNodeMap,
@@ -9,92 +8,19 @@ import type {
 
 export const createRoutes: CreateRoutes = (
   routeMap,
-  context?: AnyRenderContext
 ) => {
   const props = (path: string[]) => ({
-    $routes: routeMap,
-    $context: context ?? defaultContext,
-    $template: () =>
-      (context?.renderTemplate ?? defaultContext.renderTemplate)(
-        createRenderContext(routeMap, path)
-      ),
-    $render: (params: ParamRecordMap<any>) => {
-      const ctx = pipe(
-        createRenderContext(routeMap, path, context),
-        addPathParams(params.path),
-        addQueryParams(params.query)
-      );
-
-      return (context?.renderPath ?? defaultContext.renderPath)(ctx);
-    },
-    $bind: (params: ParamRecordMap<any>) => {
-      const ctx = pipe(
-        createRenderContext(routeMap, path, context),
-        addPathParams(params.path),
-        addQueryParams(params.query)
-      );
-
-      const pathChildren = ctx.nodes.slice(-1)[0]?.children ?? {};
-
-      return createRoutes(pathChildren, ctx);
-    },
-    $parseParams: (paramsOrLocation: Record<string, string> | string) =>
-      parsePathParams(
-        pipe(
-          createRenderContext(routeMap, path, context),
-          typeof paramsOrLocation === "string"
-            ? addPathParamsFromLocationPath(paramsOrLocation)
-            : addRawPathParams(paramsOrLocation)
-        )
-      ),
-    $parseQuery: (query: Record<string, string> | string) =>
-      parseQueryParams(
-        pipe(
-          createRenderContext(routeMap, path, context),
-          typeof query === "string"
-            ? addQueryParamsFromUrlSearch(query)
-            : addRawQueryParams(query)
-        )
-      ),
-    $from: (
-      location: string,
-      params?: ParamRecordMap<Record<string, unknown>>
-    ) => {
-      const [locationPath, locationQuery] = location.split("?");
-      const ctx = pipe(
-        createRenderContext(routeMap, path, context),
-        addPathParamsFromLocationPath(locationPath),
-        addQueryParamsFromUrlSearch(locationQuery),
-        overrideParams(params)
-      );
-
-      const pathChildren = ctx.nodes[ctx.nodes.length - 1].children ?? {};
-
-      return createRoutes(pathChildren, ctx);
-    },
-    // similar to the $from method but returns rendered path with remaining segments appended
-    // appends query string as well (if available)
-    $replace: (
-      location: string,
-      params: ParamRecordMap<Record<string, unknown>>
-    ) => {
-      const [locationPath, locationQuery] = location.split("?");
-      const ctx = pipe(
-        createRenderContext(routeMap, path, context),
-        addPathParamsFromLocationPath(locationPath, true),
-        addQueryParamsFromUrlSearch(locationQuery, true),
-        overrideParams(params)
-      );
-
-      return (context?.renderPath ?? defaultContext.renderPath)(ctx);
-    },
+    "~path": path,
+    "~routes": routeMap,
   });
 
   const proxy = (path: string[]): any =>
     new Proxy(props(path), {
       get: (target, maybeSegment, receiver) =>
-        typeof maybeSegment === "string" && maybeSegment[0] !== "$"
+        typeof maybeSegment === "string" && maybeSegment[0] !== "~"
           ? proxy([...path, maybeSegment]) // add segment to path
+          : maybeSegment === "~context"
+          ? getContext(routeMap, path)
           : Reflect.get(target, maybeSegment, receiver),
     });
 
