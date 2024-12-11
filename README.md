@@ -1,7 +1,7 @@
 ![minzipped size](https://badgen.net/bundlephobia/minzip/typesafe-routes@next)
 ![minified size](https://badgen.net/bundlephobia/min/typesafe-routes@next)
 ![tree shaking](https://badgen.net/bundlephobia/tree-shaking/typesafe-routes@next)
-[![discord link](https://img.shields.io/badge/Chat%20on-Discord-%235865f2)](https://discord.gg/MnzrbHYN)
+[![discord link](https://img.shields.io/badge/Chat%20on-Discord-%235865f2)](https://discord.gg/BCGmvSSJBk)
 
 # Typesafe Routes
 
