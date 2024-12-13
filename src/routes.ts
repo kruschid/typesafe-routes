@@ -1,205 +1,136 @@
-import { defaultContext } from "./context";
-import { str } from "./params";
 import type {
+  AnyParam,
+  Context,
   CreateRoutes,
-  ParamRecordMap,
-  RouteNodeMap,
+  ParsePathFn,
+  ParseQueryFn,
+  RenderFn,
+  RenderPathFn,
+  RenderQueryFn,
+  ReplaceFn,
+  TemplateFn,
+  WithContext,
 } from "./types";
 
-export const createRoutes: CreateRoutes = (
-  routeMap,
-) => {
-  const props = (path: string[]) => ({
-    "~path": path,
-    "~routes": routeMap,
+export const createRoutes: CreateRoutes = (routeMap) => {
+  const proxy = (ctx: Context): any =>
+    new Proxy(
+      { ["~context"]: ctx },
+      {
+        get: (target, maybeRouteName, receiver) =>
+          typeof maybeRouteName === "string" && maybeRouteName[0] !== "~"
+            ? proxy(addRoute(maybeRouteName, ctx))
+            : Reflect.get(target, maybeRouteName, receiver),
+      }
+    );
+
+  return proxy({
+    isRelative: false,
+    path: [],
+    pathSegments: [],
+    querySegments: [],
+    rootRoutes: routeMap,
+    routes: [],
+    skippedRoutes: [],
   });
-
-  const proxy = (path: string[]): any =>
-    new Proxy(props(path), {
-      get: (target, maybeSegment, receiver) =>
-        typeof maybeSegment === "string" && maybeSegment[0] !== "~"
-          ? proxy([...path, maybeSegment]) // add segment to path
-          : maybeSegment === "~context"
-          ? getContext(routeMap, path)
-          : Reflect.get(target, maybeSegment, receiver),
-    });
-
-  return proxy([]);
 };
 
-const createRenderContext = (
-  routeMap: RouteNodeMap,
-  path: string[],
-  context?: AnyRenderContext
-): AnyRenderContext => {
-  let ctx: AnyRenderContext = context
-    ? {
-        ...context,
-        // don't inherit currentSegments from parent context
-        currentPathSegments: [],
-        currentQuerySegments: [],
-      }
-    : defaultContext;
-
-  if (path.length <= 0) {
-    return ctx;
+const addRoute = (routeName: string, ctx: Context): Context => {
+  if (routeName === "_") {
+    return {
+      ...ctx,
+      path: ctx.path.concat(routeName),
+      routes: [],
+      pathSegments: [],
+      querySegments: [],
+      skippedRoutes: ctx.skippedRoutes.concat(ctx.routes),
+      isRelative: true,
+    };
   }
+  const route = ctx.children?.[routeName];
+  if (!route) {
+    throw Error(
+      `unknown segment ${routeName} in ${ctx.path.concat(routeName)}`
+    );
+  }
+  return {
+    ...ctx,
+    path: ctx.path.concat(routeName),
+    routes: ctx.routes.concat(route),
+    children: route.children,
+    pathSegments: ctx.pathSegments.concat(route.path ?? []),
+    querySegments: ctx.querySegments.concat(route.query ?? []),
+  };
+};
 
-  let nextNodeMap: RouteNodeMap | undefined = routeMap;
+export const template: TemplateFn = ({
+  "~context": { isRelative, pathSegments },
+}) => {
+  const template = pathSegments
+    .map((segment) =>
+      typeof segment === "string"
+        ? segment
+        : segment.options?.template ??
+          `:${segment.name}${segment.kind === "optional" ? "?" : ""}`
+    )
+    .join("/");
 
-  path.forEach((nodeName) => {
-    if (nodeName === "_") {
-      // reset context
-      ctx = {
-        ...ctx,
-        skippedNodes: ctx.skippedNodes.concat(ctx.nodes),
-        nodes: [],
-        pathSegments: [],
-        querySegments: [],
-        currentPathSegments: [],
-        currentQuerySegments: [],
-        isRelative: true,
-      };
-    } else if (!nextNodeMap) {
-      throw Error(`unknown segment ${nodeName} in ${path}`);
-    } else {
-      const nextNode = nextNodeMap[nodeName];
-      ctx = {
-        ...ctx,
-        nodes: ctx.nodes.concat(nextNode),
-        pathSegments: ctx.pathSegments.concat(
-          nextNode.path ?? (nextNode.template ? [nextNode.template] : [])
-        ),
-        querySegments: ctx.querySegments.concat(nextNode.query ?? []),
-        currentPathSegments: ctx.currentPathSegments.concat(
-          nextNode.path ?? []
-        ),
-        currentQuerySegments: ctx.currentQuerySegments.concat(
-          nextNode.query ?? []
-        ),
-      };
-      nextNodeMap = nextNode.children;
+  return isRelative
+    ? template //relative
+    : `/${template}`; // absolute
+};
+
+export const path: RenderPathFn = (route, params) => {
+  const serializedPath = route["~context"].pathSegments.map((pathSegment) =>
+    typeof pathSegment === "string"
+      ? pathSegment
+      : pathSegment.parser.serialize(params[pathSegment.name])
+  );
+
+  return (route["~context"].isRelative ? "" : "/") + serializedPath;
+};
+
+export const query: RenderQueryFn = (route, params) => {
+  const serializedQueryRecord: Record<string, string> = {};
+
+  route["~context"].querySegments.forEach(({ name, parser }) => {
+    if (params[name] !== undefined) {
+      serializedQueryRecord[name] = parser.serialize(params[name]);
     }
   });
 
-  return ctx;
+  return new URLSearchParams(serializedQueryRecord).toString();
 };
 
-const addPathParamsFromLocationPath =
-  (locationPath: string = "", includeExtraPath: boolean = false) =>
-  (ctx: AnyRenderContext): AnyRenderContext => {
-    const remaining = locationPath
-      .slice(locationPath[0] === "/" ? 1 : 0)
-      .split("/");
+export const render: RenderFn = (route, params: Record<string, any>) => {
+  const pathname = path(route, params["path"]);
+  const searchParams = query(route, params["query"]);
+  const separator = searchParams ? `?` : "";
 
-    const pathParams: Record<string, string> = {};
+  return pathname + separator + searchParams;
+};
 
-    // keep track of recent optional params since they might contain path segments
-    // if a path segment doesn't match the algorithm continues searching in this array
-    const recentOptionalParams: string[] = [];
+export const parsePath: ParsePathFn = (route, paramsOrLocation) => {
+  const params =
+    typeof paramsOrLocation === "string"
+      ? paramsFromLocationPath(route, paramsOrLocation).pathParams
+      : paramsOrLocation;
 
-    ctx.currentPathSegments.forEach((segment) => {
-      const locationPathSegment = remaining.shift();
+  const {
+    "~context": { pathSegments },
+  } = route;
 
-      if (typeof segment === "string") {
-        if (segment === locationPathSegment) {
-          recentOptionalParams.length = 0; // irrelevant from here
-        } else {
-          // segment might have been swallowed by an optional param
-          let recentParam: string | undefined;
-          let foundMatch = false;
-          while ((recentParam = recentOptionalParams.shift())) {
-            if (pathParams[recentParam] === segment) {
-              delete pathParams[recentParam];
-              // hold segment back for the next iteration
-              locationPathSegment && remaining.unshift(locationPathSegment);
-              foundMatch = true;
-            }
-          }
-          if (!foundMatch) {
-            throw new Error(
-              `"${locationPath}" doesn't match "${defaultContext.renderTemplate(
-                ctx
-              )}", missing segment "${segment}"`
-            );
-          }
-        }
-      } else {
-        if (locationPathSegment != null) {
-          pathParams[segment.name] = locationPathSegment;
-          if (segment.kind === "optional") {
-            recentOptionalParams.push(segment.name);
-          } else {
-            recentOptionalParams.length = 0;
-          }
-        } else if (segment.kind === "required") {
-          throw new Error(
-            `"${locationPath}" doesn't match "${defaultContext.renderTemplate(
-              ctx
-            )}", missing parameter "${segment.name}"`
-          );
-        }
-      }
-    });
-
-    return {
-      ...ctx,
-      pathParams: { ...ctx.pathParams, ...pathParams },
-      pathSegments: includeExtraPath
-        ? ctx.pathSegments.concat(remaining)
-        : ctx.pathSegments,
-    };
-  };
-
-const addPathParams =
-  (params?: Record<string, unknown>) =>
-  (ctx: AnyRenderContext): AnyRenderContext => {
-    if (!params) return ctx;
-
-    const pathParams: Record<string, string> = {};
-
-    ctx.currentPathSegments.forEach((segment) => {
-      if (typeof segment === "string") {
-      } else if (params[segment.name] != null) {
-        pathParams[segment.name] = segment.parser.serialize(
-          params[segment.name]
-        );
-      } else if (segment.kind === "required") {
-        throw Error(
-          `required path parameter "${
-            segment.name
-          }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
-        );
-      }
-    });
-
-    return {
-      ...ctx,
-      pathParams: { ...ctx.pathParams, ...pathParams },
-    };
-  };
-
-const addRawPathParams =
-  (params?: Record<string, string>) =>
-  (ctx: AnyRenderContext): AnyRenderContext => ({
-    ...ctx,
-    pathParams: { ...ctx.pathParams, ...params },
-  });
-
-const parsePathParams = (ctx: AnyRenderContext): Record<string, unknown> => {
   const parsedParams: Record<string, any> = {};
 
-  ctx.pathSegments.forEach((segment) => {
+  pathSegments.forEach((segment) => {
     if (typeof segment === "string") {
-    } else if (ctx.pathParams[segment.name] != null) {
-      parsedParams[segment.name] = segment.parser.parse(
-        ctx.pathParams[segment.name]
-      );
+    } else if (params[segment.name] !== undefined) {
+      parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
     } else if (segment.kind === "required") {
       throw Error(
         `parsePathParams: required path parameter "${
           segment.name
-        }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
+        }" was not provided in "${template(route)}"`
       );
     }
   });
@@ -207,71 +138,23 @@ const parsePathParams = (ctx: AnyRenderContext): Record<string, unknown> => {
   return parsedParams;
 };
 
-const addQueryParamsFromUrlSearch =
-  (urlSearchParams: string = "", includeExtraQuery: boolean = false) =>
-  (ctx: AnyRenderContext): AnyRenderContext => ({
-    ...ctx,
-    ...addQueryParams(
-      Object.fromEntries(new URLSearchParams(urlSearchParams)),
-      includeExtraQuery
-    )(ctx),
-  });
+export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
+  const params =
+    typeof paramsOrQuery === "string"
+      ? paramsFromQuery(paramsOrQuery)
+      : paramsOrQuery;
 
-const addQueryParams =
-  (source?: Record<string, unknown>, includeExtraQuery: boolean = false) =>
-  (ctx: AnyRenderContext): AnyRenderContext => {
-    const remaining = { ...source };
-    const queryParams: Record<string, string> = {};
-
-    ctx.currentQuerySegments.forEach(({ name, parser, kind }) => {
-      if (remaining[name] != null) {
-        queryParams[name] = parser.serialize(remaining[name]);
-        delete remaining[name];
-      } else if (kind === "required") {
-        throw Error(
-          `addQueryParams: required path parameter "${name}" was not provided in "${defaultContext.renderTemplate(
-            ctx
-          )}"`
-        );
-      }
-    });
-
-    return {
-      ...ctx,
-      queryParams: {
-        ...ctx.queryParams,
-        ...queryParams,
-        ...(includeExtraQuery
-          ? (remaining as Record<string, string>)
-          : undefined),
-      },
-      querySegments: includeExtraQuery
-        ? ctx.querySegments.concat(
-            Object.keys(remaining).map((name) => str.optional(name))
-          )
-        : ctx.querySegments,
-    };
-  };
-
-const addRawQueryParams =
-  (params?: Record<string, string>) =>
-  (ctx: AnyRenderContext): AnyRenderContext => ({
-    ...ctx,
-    queryParams: { ...ctx.queryParams, ...params },
-  });
-
-const parseQueryParams = (ctx: AnyRenderContext): Record<string, unknown> => {
   const parsedQuery: Record<string, any> = {};
 
-  ctx.querySegments.forEach((segment) => {
-    const value = ctx.queryParams[segment.name];
+  route["~context"].querySegments.forEach((segment) => {
+    const value = params[segment.name];
     if (value != null) {
       parsedQuery[segment.name] = segment.parser.parse(value);
     } else if (segment.kind === "required") {
       throw Error(
         `parseQueryParams: required query parameter "${
           segment.name
-        }" was not provided in "${defaultContext.renderTemplate(ctx)}"`
+        }" was not provided in "${template(route)}"`
       );
     }
   });
@@ -279,59 +162,108 @@ const parseQueryParams = (ctx: AnyRenderContext): Record<string, unknown> => {
   return parsedQuery;
 };
 
-const overrideParams =
-  (params?: ParamRecordMap<Record<string, unknown>>) =>
-  (ctx: AnyRenderContext): AnyRenderContext => {
-    const pathParams = { ...ctx.pathParams };
-    if (params?.path) {
-      ctx.currentPathSegments.forEach((segment) => {
-        if (typeof segment !== "string" && segment.name in params.path) {
-          if (params.path[segment.name] != null) {
-            pathParams[segment.name] = segment.parser.serialize(
-              params.path[segment.name]
-            );
-          } else if (segment.kind === "optional") {
-            delete pathParams[segment.name];
-          } else {
-            throw Error(
-              `overrideParams: required path parameter "${
-                segment.name
-              }" can not be removed from "${defaultContext.renderTemplate(
-                ctx
-              )}"`
-            );
+const replace: ReplaceFn = (route, location, params: Record<string, any>) => {
+  const [locationPath, locationQuery] = location.split("?");
+
+  const { pathParams, remainingSegments } = paramsFromLocationPath(
+    route,
+    locationPath
+  );
+
+  const {
+    "~context": { pathSegments, querySegments, isRelative },
+  } = route;
+
+  const pathname = pathSegments
+    .map((pathSegment) =>
+      typeof pathSegment === "string"
+        ? pathSegment
+        : params["path"][pathSegment.name] !== undefined
+        ? pathSegment.parser.serialize(params["path"][pathSegment.name])
+        : pathParams[pathSegment.name]
+    )
+    .concat(remainingSegments)
+    .join("/");
+
+  const queryParams = paramsFromQuery(locationQuery);
+
+  querySegments.forEach(({ name, parser }) => {
+    if (params["query"][name] !== "undefined") {
+      queryParams[name] = parser.serialize(params["query"][name]);
+    }
+  });
+
+  const prefix = isRelative ? "/" : "";
+  const searchParams = new URLSearchParams(queryParams).toString();
+  const separator = searchParams ? `?` : "";
+
+  return prefix + pathname + separator + searchParams;
+};
+
+const paramsFromQuery = (query: string) =>
+  Object.fromEntries(new URLSearchParams(query));
+
+const paramsFromLocationPath = (
+  route: WithContext,
+  locationPath: string = ""
+) => {
+  const remainingSegments = locationPath
+    .slice(locationPath[0] === "/" ? 1 : 0)
+    .split("/");
+
+  const pathParams: Record<string, string> = {};
+
+  // keep track of recent optional params since they might contain path segments
+  // if a path segment doesn't match the algorithm starts backtracking in this array
+  const recentOptionalParams: string[] = [];
+
+  route["~context"].pathSegments.forEach((segment) => {
+    const locationPathSegment = remainingSegments.shift();
+
+    if (typeof segment === "string") {
+      if (segment === locationPathSegment) {
+        recentOptionalParams.length = 0; // irrelevant from here
+      } else {
+        // segment might have been swallowed by an optional param
+        let recentParam: string | undefined;
+        let foundMatch = false;
+        while ((recentParam = recentOptionalParams.shift())) {
+          if (pathParams[recentParam] === segment) {
+            delete pathParams[recentParam];
+            // hold segment back for the next iteration
+            locationPathSegment &&
+              remainingSegments.unshift(locationPathSegment);
+            foundMatch = true;
           }
         }
-      });
-    }
-
-    const queryParams = { ...ctx.queryParams };
-    if (params?.query) {
-      ctx.currentQuerySegments.forEach(({ name, kind, parser }) => {
-        if (name in params.query) {
-          if (params.query[name] != null) {
-            queryParams[name] = parser.serialize(params.query[name]);
-          } else if (kind === "optional") {
-            delete queryParams[name];
-          } else {
-            throw Error(
-              `overrideParams: required query parameter "${name}" can not be removed from "${defaultContext.renderTemplate(
-                ctx
-              )}"`
-            );
-          }
+        if (!foundMatch) {
+          throw new Error(
+            `"${locationPath}" doesn't match "${template(
+              route
+            )}", missing segment "${segment}"`
+          );
         }
-      });
+      }
+    } else {
+      if (locationPathSegment != null) {
+        pathParams[segment.name] = locationPathSegment;
+        if (segment.kind === "optional") {
+          recentOptionalParams.push(segment.name);
+        } else {
+          recentOptionalParams.length = 0;
+        }
+      } else if (segment.kind === "required") {
+        throw new Error(
+          `"${locationPath}" doesn't match "${template(
+            route
+          )}", missing parameter "${segment.name}"`
+        );
+      }
     }
+  });
 
-    return {
-      ...ctx,
-      pathParams,
-      queryParams,
-    };
+  return {
+    pathParams,
+    remainingSegments,
   };
-
-const pipe = (
-  initialCtx: AnyRenderContext,
-  ...fns: ((ctx: AnyRenderContext) => AnyRenderContext)[]
-) => fns.reduce((ctx, fn) => fn(ctx), initialCtx);
+};
