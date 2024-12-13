@@ -1,5 +1,4 @@
 import type {
-  AnyParam,
   Context,
   CreateRoutes,
   ParsePathFn,
