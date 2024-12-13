@@ -1,5 +1,4 @@
 import type { A } from "ts-toolbelt";
-import { str } from "./params";
 
 type Unwrap<T> = T extends unknown[] ? T[number] : never;
 
@@ -23,154 +22,114 @@ export interface Parser<T> {
   serialize: (value: T) => string;
 }
 
-/**
- * ExcludeEmptyProperties<{
- *  path: {param: string},
- *  query: {}
- * }> => {
- *  path: {param: string},
- * }
- */
-export type ExcludeEmptyProperties<T> = Pick<
-  T,
-  {
-    [K in keyof T]: keyof T[K] extends never ? never : K;
-  }[keyof T]
->;
-
-export type RouteNode<Meta = any> = {
+export type RouteNode = {
   path?: (string | AnyParam)[];
   template?: string;
   query?: AnyParam[];
-  children?: RouteNodeMap<Meta>;
-  meta?: Meta;
+  children?: RouteNodeMap;
+  meta?: any;
 };
-export type RouteNodeMap<Meta = any> = Record<string, RouteNode<Meta>>;
+export type RouteNodeMap = Record<string, RouteNode>;
 
 /**
- * RouteNodeToParamRecordMap<{
- *  path?: (string | AnyParamParam<TName, TValue>)[];
- *  query?: Param<TName, TValue>[];
- *  children?: RouteNodeMap;
- * }> => {
- *  path: {[TName]: TValue, ...},
- *  query: {[TName]: TValue, ...}
- * }
- */
-export type RouteNodeToParamRecordMap<T extends RouteNode> = {
-  path: ExtractParamRecord<Exclude<Unwrap<T["path"]>, string | undefined>>;
-  query: ExtractParamRecord<Exclude<Unwrap<T["query"]>, undefined>>;
-};
-export type ParamRecordMap<T = any> = Record<"path" | "query", T>;
-
-/**
- * ExtractParamRecord<{
- *  kind: "required" | "optional";
- *  name: TName;
- *  parser: Parser<TParseType>
- * } | {...}> => {
- *  [TName]: TParseType,
- *  [TName]?: TParseType,
+ * ParamsRecord<
+ *   { kind: "required"; name: "a"; parser: Parser<string> } |
+ *   { kind: "optional"; name: "b"; parser: Parser<nubmer> } |
+ *   ...
+ * > => {
+ *  [a]: string,
+ *  [b]?: number,
  *  ...
  * }
  */
-export type ExtractParamRecord<Params extends AnyParam> = {
-  [K in Extract<Params, { kind: "required" }>["name"]]: ReturnType<
-    Extract<Params, { name: K }>["parser"]["parse"]
-  >;
-} & {
-  [K in Extract<Params, { kind: "optional" }>["name"]]?: ReturnType<
-    Extract<Params, { name: K }>["parser"]["parse"]
-  >;
+type ParamsRecord<Params extends RouteNode["path"]> = ComputeParamRecord<
+  Exclude<Unwrap<Params>, string | undefined>
+>;
+type ComputeParamRecord<Params extends AnyParam> = A.Compute<
+  {
+    [K in Extract<Params, { kind: "required" }>["name"]]: ReturnType<
+      Extract<Params, { name: K }>["parser"]["parse"]
+    >;
+  } & {
+    [K in Extract<Params, { kind: "optional" }>["name"]]?: ReturnType<
+      Extract<Params, { name: K }>["parser"]["parse"]
+    >;
+  }
+>;
+
+type ParamsMap<R extends WithContext> = {
+  path: ParamsRecord<R["~context"]["pathSegments"]>;
+  query: ParamsRecord<R["~context"]["querySegments"]>;
 };
-
-type ComputeParamRecordMap<Params extends ParamRecordMap> = A.Compute<
-  ExcludeEmptyProperties<Params>
->;
-
-type ComputePartialParamRecordMap<Params extends ParamRecordMap> = A.Compute<
-  ExcludeEmptyProperties<{
-    path: Partial<Params["path"]>;
-    query: Partial<Params["query"]>;
-  }>
->;
 
 export type RoutesProps<
   Routes extends RouteNodeMap,
-  Params extends ParamRecordMap = ParamRecordMap
+  Path extends RouteNode[] = []
 > = {
-  "~context": Context;
-  "~params": Params;
+  "~context": Context<Path>;
   _: RoutesProps<Routes>;
 } & {
   [Segment in keyof Routes]: RoutesProps<
     Routes[Segment]["children"] & {}, // this shortcut excludes undefined
-    A.Compute<Params & RouteNodeToParamRecordMap<Routes[Segment]>>
+    [...Path, Routes[Segment]]
   >;
 };
 
-export interface Context {
+export interface Context<Path extends RouteNode[] = RouteNode[]> {
   path: string[];
   routes: RouteNode[];
-  pathSegments: Exclude<RouteNode["path"], undefined>;
-  querySegments: Exclude<RouteNode["query"], undefined>;
+  pathSegments: Unwrap<Path>["path"] & {};
+  querySegments: Unwrap<Path>["query"] & {};
   skippedRoutes: RouteNode[];
   children?: RouteNodeMap;
   rootRoutes: RouteNodeMap;
   isRelative: boolean;
 }
 
-export type CreateRoutes<Meta = any> = <Routes extends RouteNodeMap<Meta>>(
+export type CreateRoutes = <Routes extends RouteNodeMap>(
   routes: Routes
 ) => RoutesProps<Routes>;
 
 export interface WithContext {
   "~context": Context;
-  "~params": ParamRecordMap;
 }
 
 export type TemplateFn = <R extends WithContext>(route: R) => string;
 
 export type RenderPathFn = <R extends WithContext>(
   route: R,
-  params: R["~params"]["path"]
+  params: ParamsRecord<R["~context"]["pathSegments"]>
 ) => string;
 
 export type RenderQueryFn = <R extends WithContext>(
   route: R,
-  params: R["~params"]["query"]
+  params: ParamsRecord<R["~context"]["querySegments"]>
 ) => string;
 
 export type RenderFn = <R extends WithContext>(
   route: R,
-  params: ComputeParamRecordMap<R["~params"]>
+  params: ParamsMap<R>
 ) => string;
 
 export type ParsePathFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
-) => R["~params"]["path"];
+) => ParamsRecord<R["~context"]["pathSegments"]>;
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
   paramsOrQuery: Record<string, string> | string
-) => R["~params"]["query"];
+) => ParamsRecord<R["~context"]["querySegments"]>;
 
 export type ParseFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
-) => ComputeParamRecordMap<R["~params"]>;
-
-export type FromFn = <R extends WithContext>(
-  route: R,
-  location: string,
-  params: ComputeParamRecordMap<R["~params"]>
-) => R;
+) => ParamsMap<R>;
 
 export type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
-  params: ComputeParamRecordMap<R["~params"]>
+  params: Partial<ParamsMap<R>>
 ) => string;
 
-type InferParams<R extends WithContext> = R["~params"];
+export type InferParams<R extends WithContext> = ParamsMap<R>;
