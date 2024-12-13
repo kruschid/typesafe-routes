@@ -29,7 +29,6 @@ export interface Parser<T> {
  *  query: {}
  * }> => {
  *  path: {param: string},
- *  query: never,
  * }
  */
 export type ExcludeEmptyProperties<T> = Pick<
@@ -62,7 +61,7 @@ export type RouteNodeToParamRecordMap<T extends RouteNode> = {
   path: ExtractParamRecord<Exclude<Unwrap<T["path"]>, string | undefined>>;
   query: ExtractParamRecord<Exclude<Unwrap<T["query"]>, undefined>>;
 };
-export type ParamRecordMap<T = unknown> = Record<"path" | "query", T>;
+export type ParamRecordMap<T = any> = Record<"path" | "query", T>;
 
 /**
  * ExtractParamRecord<{
@@ -100,10 +99,8 @@ export type RoutesProps<
   Routes extends RouteNodeMap,
   Params extends ParamRecordMap = ParamRecordMap
 > = {
+  "~context": Context;
   "~params": Params;
-  "~path": string[];
-  "~routes": Routes;
-  "~context": RenderContext;
   _: RoutesProps<Routes>;
 } & {
   [Segment in keyof Routes]: RoutesProps<
@@ -112,77 +109,68 @@ export type RoutesProps<
   >;
 };
 
-export type RenderContext = {
-  // contains leading nodes that were skipped in a relative path
-  skippedNodes: RouteNode[];
-  nodes: RouteNode[];
+export interface Context {
+  path: string[];
+  routes: RouteNode[];
   pathSegments: Exclude<RouteNode["path"], undefined>;
   querySegments: Exclude<RouteNode["query"], undefined>;
+  skippedRoutes: RouteNode[];
+  children?: RouteNodeMap;
+  rootRoutes: RouteNodeMap;
   isRelative: boolean;
-  pathParams: Record<string, string>;
-  queryParams: Record<string, string>;
-  // todo: explain these properties
-  // will be resetted each time a parentContext gets inherited
-  currentPathSegments: Exclude<RouteNode["path"], undefined>;
-  currentQuerySegments: Exclude<RouteNode["query"], undefined>;
-};
+}
 
-export type CreateRoutes<Meta = any> = <
-  Routes extends RouteNodeMap<Meta>,
->(
+export type CreateRoutes<Meta = any> = <Routes extends RouteNodeMap<Meta>>(
   routes: Routes
 ) => RoutesProps<Routes>;
 
-type RouteWithParams = { "~params": ParamRecordMap }
+export interface WithContext {
+  "~context": Context;
+  "~params": ParamRecordMap;
+}
 
-type InferParams<Route extends RouteWithParams> = Route["~params"];
+export type TemplateFn = <R extends WithContext>(route: R) => string;
 
-type BindFn = <
-  Route extends RouteWithParams
->(route: Route, params: InferParams<Route>) => Route;
+export type RenderPathFn = <R extends WithContext>(
+  route: R,
+  params: R["~params"]["path"]
+) => string;
 
-type TemplateFn = <
-  Routes extends RouteNodeMap,
-  Params extends ParamRecordMap
->(route: RoutesProps<Routes, Params>) => string;
+export type RenderQueryFn = <R extends WithContext>(
+  route: R,
+  params: R["~params"]["query"]
+) => string;
 
-type RenderFn = <
-  Routes extends RouteNodeMap,
-  Params extends ParamRecordMap
->(route: RoutesProps<Routes, Params>, params: ComputeParamRecordMap<Params>) => string;
+export type RenderFn = <R extends WithContext>(
+  route: R,
+  params: ComputeParamRecordMap<R["~params"]>
+) => string;
 
-type ParseParamsFn = <
-  Routes extends RouteNodeMap,
-  Params extends ParamRecordMap
->(route: RoutesProps<Routes, Params>, params: Record<string, string> | string) => ComputeParamRecordMap<Params>;
+export type ParsePathFn = <R extends WithContext>(
+  route: R,
+  paramsOrLocation: Record<string, string> | string
+) => R["~params"]["path"];
 
-type FromFn = <
-  Routes extends RouteNodeMap,
-  Params extends ParamRecordMap
->(route: RoutesProps<Routes, Params>, location: string, params: Record<string, string>) => RoutesProps<Routes>;
+export type ParseQueryFn = <R extends WithContext>(
+  route: R,
+  paramsOrQuery: Record<string, string> | string
+) => R["~params"]["query"];
 
-type ReplaceFn = <
-  Routes extends RouteNodeMap,
-  Params extends ParamRecordMap
->(route: RoutesProps<Routes, Params>, location: string, params: Record<string, string>) => string;
+export type ParseFn = <R extends WithContext>(
+  route: R,
+  paramsOrLocation: Record<string, string> | string
+) => ComputeParamRecordMap<R["~params"]>;
 
-const fn: CreateRoutes = null as any;
+export type FromFn = <R extends WithContext>(
+  route: R,
+  location: string,
+  params: ComputeParamRecordMap<R["~params"]>
+) => R;
 
-const r = fn({
-  test: {
-    path: [str("sd")]
-  }
-});
+export type ReplaceFn = <R extends WithContext>(
+  route: R,
+  location: string,
+  params: ComputeParamRecordMap<R["~params"]>
+) => string;
 
-type p = InferParams<(typeof r.test)>
-
-
-// export type InferParams<
-//   R extends {
-//     $parseParams: (...p: any[]) => any;
-//     $parseQuery: (...p: any[]) => any;
-//   }
-// > = ComputeParamRecordMap<{
-//   path: ReturnType<R["$parseParams"]>;
-//   query: ReturnType<R["$parseQuery"]>;
-// }>;
+type InferParams<R extends WithContext> = R["~params"];
