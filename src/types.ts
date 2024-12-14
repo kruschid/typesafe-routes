@@ -1,6 +1,6 @@
 import type { A } from "ts-toolbelt";
 
-type Unwrap<T> = T extends unknown[] ? T[number] : never;
+type Defined<T> = Exclude<T, undefined>;
 
 export type ParamKind = "optional" | "required";
 
@@ -43,7 +43,7 @@ export type RouteNodeMap = Record<string, RouteNode>;
  * }
  */
 type ParamsRecord<Params extends RouteNode["path"]> = ComputeParamRecord<
-  Exclude<Unwrap<Params>, string | undefined>
+  Exclude<Defined<Params>[number], string>
 >;
 type ComputeParamRecord<Params extends AnyParam> = A.Compute<
   {
@@ -57,10 +57,12 @@ type ComputeParamRecord<Params extends AnyParam> = A.Compute<
   }
 >;
 
-type ParamsMap<R extends WithContext> = {
-  path: ParamsRecord<R["~context"]["pathSegments"]>;
-  query: ParamsRecord<R["~context"]["querySegments"]>;
-};
+type ParamsMap<R> = R extends WithContext
+  ? {
+      path: ParamsRecord<R["~context"]["routes"][number]["path"]>;
+      query: ParamsRecord<R["~context"]["routes"][number]["query"]>;
+    }
+  : Record<string, any>; // this is neccessary for RenderPathFn, RenderQueryFn, ParseFn etc...
 
 export type RoutesProps<
   Routes extends RouteNodeMap,
@@ -70,16 +72,14 @@ export type RoutesProps<
   _: RoutesProps<Routes>;
 } & {
   [Segment in keyof Routes]: RoutesProps<
-    Routes[Segment]["children"] & {}, // this shortcut excludes undefined
+    Defined<Routes[Segment]["children"]>,
     [...Path, Routes[Segment]]
   >;
 };
 
 export interface Context<Path extends RouteNode[] = RouteNode[]> {
   path: string[];
-  routes: RouteNode[];
-  pathSegments: Unwrap<Path>["path"] & {};
-  querySegments: Unwrap<Path>["query"] & {};
+  routes: Path;
   skippedRoutes: RouteNode[];
   children?: RouteNodeMap;
   rootRoutes: RouteNodeMap;
@@ -98,12 +98,12 @@ export type TemplateFn = <R extends WithContext>(route: R) => string;
 
 export type RenderPathFn = <R extends WithContext>(
   route: R,
-  params: ParamsRecord<R["~context"]["pathSegments"]>
+  params: ParamsMap<R>["path"]
 ) => string;
 
 export type RenderQueryFn = <R extends WithContext>(
   route: R,
-  params: ParamsRecord<R["~context"]["querySegments"]>
+  params: ParamsMap<R>["query"]
 ) => string;
 
 export type RenderFn = <R extends WithContext>(
@@ -114,12 +114,12 @@ export type RenderFn = <R extends WithContext>(
 export type ParsePathFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
-) => ParamsRecord<R["~context"]["pathSegments"]>;
+) => ParamsMap<R>["path"];
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
   paramsOrQuery: Record<string, string> | string
-) => ParamsRecord<R["~context"]["querySegments"]>;
+) => ParamsMap<R>["query"];
 
 export type ParseFn = <R extends WithContext>(
   route: R,
