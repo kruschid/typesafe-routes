@@ -32,7 +32,7 @@ export type RouteNode = {
 export type RouteNodeMap = Record<string, RouteNode>;
 
 /**
- * ParamsRecord<
+ * ComputeParamRecord<
  *   { kind: "required"; name: "a"; parser: Parser<string> } |
  *   { kind: "optional"; name: "b"; parser: Parser<nubmer> } |
  *   ...
@@ -42,9 +42,6 @@ export type RouteNodeMap = Record<string, RouteNode>;
  *  ...
  * }
  */
-type ParamsRecord<Params extends RouteNode["path"]> = ComputeParamRecord<
-  Exclude<Defined<Params>[number], string>
->;
 type ComputeParamRecord<Params extends AnyParam> = A.Compute<
   {
     [K in Extract<Params, { kind: "required" }>["name"]]: ReturnType<
@@ -57,12 +54,30 @@ type ComputeParamRecord<Params extends AnyParam> = A.Compute<
   }
 >;
 
-type ParamsMap<R> = R extends WithContext
-  ? {
-      path: ParamsRecord<R["~context"]["routes"][number]["path"]>;
-      query: ParamsRecord<R["~context"]["routes"][number]["query"]>;
-    }
-  : Record<string, any>; // this is neccessary for RenderPathFn, RenderQueryFn, ParseFn etc...
+export type InferPathParams<R extends WithContext> = ComputeParamRecord<
+  Extract<
+    Extract<
+      R["~context"]["routes"][number],
+      Required<Pick<RouteNode, "path">> // excludes undefined paths -> allows path to be optional
+    >["path"][number],
+    AnyParam
+  >
+>;
+
+export type InferQueryParams<R extends WithContext> = ComputeParamRecord<
+  Extract<
+    Extract<
+      R["~context"]["routes"][number],
+      Required<Pick<RouteNode, "query">> // excludes undefined queries -> allows query to be optional
+    >["query"][number],
+    AnyParam
+  >
+>;
+
+export type InferParams<R extends WithContext> = {
+  path: InferPathParams<R>;
+  query: InferQueryParams<R>;
+};
 
 export type RoutesProps<
   Routes extends RouteNodeMap,
@@ -98,38 +113,36 @@ export type TemplateFn = <R extends WithContext>(route: R) => string;
 
 export type RenderPathFn = <R extends WithContext>(
   route: R,
-  params: ParamsMap<R>["path"]
+  params: InferPathParams<R>
 ) => string;
 
 export type RenderQueryFn = <R extends WithContext>(
   route: R,
-  params: ParamsMap<R>["query"]
+  params: InferQueryParams<R>
 ) => string;
 
 export type RenderFn = <R extends WithContext>(
   route: R,
-  params: ParamsMap<R>
+  params: InferParams<R>
 ) => string;
 
 export type ParsePathFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
-) => ParamsMap<R>["path"];
+) => InferPathParams<R>;
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
   paramsOrQuery: Record<string, string> | string
-) => ParamsMap<R>["query"];
+) => InferQueryParams<R>;
 
 export type ParseFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
-) => ParamsMap<R>;
+) => InferParams<R>;
 
 export type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
-  params: Partial<ParamsMap<R>>
+  params: Partial<InferParams<R>>
 ) => string;
-
-export type InferParams<R extends WithContext> = ParamsMap<R>;
