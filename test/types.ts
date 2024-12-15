@@ -1,15 +1,11 @@
 import {
   bool,
   createRoutes,
-  InferParams,
-  int,
   InferPathParams,
   InferQueryParams,
-  RouteNodeMap,
+  int,
   str,
-  template,
 } from "../src";
-import { safeCall } from "../src/utils";
 
 type AssertEqual<T, U> = T extends U
   ? U extends T
