@@ -136,7 +136,7 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
         parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
       } else if (segment.kind === "required") {
         throw Error(
-          `parsePathParams: required path parameter "${
+          `parsePath: required path parameter "${
             segment.name
           }" was not provided in "${template(route)}"`
         );
@@ -162,7 +162,7 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
         parsedQuery[segment.name] = segment.parser.parse(value);
       } else if (segment.kind === "required") {
         throw Error(
-          `parseQueryParams: required query parameter "${
+          `parseQuery: required query parameter "${
             segment.name
           }" was not provided in "${template(route)}"`
         );
