@@ -128,7 +128,7 @@ export type RenderFn = <R extends WithContext>(
 
 export type ParsePathFn = <R extends WithContext>(
   route: R,
-  paramsOrLocation: Record<string, string> | string
+  paramsOrPath: Record<string, string> | string
 ) => InferPathParams<R>;
 
 export type ParseQueryFn = <R extends WithContext>(
@@ -136,13 +136,32 @@ export type ParseQueryFn = <R extends WithContext>(
   paramsOrQuery: Record<string, string> | string
 ) => InferQueryParams<R>;
 
-export type ParseFn = <R extends WithContext>(
+export type ParseLocationFn = <R extends WithContext>(
   route: R,
   paramsOrLocation: Record<string, string> | string
 ) => InferParams<R>;
+
+export type SafeParsePathFn = <R extends WithContext>(
+  route: R,
+  paramsOrPath: Record<string, string> | string
+) => SafeParseResult<InferPathParams<R>>;
+
+export type SafeParseQueryFn = <R extends WithContext>(
+  route: R,
+  paramsOrQuery: Record<string, string> | string
+) => SafeParseResult<InferQueryParams<R>>;
+
+export type SafeParseLocationFn = <R extends WithContext>(
+  route: R,
+  paramsOrLocation: Record<string, string> | string
+) => SafeParseResult<InferParams<R>>;
 
 export type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
   params: Partial<InferParams<R>>
 ) => string;
+
+export type SafeParseResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: Error };
