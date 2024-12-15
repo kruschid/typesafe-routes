@@ -1,12 +1,17 @@
 import type {
   Context,
   CreateRoutes,
+  ParseLocationFn,
   ParsePathFn,
   ParseQueryFn,
   RenderFn,
   RenderPathFn,
   RenderQueryFn,
   ReplaceFn,
+  SafeParseLocationFn,
+  SafeParsePathFn,
+  SafeParseQueryFn,
+  SafeParseResult,
   TemplateFn,
   WithContext,
 } from "./types";
@@ -77,7 +82,7 @@ export const template: TemplateFn = ({
 
 export const renderPath: RenderPathFn = (
   { "~context": { routes, isRelative } },
-  params
+  params: Record<string, any>
 ) => {
   const serializedPath = routes
     .flatMap((route) => route.path ?? [])
@@ -93,7 +98,7 @@ export const renderPath: RenderPathFn = (
 
 export const renderQuery: RenderQueryFn = (
   { "~context": { routes } },
-  params
+  params: Record<string, any>
 ) => {
   const serializedQueryRecord: Record<string, string> = {};
 
@@ -116,11 +121,11 @@ export const render: RenderFn = (route, params) => {
   return pathname + separator + searchParams;
 };
 
-export const parsePath: ParsePathFn = (route, paramsOrLocation) => {
+export const parsePath: ParsePathFn = (route, paramsOrPath) => {
   const params =
-    typeof paramsOrLocation === "string"
-      ? paramsFromLocationPath(route, paramsOrLocation).pathParams
-      : paramsOrLocation;
+    typeof paramsOrPath === "string"
+      ? paramsFromLocationPath(route, paramsOrPath).pathParams
+      : paramsOrPath;
   const parsedParams: Record<string, any> = {};
 
   route["~context"].routes
@@ -138,7 +143,7 @@ export const parsePath: ParsePathFn = (route, paramsOrLocation) => {
       }
     });
 
-  return parsedParams;
+  return parsedParams as any;
 };
 
 export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
@@ -164,10 +169,26 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
       }
     });
 
-  return parsedQuery;
+  return parsedQuery as any;
 };
 
-export const replace: ReplaceFn = (route, location, params) => {
+export const parseLocation: ParseLocationFn = (route, paramsOrLocation) => {
+  const [pathParams, queryParams] =
+    typeof paramsOrLocation === "string"
+      ? paramsOrLocation.split("&")
+      : [paramsOrLocation, paramsOrLocation];
+
+  return {
+    path: parsePath(route, pathParams),
+    query: parseQuery(route, queryParams),
+  };
+};
+
+export const replace: ReplaceFn = (
+  route,
+  location,
+  params: Record<string, any>
+) => {
   const [locationPath, locationQuery] = location.split("?");
 
   const { pathParams, remainingSegments } = paramsFromLocationPath(
@@ -278,3 +299,27 @@ const paramsFromLocationPath = (
     remainingSegments,
   };
 };
+
+export const safeCall =
+  <T extends (...args: any[]) => any>(fn: T) =>
+  (...params: any[]): SafeParseResult<any> => {
+    try {
+      const result = fn(...params);
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error:
+          err instanceof Error
+            ? err
+            : new Error(err === "string" ? err : `unknown error: ${err}`),
+      };
+    }
+  };
+
+export const safeParsePath: SafeParsePathFn = safeCall(parsePath);
+export const safeParseQuery: SafeParseQueryFn = safeCall(parseQuery);
+export const safeParseLocation: SafeParseLocationFn = safeCall(parseLocation);
