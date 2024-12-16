@@ -5,7 +5,7 @@ This section contains a list of parameter types that are included with the libra
 <!-- tabs:start -->
 ## **str**
 ``` ts
-import { createRoutes, str } from "typesafe-routes";
+import { createRoutes, str, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
@@ -13,14 +13,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {lang: "en"}}); // => "/path/en"
-routes.myRoute.$parseParams("/path/en"); // => {lang: "en"}
+renderPath(routes.myRoute, { lang: "en" }); // ~> "/path/en"
+parsePath(routes.myRoute, "/path/en"); // ~> { lang: "en" }
 ```
 
 ## **int**
 
 ``` ts
-import { createRoutes, int } from "typesafe-routes";
+import { createRoutes, int, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
@@ -28,14 +28,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {id: 55}}); // => "/path/55"
-routes.myRoute.$parseParams("/path/55"); // => {id: 55}
+renderPath(routes.myRoute, { id: 55 }); // ~> "/path/55"
+parsePath(routes.myRoute, "/path/55"); // ~> { id: 55 }
 ```
 
 ## **float**
 
 ``` ts
-import { createRoutes, float } from "typesafe-routes";
+import { createRoutes, float, renderPath, parsePath } from "typesafe-routes";
 
 const f2 = float(2); // renders 2 fraction digits
 
@@ -45,14 +45,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {x: 55.1234}}); // => "/path/55.12"
-routes.myRoute.$parseParams("/path/55.12"); // => {x: 55.12}
+renderPath(routes.myRoute, { x: 55.1234 }); // ~> "/path/55.12"
+parsePath(routes.myRoute, "/path/55.12"); // ~> { x: 55.12 }
 ```
 
 ## **isoDate**
 
 ``` ts
-import { createRoutes, isoDate } from "typesafe-routes";
+import { createRoutes, isoDate, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
@@ -60,14 +60,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {date: new Date(1706549242302)}}); // => "/path/2024-01-29T17:27:22.302Z"
-routes.myRoute.$parseParams("/path/2024-01-29T17:27:22.302Z"); // => {date: Date("2024-01-29T17:27:22.302Z")}
+renderPath(routes.myRoute, { date: new Date(1706549242302) }); // ~> "/path/2024-01-29T17:27:22.302Z"
+parsePath(routes.myRoute, "/path/2024-01-29T17:27:22.302Z"); // ~> { date: Date("2024-01-29T17:27:22.302Z") }
 ```
 
 ## **date**
 
 ``` ts
-import { createRoutes, date } from "typesafe-routes";
+import { createRoutes, date, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
@@ -75,14 +75,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {date: new Date(1706549242302)}}); // => "/path/2024-01-29"
-routes.myRoute.$parseParams("/path/2024-01-29"); // => {date: Date("2024-01-29")}
+renderPath(routes.myRoute, { date: new Date(1706549242302) }); // ~> "/path/2024-01-29"
+parsePath(routes.myRoute, "/path/2024-01-29"); // ~> { date: Date("2024-01-29") }
 ```
 
 ## **bool**
 
 ``` ts
-import { createRoutes, bool } from "typesafe-routes";
+import { createRoutes, bool, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
@@ -90,14 +90,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {isVisible: true}}); // => "/path/true"
-routes.myRoute.$parseParams("/path/false"); // => {isVisible: false}
+renderPath(routes.myRoute, { isVisible: true }); // ~> "/path/true"
+parsePath(routes.myRoute, "/path/false"); // ~> { isVisible: false }
 ```
 
 ## **oneOf**
 
 ``` ts
-import { createRoutes, oneOf } from "typesafe-routes";
+import { createRoutes, oneOf, renderPath, parsePath } from "typesafe-routes";
 
 const options = oneOf("movies", "music", "art")
 
@@ -107,14 +107,14 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {category: "music"}}); // => "/path/music"
-routes.myRoute.$parseParams("/path/art"); // => {category: "art"}
+renderPath(routes.myRoute, { category: "music" }); // ~> "/path/music"
+parsePath(routes.myRoute, "/path/art"); // ~> { category: "art" }
 ```
 
 ## **list**
 
 ``` ts
-import { createRoutes, list } from "typesafe-routes";
+import { createRoutes, list, renderPath, parsePath } from "typesafe-routes";
 
 const options = list(["movies", "music", "art"], ","); // second argument is optional, default is ";"
 
@@ -124,8 +124,8 @@ const routes = createRoutes({
   }
 });
 
-routes.myRoute.$render({path: {categories: ["music", "art"]}}); // => "/path/music,art"
-routes.myRoute.$parseParams("/path/art,movies,music"); // => {categories: ["art", "movies", "music"]}
+renderPath(routes.myRoute, { categories: ["music", "art"] }); // ~> "/path/music,art"
+parsePath(routes.myRoute, "/path/art,movies,music"); // ~> { categories: ["art", "movies", "music"] }
 ```
 
 <!-- tabs:end -->

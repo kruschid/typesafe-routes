@@ -31,14 +31,15 @@ const routes = createRoutes({
 
 ``` ts
 // only required params
-routes.groups.users.$render({
-  path: { gid: 123 },
-}); // => "/groups/123/users"
+renderPath(routes.groups.users, {
+  gid: 123,
+}); // ~> "/groups/123/users"
 
 // with optional param
-routes.groups.users.$render({
-  path: { gid: 123, uid: 456 },
-}); // => "/groups/123/users/456"
+renderPath(routes.groups.users, {
+  gid: 123,
+  uid: 456,
+}); // ~> "/groups/123/users/456"
 ```
 
 ### 4. Discover More Features

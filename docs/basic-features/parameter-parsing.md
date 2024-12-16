@@ -1,13 +1,13 @@
 # Parameter Parsing
 
-This section explains how to parse path and query parameter values. Parsing converts string values into their corresponding types that were specified in the route tree. These values may originate from various sources. For instance, they can be in the form of an object provided by router libraries such as [React Router](https://reactrouter.com). Alternatively, they might come from the global [Location](https://developer.mozilla.org/en-US/docs/Web/API/Location) object as a string. This flexibility allows for effective handling of parameter values regardless of their source.
+This section explains how to parse path and query parameters. Parsing converts string values into their corresponding types that were specified in the route tree. These values may originate from various sources. For instance, they can be in the form of an object provided by router libraries such as [React Router](https://reactrouter.com). Alternatively, they might come from the global [Location](https://developer.mozilla.org/en-US/docs/Web/API/Location) object as a string. This flexibility allows for effective handling of parameter values regardless of their source.
 
 ## Path Parameters
 
 Path parameter values are dynamic segments in a location path. For example, if we look at the path `"/blog/35/category/movies/date/2023-12-28"` using the route definition below, we can find three dynamic segments: `"35"`,`"movies"`, and `"2023-12-28"`.
 
 ``` ts
-import { createRoutes, int, str, date } from "typesafe-routes";
+import { createRoutes, int, str, date, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   blog: {
@@ -29,7 +29,7 @@ const routes = createRoutes({
 
 ### **Parameter Record**
 
-Frameworks such as [React Router](https://reactrouter.com) provide a [record](https://reactrouter.com/en/main/hooks/use-params#useparams) containing parameter values. These parameters, typically in string format, can be processed using the `$parseParams` method. This method transforms these string values into their respective JavaScript types, enhancing data handling within the application.
+Frameworks such as [React Router](https://reactrouter.com) provide a [record](https://reactrouter.com/en/main/hooks/use-params#useparams) containing parameter values. These parameters, typically in string format, can be processed using the `parsePath` function. This method transforms these string values into their respective JavaScript types, enhancing data handling within the application.
 
 ``` ts
 // this object might be provided by a routing library
@@ -39,24 +39,30 @@ const params = {
   date: "2023-12-28",
 };
 
-routes.blog.categories.date.$parseParams(params); // => { blogId: 35, category: "movies", date: Date("2023-12-28T00:00:00.000Z") }
+parsePath(routes.blog.categories.date, params);
+// ~> {
+//   blogId: 35,
+//   category: "movies",
+//   date: Date("2023-12-28T00:00:00.000Z")
+// }
 ```
 
 The `params` object's string-based values are all converted to the corresponding type that was previously defined with `createRoutes`.
 
 ### **Relative Routes**
 
-`$parseParams` is also able to handle [relative route](basic-features/relative-routes.md) paths initiated with the `_` link.
+`parsePath` is also able to handle [relative route](basic-features/relative-routes.md) paths initiated with the `_` link.
 
 ``` ts
-routes.blog._.categories.date.$parseParams({
+
+parsePath(routes.blog._.categories.date, {
   category: "movies",
   date: "2023-12-28",
-}); // => { category: "movies", date: Date("2023-12-28T00:00:00.000Z") }
+}); // ~> { category: "movies", date: Date("2023-12-28T00:00:00.000Z") }
 
-routes.blog.categories._.date.$parseParams({
+parsePath(routes.blog.categories._.date, {
   date: "2023-12-28",
-}); // => { date: Date("2023-12-28T00:00:00.000Z") }
+}); // ~> { date: Date("2023-12-28T00:00:00.000Z") }
 ```
 
 ### **Absolute Location Path**
@@ -65,14 +71,16 @@ Alternatively, parsing parameters from string paths, like `location.pathname`, i
 
 ``` ts
 // with absolute path location
-routes.blog.categories.date.$parseParams(
+parsePath( 
+  routes.blog.categories.date,
   "/blog/35/category/movies/date/2023-12-28" // location.path
-); // => { blogId: 35, catId: "movies", date: Date("2023-12-28T00:00:00.000Z") }
+); // ~> { blogId: 35, catId: "movies", date: Date("2023-12-28T00:00:00.000Z") }
 
-// without optional parameters
-routes.blog.categories.date.$parseParams(
+// omitting optional parameters
+parsePath(
+  routes.blog.categories.date, 
   "/blog/35/category/date/2023-12-28" // without the "category" parameter
-); // => { blogId: 35, date: Date("2023-12-28T00:00:00.000Z") }
+); // ~> { blogId: 35, date: Date("2023-12-28T00:00:00.000Z") }
 ```
 
 ### **Relative Location Path**
@@ -81,15 +89,16 @@ It is also possible to parse parameters from [relative route](basic-features/rel
 
 ``` ts
 // with relative location path
-routes.blog._.categories.date.$parseParams(
+parsePath(
+  routes.blog._.categories.date,
   "category/date/2023-12-28"
-); // => { date: Date("2023-12-28T00:00:00.000Z") }
+); // ~> { date: Date("2023-12-28T00:00:00.000Z") }
 ```
 <!-- tabs:end -->
 
 ## Query Parameters
 
-The `$parseQuery` method converts [search parameter](https://developer.mozilla.org/en-US/docs/Web/API/URL/searchParams) values from string format to their corresponding types. It takes one argument that is the source, which contains the string-based parameter values that need to be parsed. A source can be an object with string values `{name: "value",...}` or a search string `"?name=value&..."`.
+The `parseQuery` function converts [search parameter](https://developer.mozilla.org/en-US/docs/Web/API/URL/searchParams) values from string format to their corresponding types. It takes one argument that is the source, which contains the string-based parameter values that need to be parsed. A source can be an object with string values `{name: "value",...}` or a search string `"?name=value&..."`.
 
 ``` ts
 import { createRoutes, int, bool, date } from "typesafe-routes";
@@ -113,7 +122,7 @@ const routes = createRoutes({
 });
 ```
 
-Note that in the example the `options` node lacks a `path` property, indicating that this node is exclusively used for handling query parameters. 
+Note that in the example the `options` node is a regular route node but lacks a `path` property, indicating that this node is exclusively used for handling query parameters. 
 
 <!-- tabs:start -->
 ### **Basic Usage**
@@ -121,31 +130,33 @@ Note that in the example the `options` node lacks a `path` property, indicating 
 // this could come from a router library:
 const params = { page: "1", showModal: "false" };
 
-route.blog.categories.options.$parseQuery(params); // => { page: 1, showModal: false }
+parseQuery(route.blog.categories.options, params); // ~> { page: 1, showModal: false }
 ```
 
 ### **Relative Routes**
 
-[Relative Routes](basic-features/relative-routes.md) are compatible with the parsing of query parameters, causing `$parseQuery` to parse only those parameters that belong to the routes that are initiated with `_`.
+[Relative Routes](basic-features/relative-routes.md) are compatible with the parsing of query parameters, causing `parseQuery` to parse only those parameters that belong to the routes that are initiated with `_`.
 
 ``` ts
-route.blog._.categories.options.$parseQuery({
+parseQuery(route.blog._.categories.options, {
   showModal: "false",
-}); // => { showModal: false }
+}); // ~> { showModal: false }
 ```
 
 ### **String-Based Source**
 
 ``` ts
 // absolute route path
-route.blog.categories.options.$parseQuery(
+parseQuery(
+  route.blog.categories.options, 
   "?catId=movies&date=2023-12-28&showModal=false"
-); // => { catId: "movies", date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+); // ~> { catId: "movies", date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
 
 // relative route path
-route.blog.categories._.options.$parseQuery(
+parseQuery(
+  route.blog._.categories.options,
   "?date=2023-12-28&showModal=false"
-); // => { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
+); // ~> { date: Date("2023-12-28T00:00:00.000Z"), showModal: false }
 ```
 
 ### **Unknown Params**
@@ -154,28 +165,23 @@ Parameters that are not specified in any of the route nodes will not be included
 
 ``` ts
 // ignores addional parameters 
-route.blog.categories.$parseQuery(
+parseQuery(
+  route.blog.categories, 
   "?page=5&a=123&b=456"
-); // => { page: 5 } // does not include "a" and "b" because they are not specified.
+); // => { page: 5 } // does not include "a" and "b" because they were not specified with `createRoutes`
 ```
 <!-- tabs:end -->
 
 ## Safe Parsing
 
-Parsing libraries, such as [Zod](https://github.com/colinhacks/zod/blob/3032e240a0c227692bb96eedf240ed493c53f54c/README.md#safeparse), provide a method for safe parsing that doesn't trigger an error when validation fails. Following this example, typesafe-routes includes a utility function, `safeCall`, which returns an object containing information about the parsing result.
+Parsing libraries, such as [Zod](https://github.com/colinhacks/zod/blob/3032e240a0c227692bb96eedf240ed493c53f54c/README.md#safeparse), provide a method for safe parsing that doesn't trigger an error when validation fails. Typesafe-routes includes similar safe call functions, `safeParsePath`, `safeParseQuery`, and `safeParse`, which return an object containing information about the parsing result.
 
 ``` ts
-import { safeCall } from "typesafe-routes/utils";
+import { safeParseQuery } from "typesafe-routes";
 
-const parseCategoriesQuery = safeCall(route.blog.categories.$parseQuery);
-
-parseCategoriesQuery("?page=5");
+safeParseQuery(route.blog.categories, "?page=5");
 // => { success: true; data: { page: 5 }}
 
-parseCategoriesQuery("?offset=10");
+safeParseQuery(route.blog.categories, "?offset=10");
 // => { success: false; error: Error }
-
-safeCall(route.blog.categories.$parseQuery)("?page=42");
-// => { success: true; data: { page: 42 }}
-
 ```
