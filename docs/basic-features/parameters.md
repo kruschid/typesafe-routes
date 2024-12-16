@@ -7,7 +7,7 @@ In addition to static path segments, `path` segment arrays can also accommodate 
 The example showcases the import of string (`str`) and integer (`int`) parameter functions for defining typed parameters. For details on other built-in parameter types, please refer to the [Parameter Types](basic-features/parameter-types.md) section.
 
 ``` ts
-import { createRoutes, str, int } from "typesafe-routes";
+import { createRoutes, renderPath, str, int } from "typesafe-routes";
 
 const routes = createRoutes({
   blog: {
@@ -20,35 +20,29 @@ const routes = createRoutes({
 <!-- tabs:start -->
 ### **Required Params Only**
 ``` ts
-routes.blog.$render({
-  path: {
-    category: "movies",
-  },
-}); // => "/blog/categories/movies/year"
+renderPath(routes.blog, {
+  category: "movies" // required parameter
+}); // ~> "/blog/categories/movies/year"
 ```
 
 ### **With Optional Params**
 ``` ts
-routes.$render("blog", {
-  path: {
-    category: "movies",
-    year: 2024,
-  }
-}); // => "/blog/categories/movies/year/2024"
+renderPath(routes."blog", {
+  category: "movies",
+  year: 2024, // optional parameter
+}); // ~> "/blog/categories/movies/year/2024"
 ```
 
 ### **Nested Segments**
 
-When supplying nested segment names, include all parameters in a unified object. For improved clarity in assigning parameters, refer to the [Parameter Binding](basic-features/parameter-binding.md) section for guidance on utilizing the `$bind` method.
+When supplying nested segment names, include all parameters in a unified object. For improved clarity in assigning parameters.
 
 ``` ts
-routes.segmentA.segmentB.$render({
+renderPath(routes.segmentA.segmentB, {
   // unified parameter object for "segmentA" and "segmentB"
-  path: {
-    paramA: "param-a",
-    paramB: "param-b",
-  },
-}); // => "/segment-a/param-a/segment-b/param-b"
+  paramA: "param-a",
+  paramB: "param-b",
+}); // ~> "/segment-a/param-a/segment-b/param-b"
 ```
 
 <!-- tabs:end -->
@@ -58,7 +52,7 @@ routes.segmentA.segmentB.$render({
 Query parameters can be defined by setting a `query` property in a route node. Query parameters can be made `optional`. If an `optional` query parameter is missing during rendering or parsing, no error will be thrown.
 
 ``` ts
-import { createRoutes, str, int, bool } from "typesafe-routes";
+import { createRoutes, renderQuery, str, int, bool } from "typesafe-routes";
 
 const routes = createRoutes({
   blog: {
@@ -68,64 +62,80 @@ const routes = createRoutes({
 });
 ```
 
-Pass the parameter values to the `$render` method, which should be an object containing a `query` property. The `$render` method concatenates the entire query string following the location path. Query parameters are fully compatible with Nested Routes](basic-features/nested-routes.md) and [Relative Routes](basic-features/relative-routes.md).
+Pass the parameter values to the `renderQuery` function. The `renderQuery` method concatenates the entire query string following the location path. Query parameters are fully compatible with [Nested Routes](basic-features/nested-routes.md) and [Relative Routes](basic-features/relative-routes.md).
 
 <!-- tabs:start -->
 ### **Required Params Only**
 ``` ts
-routes.blog.$render({
-  query: {
-    search: "batman",
-  }
-}); // => "/blog?search=batman"
+renderQuery(routes.blog, {
+  search: "batman",
+}); // ~> "search=batman"
 ```
 
 ### **With Optional Params**
 
 ``` ts
-routes.blog.categories.year.$render({
-  query: {
-    search: "batman",
-    page: 0,
-    filter: true,
-  }
-}); // => "/blog?search=batman&page=0&filter=true"
+renderQuery(routes.blog, {
+  search: "batman",
+  page: 0,
+  filter: true,
+}); // ~> "search=batman&page=0&filter=true"
 ```
 
 ### **Nested Segments**
 
-When supplying nested segment names, include all parameters in a unified object. For improved clarity in assigning parameters, refer to the [Parameter Binding](basic-features/parameter-binding.md) section for guidance on utilizing the `$bind` method.
+When supplying nested segment names, include all parameters in a unified object.
 
 ``` ts
-routes.segmentA.segmentB.$render({
+renderQuery(routes.segmentA.segmentB, {
   // unified parameter object for "segmentA" and "segmentB"
-  path: {
-    paramA: "valueA",
-    paramB: "valueB",
-  },
-}); // => "/segment-a/segment-b?paramA=valueA&paramB=valueB"
+  paramA: "valueA",
+  paramB: "valueB",
+}); // ~> "paramA=valueA&paramB=valueB"
 ```
 
 <!-- tabs:end -->
 
-## Type inference
+## Mixing path & query parameters
 
-Parameter types can be extraced with `InferParams`.
+Path and query can be rendered in one single step using the `render` function.
 
 ``` ts
-import type { InferParams } from "typesafe-routes";
+import { createRoutes, render, str, int, bool } from "typesafe-routes";
 
-type MyParams = InferParams<typeof routes.blog.categories.year>;
-
-const params: MyParams = {
-  query: {
-    search: "batman",
-    page: 0,
-    filter: true,
+const routes = createRoutes({
+  blog: {
+    // path contains static and dynamic segments (parameters)
+    path: ["blog", "categories", str("category"), "year", int.optional("year")]
+    query: [str("search"), int.optional(page), bool.optional("filter")]
   }
-} // compiles
+});
+
+render(routes.blog, {
+  path: { category: "movies" },
+  query: { search: "robocop" },
+}); // ~> /blog/categories/movies/year?search=robocop
+```
+
+The second argument of `render` takes an object with the properties `path` and `query`, containing parameter records that correspond to the route definitons above.
+
+
+## Type inference
+
+Query parameter types can be extraced with `InferQueryParams`, `InferPathParams` and `InferParams`.
+
+The next example shows how to use `InferQueryParams`. The remaining utility types can be used similarly.
+
+``` ts
+import type { InferQueryParams } from "typesafe-routes";
+
+type MyParams = InferQueryParams<typeof routes.blog>;
 
 const params: MyParams = {
-  query: {},
-} // TypeError (search is not optional)
+  search: "batman",
+  page: 0,
+  filter: true,
+} // ✅ complies
+
+const params: MyParams = {} // ❌ TypeError (search is not optional)
 ```

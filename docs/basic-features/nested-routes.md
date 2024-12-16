@@ -1,9 +1,9 @@
 # Nested routes
 
-Nested route segments are defined through the `children` property, containing an object with additional route segments.
+Nested route segments are defined through the `children` property, containing an object with nested route segments.
 
 ``` ts
-import { createRoutes } from "typesafe-routes";
+import { createRoutes, renderPath } from "typesafe-routes";
 
 const routes = createRoutes({
   blog: {
@@ -22,12 +22,12 @@ const routes = createRoutes({
 });
 ```
 
-To render nested segments, chain the corresponding route-nodes based on their hierarchy and use `$render` on them.
+To render nested segments, chain the corresponding route-nodes based on their hierarchy and use `renderPath`, `renderQuery` or `render` on them.
 
 ``` ts
-routes.blog.$render({}); // => "/blog"
+renderPath(routes.blog, {}); // => "/blog"
 
-routes.blog.categories.$render({}); // => "/blog/categories"
+renderPath(routes.blog.categories, {}); // => "/blog/categories"
 
-routes.blog.categories.movies.$render({}); // => "/blog/categories/movies"
+renderPath(routes.blog.categories.movies, {}); // => "/blog/categories/movies"
 ```
