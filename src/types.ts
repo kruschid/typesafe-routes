@@ -84,6 +84,7 @@ export type RoutesProps<
   Path extends RouteNode[] = []
 > = {
   "~context": Context<Path>;
+  "~routes": Routes;
   _: RoutesProps<Routes>;
 } & {
   [Segment in keyof Routes]: RoutesProps<
@@ -97,7 +98,6 @@ export interface Context<Path extends RouteNode[] = RouteNode[]> {
   routes: Path;
   skippedRoutes: RouteNode[];
   children?: RouteNodeMap;
-  rootRoutes: RouteNodeMap;
   isRelative: boolean;
 }
 
