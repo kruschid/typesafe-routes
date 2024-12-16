@@ -1,45 +1,35 @@
 import test from "tape";
 import {
-  AnyRenderContext,
   bool,
-  ComputeParamRecordMap,
   createRoutes,
   date,
-  defaultContext,
   float,
   int,
   isoDate,
   list,
   oneOf,
-  ParamRecordMap,
-  RouteNodeMap,
-  RoutesProps,
+  parsePath,
+  parseQuery,
+  render,
+  renderPath,
+  renderQuery,
+  safeParsePath,
+  safeParseQuery,
   str,
+  template,
 } from "../src";
-import {
-  createAngularRoutes,
-  CreateAngularRoutes,
-} from "../src/adapters/angular-router";
-import { safeCall } from "../src/utils";
 
-type FN = <
-  Routes extends RouteNodeMap,
-  Context extends AnyRenderContext,
-  Params extends ParamRecordMap = ParamRecordMap
->(props: RoutesProps<Routes, Context, Params>, params: ComputeParamRecordMap<Params>) => RoutesProps<Routes, Context>;
-
-
-test("templates with default renderer", (t) => {
+test("template", (t) => {
   const routes = createRoutes({
     home: {},
     blog: {
       path: ["blog", str("lang")],
       children: {
-        _wildcard: { template: "**" },
+        $wildcard: { template: "**" },
         category: {
           path: ["category", str("cid")],
           children: {
-            _wildcard: { template: "**" },
+            $wildcard: { template: "**" },
             date: {
               path: [isoDate("date")],
             },
@@ -49,29 +39,25 @@ test("templates with default renderer", (t) => {
     },
   });
 
-  const bind: FN = null as any;
-
-  bind(bind(routes.blog.category, {path: {cid: "d", lang: "end"}}).date, {path: {date: new Date()}})
-
-  t.equal(routes.home.$template(), "/");
-  t.equal(routes.blog.$template(), "/blog/:lang");
-  t.equal(routes.blog._wildcard.$template(), "/blog/:lang/**");
+  t.equal(template(routes.home), "/");
+  t.equal(template(routes.blog), "/blog/:lang");
+  t.equal(template(routes.blog.$wildcard), "/blog/:lang/**");
   t.equal(
-    routes.blog.category.date.$template(),
+    template(routes.blog.category.date),
     "/blog/:lang/category/:cid/:date"
   );
   t.equal(
-    routes.blog.category._wildcard.$template(),
+    template(routes.blog.category.$wildcard),
     "/blog/:lang/category/:cid/**"
   );
-  t.equal(routes.blog._.category._wildcard.$template(), "category/:cid/**");
-  t.equal(routes.blog._.category.date.$template(), "category/:cid/:date");
-  t.equal(routes.blog.category._.date.$template(), ":date");
+  t.equal(template(routes.blog._.category.$wildcard), "category/:cid/**");
+  t.equal(template(routes.blog._.category.date), "category/:cid/:date");
+  t.equal(template(routes.blog.category._.date), ":date");
 
   t.end();
 });
 
-test("custom templates with default renderer ", (t) => {
+test("custom templates ", (t) => {
   const routes = createRoutes({
     customTemplate: {
       template: "segment/:param/segment",
@@ -81,13 +67,13 @@ test("custom templates with default renderer ", (t) => {
     },
   });
 
-  t.equal(routes.customTemplate.$template(), "/segment/:param/segment");
-  t.equal(routes.customParamTemplate.$template(), "/segment/:title.(mp4|mov)");
+  t.equal(template(routes.customTemplate), "/segment/:param/segment");
+  t.equal(template(routes.customParamTemplate), "/segment/:title.(mp4|mov)");
 
   t.end();
 });
 
-test("render with default renderer", (t) => {
+test("renderPath", (t) => {
   const routes = createRoutes({
     home: {},
     blog: {
@@ -107,32 +93,102 @@ test("render with default renderer", (t) => {
     },
   });
 
-  t.equal(routes.$render({}), "/", "renders home route on empty context");
-  t.equal(routes.home.$render({}), "/");
-  t.equal(routes.blog.$render({ path: { lang: "en" } }), "/blog/en");
+  t.equal(renderPath(routes, {}), "/", "renders home route on empty context");
+  t.equal(renderPath(routes.home, {}), "/");
+  t.equal(renderPath(routes.blog, { lang: "en" }), "/blog/en");
   t.equal(
-    routes.blog.category.$render({
+    renderPath(routes.blog.category, { lang: "en", cid: "movies" }),
+    "/blog/en/category/movies"
+  );
+  t.end();
+});
+
+test("renderQuery ", (t) => {
+  const routes = createRoutes({
+    blog: {
+      path: ["blog", str("lang")],
+      children: {
+        category: {
+          path: ["category", str("cid")],
+          query: [str.optional("search")],
+          children: {
+            date: {
+              path: [date("date")],
+              query: [int("page")],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.equal(renderQuery(routes, {}), "");
+  t.equal(renderQuery(routes.blog, {}), "");
+  t.equal(renderQuery(routes.blog.category, {}), "");
+  t.equal(
+    renderQuery(routes.blog.category, { search: "robocop" }),
+    "search=robocop"
+  );
+  t.equal(renderQuery(routes.blog.category.date, { page: 1 }), "page=1");
+  t.equal(
+    renderQuery(routes.blog.category.date, { search: "robocop", page: 1 }),
+    "search=robocop&page=1"
+  );
+  t.equal(renderQuery(routes.blog.category._.date, { page: 2 }), "page=2");
+  t.equal(
+    // @ts-expect-error
+    renderQuery(routes.blog.category._.date, { search: "robocop", page: 1 }),
+    "page=1"
+  );
+  t.end();
+});
+
+test("render", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog", str("lang")],
+      children: {
+        category: {
+          path: ["category", str("cid")],
+          query: [str.optional("search")],
+          children: {
+            date: {
+              path: [date("date")],
+              query: [int("page")],
+            },
+          },
+        },
+      },
+    },
+  });
+
+  t.equal(render(routes, { path: {}, query: {} }), "/");
+  t.equal(render(routes.home, { path: {}, query: {} }), "/");
+  t.equal(render(routes.blog, { path: { lang: "en" }, query: {} }), "/blog/en");
+  t.equal(
+    render(routes.blog.category, {
       path: { lang: "en", cid: "movies" },
       query: {},
     }),
     "/blog/en/category/movies"
   );
   t.equal(
-    routes.blog.category.$render({
+    render(routes.blog.category, {
       path: { lang: "en", cid: "movies" },
       query: { search: "robocop" },
     }),
     "/blog/en/category/movies?search=robocop"
   );
   t.equal(
-    routes.blog.category.date.$render({
+    render(routes.blog.category.date, {
       path: { lang: "en", cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 42 },
     }),
     "/blog/en/category/movies/2023-12-28?search=robocop&page=42"
   );
   t.equal(
-    routes.blog.category.date.$render({
+    render(routes.blog.category.date, {
       path: { lang: "en", cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 0 },
     }),
@@ -140,14 +196,14 @@ test("render with default renderer", (t) => {
     "falsy parameters should be rendered"
   );
   t.equal(
-    routes.blog._.category.date.$render({
+    render(routes.blog._.category.date, {
       path: { cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 42 },
     }),
     "category/movies/2023-12-28?search=robocop&page=42"
   );
   t.equal(
-    routes.blog._.category.date.$render({
+    render(routes.blog._.category.date, {
       path: { cid: "movies", date: new Date(1703798091000) },
       query: { page: 42 },
     }),
@@ -157,55 +213,7 @@ test("render with default renderer", (t) => {
   t.end();
 });
 
-test("bind with default renderer", (t) => {
-  const routes = createRoutes({
-    home: {},
-    blog: {
-      path: ["blog", str("lang")],
-      children: {
-        category: {
-          path: ["category", str("cid")],
-          children: {
-            date: {
-              path: [isoDate.optional("date")],
-            },
-          },
-        },
-      },
-    },
-  });
-
-  t.equal(routes.home.$bind({}).$render({}), "/");
-  t.equal(
-    routes.blog.category
-      .$bind({ path: { cid: "movies", lang: "en" } })
-      .date.$render({ path: { date: new Date(1703798091000) } }),
-    "/blog/en/category/movies/2023-12-28T21:14:51.000Z"
-  );
-  t.equal(
-    routes.blog
-      .$bind({ path: { lang: "en" } })
-      .category.$bind({ path: { cid: "movies" } })
-      .date.$render({ path: { date: new Date(1703798091000) } }),
-    "/blog/en/category/movies/2023-12-28T21:14:51.000Z"
-  );
-  t.equal(
-    routes.blog._.category
-      .$bind({ path: { cid: "movies" } })
-      .date.$render({ path: { date: new Date(1703798091000) } }),
-    "category/movies/2023-12-28T21:14:51.000Z"
-  );
-  t.equal(
-    routes.blog._.category
-      .$bind({ path: { cid: "movies" } })
-      .date.$render({ path: {} }),
-    "category/movies"
-  );
-
-  t.end();
-});
-
-test("parsing path params", (t) => {
+test("parsePath", (t) => {
   const routes = createRoutes({
     home: {},
     blog: {
@@ -224,7 +232,7 @@ test("parsing path params", (t) => {
   });
 
   t.deepEqual(
-    routes.blog.category.date.$parseParams({
+    parsePath(routes.blog.category.date, {
       lang: "true",
       cid: "42",
       date: "2023-12-28",
@@ -237,7 +245,8 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog.category.date.$parseParams(
+    parsePath(
+      routes.blog.category.date,
       "blog/false/category/24/date/2024-11-29"
     ),
     {
@@ -248,7 +257,7 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog.category.date.$parseParams({
+    parsePath(routes.blog.category.date, {
       lang: "true",
       cid: "0", // potentially falsy
       date: "2023-12-28",
@@ -261,7 +270,8 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog.category.date.$parseParams(
+    parsePath(
+      routes.blog.category.date,
       "blog/true/category/0/date/2024-11-29"
     ),
     {
@@ -272,7 +282,7 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog._.category.date.$parseParams({
+    parsePath(routes.blog._.category.date, {
       cid: "42",
     }),
     { cid: 42 },
@@ -280,7 +290,7 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog._.category.date.$parseParams("category/42/date"),
+    parsePath(routes.blog._.category.date, "category/42/date"),
     {
       cid: 42,
     },
@@ -288,7 +298,7 @@ test("parsing path params", (t) => {
   );
 
   t.deepEqual(
-    routes.blog._.category.date.$parseParams("category/244/date/2024-10-29"),
+    parsePath(routes.blog._.category.date, "category/244/date/2024-10-29"),
     {
       cid: 244,
       date: new Date("2024-10-29T00:00:00.000Z"),
@@ -298,12 +308,13 @@ test("parsing path params", (t) => {
 
   t.throws(
     () =>
-      routes.blog.category._.date.$parseParams("category/244/date/2024-10-29"),
+      parsePath(routes.blog.category._.date, "category/244/date/2024-10-29"),
     "string path mismatch"
   );
 
   t.deepEqual(
-    safeCall(routes.blog.category.date.$parseParams)(
+    safeParsePath(
+      routes.blog.category.date,
       "blog/true/category/0/date/2024-11-29"
     ),
     {
@@ -316,9 +327,7 @@ test("parsing path params", (t) => {
     }
   );
   t.deepEqual(
-    safeCall(routes.blog.category._.date.$parseParams)(
-      "category/244/date/2024-10-29"
-    ),
+    safeParsePath(routes.blog.category._.date, "category/244/date/2024-10-29"),
     {
       success: false,
       error: Error(
@@ -331,7 +340,7 @@ test("parsing path params", (t) => {
   t.end();
 });
 
-test("parsing query params", (t) => {
+test("parseQuery", (t) => {
   const routes = createRoutes({
     home: {},
     blog: {
@@ -351,9 +360,8 @@ test("parsing query params", (t) => {
       },
     },
   });
-
   t.deepEqual(
-    routes.blog.category.date.$parseQuery({
+    parseQuery(routes.blog.category.date, {
       lang: "en",
       category: "drama",
       shortmovie: "true",
@@ -366,9 +374,9 @@ test("parsing query params", (t) => {
       month: "feb",
     }
   );
-
   t.deepEqual(
-    routes.blog.category.date.$parseQuery(
+    parseQuery(
+      routes.blog.category.date,
       "lang=en&category=drama&shortmovie=true&month=feb"
     ),
     {
@@ -378,9 +386,8 @@ test("parsing query params", (t) => {
       month: "feb",
     }
   );
-
   t.deepEqual(
-    routes.blog._.category.date.$parseQuery({
+    parseQuery(routes.blog._.category.date, {
       lang: "en", // ignores additional params
       category: "drama",
       shortmovie: "true",
@@ -392,9 +399,9 @@ test("parsing query params", (t) => {
       month: "feb",
     }
   );
-
   t.deepEqual(
-    routes.blog._.category.date.$parseQuery(
+    parseQuery(
+      routes.blog._.category.date,
       "category=drama&shortmovie=true&month=feb"
     ),
     {
@@ -403,13 +410,12 @@ test("parsing query params", (t) => {
       month: "feb",
     }
   );
-
-  t.throws(() => routes.blog.category._.date.$parseQuery({}));
-  t.throws(() => routes.blog.category._.date.$parseQuery({ month: "jun" }));
-  t.throws(() => routes.blog._.category.date.$parseQuery("lang=en&category"));
-
+  t.throws(() => parseQuery(routes.blog.category._.date, {}));
+  t.throws(() => parseQuery(routes.blog.category._.date, { month: "jun" }));
+  t.throws(() => parseQuery(routes.blog._.category.date, "lang=en&category"));
   t.deepEqual(
-    safeCall(routes.blog.category.date.$parseQuery)(
+    safeParseQuery(
+      routes.blog.category.date,
       "lang=en&category=drama&shortmovie=true&month=feb"
     ),
     {
@@ -423,7 +429,7 @@ test("parsing query params", (t) => {
     }
   );
   t.deepEqual(
-    safeCall(routes.blog._.category.date.$parseQuery)({
+    safeParseQuery(routes.blog._.category.date, {
       lang: "en", // ignores additional params
       category: "drama",
       shortmovie: "true",
@@ -439,256 +445,88 @@ test("parsing query params", (t) => {
     }
   );
   t.deepEqual(
-    safeCall(routes.blog.category.date.$parseQuery)(""),
+    safeParseQuery(routes.blog.category.date, ""),
     {
       success: false,
       error: Error(
-        'addQueryParams: required path parameter "lang" was not provided in "/blog/movies/2023"'
+        'parseQuery: required query parameter "lang" was not provided in "/blog/movies/2023"'
       ),
     },
     "safeCall failed"
   );
-
   t.end();
 });
 
-test("from", (t) => {
-  const routes = createRoutes({
-    home: {},
-    blog: {
-      path: ["blog", str("lang")],
-      children: {
-        category: {
-          path: ["category", str.optional("cid")],
-          query: [str.optional("search")],
-          children: {
-            date: {
-              path: ["date", date("date")],
-              query: [int.optional("page")],
-            },
-          },
-        },
-      },
-    },
-  });
+// test("replace", (t) => {
+//   const routes = createRoutes({
+//     home: {},
+//     blog: {
+//       path: ["blog", str("lang")],
+//       children: {
+//         category: {
+//           path: ["category", str.optional("cid")],
+//           query: [str.optional("search")],
+//           children: {
+//             date: {
+//               path: ["date", date("date")],
+//               query: [int.optional("page")],
+//             },
+//           },
+//         },
+//       },
+//     },
+//   });
 
-  t.equal(routes.blog.$from("/blog/de", { path: {} }).$render({}), "/blog/de");
-  t.equal(
-    routes.blog
-      .$from("/blog/de", {
-        path: { lang: "en" },
-      })
-      .$render({}),
-    "/blog/en"
-  );
-  t.equal(
-    routes.blog.category
-      .$from("/blog/de/category/music/date/5", {
-        query: {},
-        path: { cid: "movies", lang: "en" },
-      })
-      .$render({}),
-    "/blog/en/category/movies"
-  );
-  t.equal(
-    routes.blog.category.date
-      .$from("/blog/de/category/date/2023-12-31", {
-        query: {},
-        path: { cid: "movies", lang: "en", date: new Date("2024-01-01") },
-      })
-      .$render({}),
-    "/blog/en/category/movies/date/2024-01-01",
-    "skip optional path parameters"
-  );
-  t.equal(
-    routes.blog._.category.date
-      .$from("category/music/date/2023-12-31", {
-        query: {},
-        path: { cid: "movies", date: new Date("2024-01-01") },
-      })
-      .$render({}),
-    "category/movies/date/2024-01-01"
-  );
-  t.equal(
-    routes.blog
-      .$bind({ path: { lang: "en" } })
-      .category.date.$from("category/music/date/2023-12-31", {
-        query: {},
-        path: { cid: "movies", date: new Date("2024-01-01") },
-      })
-      .$render({}),
-    "/blog/en/category/movies/date/2024-01-01",
-    "should take context from bind method"
-  );
-  t.equal(
-    routes.blog
-      .$from("blog/de", { path: { lang: "en" } })
-      .category.date.$bind({
-        query: {},
-        path: { cid: "movies", date: new Date("2024-01-01") },
-      })
-      .$render({}),
-    "/blog/en/category/movies/date/2024-01-01",
-    "should pass context to bind method"
-  );
-  t.equal(
-    routes.blog
-      .$from("blog/de", { path: { lang: "en" } })
-      .category.$from("category/music", {
-        query: {},
-        path: { cid: "movies" },
-      })
-      .date.$from("date/2023-12-31", { path: {}, query: {} })
-      .$render({}),
-    "/blog/en/category/movies/date/2023-12-31",
-    "should chain multiple from calls"
-  );
-  t.equal(
-    routes.blog._.category.date
-      .$from("category/music/date/2023-12-31", {
-        query: { page: 1, search: "abc" },
-        path: { cid: "movies", date: new Date("2024-01-01") },
-      })
-      .$render({}),
-    "category/movies/date/2024-01-01?search=abc&page=1"
-  );
+//   t.equal(
+//     routes.blog.category.$replace(
+//       "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
+//       { path: { cid: "art" }, query: {} }
+//     ),
+//     "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
+//     "should replace path params in absolute path"
+//   );
 
-  const routesWithOptionalParams = createRoutes({
-    user: {
-      path: ["user", str.optional("uid")],
-      children: {
-        setting: {
-          path: ["settings", str.optional("sid")],
-          children: {
-            group: {
-              path: [str.optional("gid"), "group"],
-            },
-          },
-        },
-      },
-    },
-  });
-  t.equal(
-    routesWithOptionalParams.user.setting.group
-      .$from("/user/settings/group", {
-        path: {},
-      })
-      .$render({}),
-    "/user/settings/group"
-  );
-  t.equal(
-    routesWithOptionalParams.user.setting.group
-      .$from("/user/settings/group", {
-        path: { gid: "admins" },
-      })
-      .$render({}),
-    "/user/settings/admins/group"
-  );
-  t.equal(
-    routesWithOptionalParams.user.setting.group
-      .$from("/user/root/settings/group", {
-        path: { uid: "kruschid" },
-      })
-      .$render({}),
-    "/user/kruschid/settings/group"
-  );
-  t.equal(
-    routesWithOptionalParams.user.setting.group
-      .$from("/user/root/settings/queue/group", {
-        path: {},
-      })
-      .$render({}),
-    "/user/root/settings/queue/group"
-  );
-  t.equal(
-    routesWithOptionalParams.user._.setting.group
-      .$from("settings/queue/admins/group", {
-        path: {},
-      })
-      .$render({}),
-    "settings/queue/admins/group"
-  );
-  t.equal(
-    routesWithOptionalParams.user._.setting.group
-      .$from("settings/queue/admins/group", {
-        path: { gid: "clients", sid: "leads" },
-      })
-      .$render({}),
-    "settings/leads/clients/group"
-  );
-  t.end();
-});
+//   t.equal(
+//     routes.blog._.category.date.$replace(
+//       "category/movies/date/2012-12-28?search=batman&page=1",
+//       { path: { cid: "art" }, query: {} }
+//     ),
+//     "category/art/date/2012-12-28?search=batman&page=1",
+//     "should replace params in relative path"
+//   );
 
-test("replace", (t) => {
-  const routes = createRoutes({
-    home: {},
-    blog: {
-      path: ["blog", str("lang")],
-      children: {
-        category: {
-          path: ["category", str.optional("cid")],
-          query: [str.optional("search")],
-          children: {
-            date: {
-              path: ["date", date("date")],
-              query: [int.optional("page")],
-            },
-          },
-        },
-      },
-    },
-  });
+//   t.equal(
+//     routes.blog.$replace("/blog/en?additionalParam=value", {
+//       path: { lang: "es" },
+//     }),
+//     "/blog/es?additionalParam=value",
+//     "should keep additional params"
+//   );
 
-  t.equal(
-    routes.blog.category.$replace(
-      "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" }, query: {} }
-    ),
-    "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
-    "should replace path params in absolute path"
-  );
+//   t.equal(
+//     routes.blog._.category.$replace(
+//       "category/movies/date/2012-12-28?search=batman&page=1",
+//       { path: { cid: "art" }, query: { search: undefined } }
+//     ),
+//     "category/art/date/2012-12-28?page=1",
+//     "should remove param"
+//   );
 
-  t.equal(
-    routes.blog._.category.date.$replace(
-      "category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" }, query: {} }
-    ),
-    "category/art/date/2012-12-28?search=batman&page=1",
-    "should replace params in relative path"
-  );
+//   t.throws(
+//     () =>
+//       routes.blog._.category.date.$replace("category/movies/date/2012-12-28", {
+//         path: { date: undefined },
+//         query: {},
+//       }),
+//     "throws when deleting a required parameter"
+//   );
 
-  t.equal(
-    routes.blog.$replace("/blog/en?additionalParam=value", {
-      path: { lang: "es" },
-    }),
-    "/blog/es?additionalParam=value",
-    "should keep additional params"
-  );
-
-  t.equal(
-    routes.blog._.category.$replace(
-      "category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" }, query: { search: undefined } }
-    ),
-    "category/art/date/2012-12-28?page=1",
-    "should remove param"
-  );
-
-  t.throws(
-    () =>
-      routes.blog._.category.date.$replace("category/movies/date/2012-12-28", {
-        path: { date: undefined },
-        query: {},
-      }),
-    "throws when deleting a required parameter"
-  );
-
-  t.comment("todo: should replace query params in absolute path");
-  t.comment("todo: should replace query params in relative path");
-  t.comment("todo: should replace path & query params in absolute path");
-  t.comment("todo: should replace path & query params in relative path");
-  t.end();
-});
+//   t.comment("todo: should replace query params in absolute path");
+//   t.comment("todo: should replace query params in relative path");
+//   t.comment("todo: should replace path & query params in absolute path");
+//   t.comment("todo: should replace path & query params in relative path");
+//   t.end();
+// });
 
 test("params", (t) => {
   const i = int("").parser;
@@ -731,102 +569,6 @@ test("params", (t) => {
   t.end();
 });
 
-test("renderer customization", (t) => {
-  const renderPath = ({
-    pathSegments,
-    isRelative,
-    pathParams,
-    queryParams,
-  }: AnyRenderContext) => {
-    // path params
-    const path = pathSegments.flatMap((pathSegment) =>
-      typeof pathSegment === "string"
-        ? pathSegment
-        : pathParams[pathSegment.name] != null
-        ? pathParams[pathSegment.name]
-        : []
-    );
-
-    const searchParams = new URLSearchParams(queryParams).toString();
-
-    const pathname = (isRelative ? "" : "/") + path.join("/");
-    const search = (searchParams ? `?` : "") + searchParams;
-    const href = pathname + search;
-
-    return { pathname, search, href };
-  };
-
-  const routes = createRoutes(
-    {
-      home: {},
-      blog: {
-        path: ["blog", str("lang")],
-        children: {
-          category: {
-            path: ["category", str.optional("cid")],
-            query: [str.optional("search")],
-          },
-        },
-      },
-    },
-    { ...defaultContext, renderPath }
-  );
-
-  t.deepEqual(
-    routes.blog.category.$render({
-      path: { lang: "en" },
-      query: { search: "hello" },
-    }),
-    {
-      pathname: "/blog/en/category",
-      search: "?search=hello",
-      href: "/blog/en/category?search=hello",
-    }
-  );
-
-  t.end();
-});
-
-test("render global query params", (t) => {
-  const routes = createRoutes({
-    root: {
-      query: [str.optional("search")],
-      children: {
-        blog: {
-          path: ["blog", str("lang")],
-        },
-      },
-    },
-  });
-
-  t.equal(
-    routes.root.$render({ query: { search: "hello" } }),
-    "/?search=hello"
-  );
-
-  t.equal(
-    routes.root.$bind({ query: { search: "hello" } })._.$render({}),
-    "?search=hello"
-  );
-
-  t.equal(
-    routes.root.blog.$render({
-      query: { search: "hello" },
-      path: { lang: "de" },
-    }),
-    "/blog/de?search=hello"
-  );
-
-  t.equal(
-    routes.root.$bind({ query: { search: "hello" } })._.blog.$render({
-      path: { lang: "de" },
-    }),
-    "blog/de?search=hello"
-  );
-
-  t.end();
-});
-
 test("route composition", (t) => {
   const usersRoutes = createRoutes({
     list: {
@@ -850,64 +592,61 @@ test("route composition", (t) => {
   });
 
   const routes = createRoutes({
-    ...globalRoutes.$routes,
+    ...globalRoutes["~routes"],
     user: {
       path: ["user"],
-      children: usersRoutes.$routes,
+      children: usersRoutes["~routes"],
     },
     cart: {
       path: ["cart"],
-      children: cartRoutes.$routes,
+      children: cartRoutes["~routes"],
     },
   });
 
-  t.equals(routes.home.$render({}), "/home");
-  t.equals(routes.user.list.$render({}), "/user/list");
-  t.equals(
-    routes.user.detail.$render({ path: { uid: 123 } }),
-    "/user/detail/123"
-  );
-  t.equals(routes.cart.detail.$render({}), "/cart/detail");
+  t.equals(renderPath(routes.home, {}), "/home");
+  t.equals(renderPath(routes.user.list, {}), "/user/list");
+  t.equals(renderPath(routes.user.detail, { uid: 123 }), "/user/detail/123");
+  t.equals(renderPath(routes.cart.detail, {}), "/cart/detail");
 
   t.end();
 });
 
-test("angular routes", (t) => {
-  const createRoute: CreateAngularRoutes<{ component: string }> =
-    createAngularRoutes;
+// test("angular routes", (t) => {
+//   const createRoute: CreateAngularRoutes<{ component: string }> =
+//     createAngularRoutes;
 
-  const r = createRoute({
-    a: {
-      path: ["string", int("parm")],
-      meta: { component: "A" },
-      children: {
-        b: {
-          meta: { component: "B" },
-        },
-      },
-    },
-    c: {
-      path: ["string", int("lala")],
-    },
-  });
+//   const r = createRoute({
+//     a: {
+//       path: ["string", int("parm")],
+//       meta: { component: "A" },
+//       children: {
+//         b: {
+//           meta: { component: "B" },
+//         },
+//       },
+//     },
+//     c: {
+//       path: ["string", int("lala")],
+//     },
+//   });
 
-  t.deepEquals(r.$routes.a.meta, { component: "A" });
-  t.deepEquals(r.$provider, [
-    {
-      path: "string/:parm",
-      component: "A",
-      children: [
-        {
-          path: "string/:parm",
-          children: undefined,
-          component: "B",
-        },
-      ],
-    },
-    {
-      path: "string/:lala",
-      children: undefined,
-    },
-  ]);
-  t.end();
-});
+//   t.deepEquals(r.$routes.a.meta, { component: "A" });
+//   t.deepEquals(r.$provider, [
+//     {
+//       path: "string/:parm",
+//       component: "A",
+//       children: [
+//         {
+//           path: "string/:parm",
+//           children: undefined,
+//           component: "B",
+//         },
+//       ],
+//     },
+//     {
+//       path: "string/:lala",
+//       children: undefined,
+//     },
+//   ]);
+//   t.end();
+// });
