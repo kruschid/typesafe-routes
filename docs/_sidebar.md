@@ -6,10 +6,8 @@
   * [Relative Routes](basic-features/relative-routes.md)
   * [Route Templates](basic-features/route-templates.md)
   * [Parameter Parsing](basic-features/parameter-parsing.md)
-  * [Parameter Binding](basic-features/parameter-binding.md)
   * [Parameter Types](basic-features/parameter-types.md)
 * Advanced Features
-  * [Extend String Location](advanced-features/extend-string-location.md)
   * [Replace Dynamic Segments](advanced-features/replace-dynamic-segments.md)
   * [Global Query Parameters](advanced-features/global-query-parameters.md)
   * [Composing Routes](advanced-features/composing-routes.md)
