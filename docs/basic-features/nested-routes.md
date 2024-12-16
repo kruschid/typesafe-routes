@@ -25,9 +25,9 @@ const routes = createRoutes({
 To render nested segments, chain the corresponding route-nodes based on their hierarchy and use `renderPath`, `renderQuery` or `render` on them.
 
 ``` ts
-renderPath(routes.blog, {}); // => "/blog"
+renderPath(routes.blog, {}); // ~> "/blog"
 
-renderPath(routes.blog.categories, {}); // => "/blog/categories"
+renderPath(routes.blog.categories, {}); // ~> "/blog/categories"
 
-renderPath(routes.blog.categories.movies, {}); // => "/blog/categories/movies"
+renderPath(routes.blog.categories.movies, {}); // ~> "/blog/categories/movies"
 ```
