@@ -19,7 +19,10 @@ import type {
 export const createRoutes: CreateRoutes = (routeMap) => {
   const proxy = (ctx: Context): any =>
     new Proxy(
-      { ["~context"]: ctx },
+      {
+        ["~context"]: ctx,
+        ["~routes"]: routeMap,
+      },
       {
         get: (target, maybeRouteName, receiver) =>
           typeof maybeRouteName === "string" && maybeRouteName[0] !== "~"
@@ -31,7 +34,6 @@ export const createRoutes: CreateRoutes = (routeMap) => {
   return proxy({
     isRelative: false,
     path: [],
-    rootRoutes: routeMap,
     children: routeMap,
     routes: [],
     skippedRoutes: [],
