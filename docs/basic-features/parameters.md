@@ -62,7 +62,7 @@ const routes = createRoutes({
 });
 ```
 
-Pass the parameter values to the `renderQuery` function. The `renderQuery` method concatenates the entire query string following the location path. Query parameters are fully compatible with [Nested Routes](basic-features/nested-routes.md) and [Relative Routes](basic-features/relative-routes.md).
+The `renderQuery` function concatenates the entire query string following the given path. Query parameters are fully compatible with [Nested Routes](basic-features/nested-routes.md) but [Relative Routes](basic-features/relative-routes.md) don't apply on query params. Required query params can't be omitted if they belong to a parent route of a relative path. If you don't like this behaviour you can switch to optional params or move your required query param to a childless sibling node in a different branch.
 
 <!-- tabs:start -->
 ### **Required Params Only**
