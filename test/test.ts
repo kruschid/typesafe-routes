@@ -13,6 +13,7 @@ import {
   render,
   renderPath,
   renderQuery,
+  replace,
   safeParsePath,
   safeParseQuery,
   str,
@@ -136,9 +137,9 @@ test("renderQuery ", (t) => {
   );
   t.equal(renderQuery(routes.blog.category._.date, { page: 2 }), "page=2");
   t.equal(
-    // @ts-expect-error
-    renderQuery(routes.blog.category._.date, { search: "robocop", page: 1 }),
-    "page=1"
+    renderQuery(routes.blog.category._.date, { search: "robocop", page: 2 }),
+    "search=robocop&page=2",
+    "should include complete query in relative paths"
   );
   t.end();
 });
@@ -324,7 +325,8 @@ test("parsePath", (t) => {
         cid: 0,
         date: new Date("2024-11-29T00:00:00.000Z"),
       },
-    }
+    },
+    "safeCall success"
   );
   t.deepEqual(
     safeParsePath(routes.blog.category._.date, "category/244/date/2024-10-29"),
@@ -334,7 +336,7 @@ test("parsePath", (t) => {
         `"category/244/date/2024-10-29" doesn't match "date/:date?", missing segment "date"`
       ),
     },
-    "safeCall failed"
+    "safeCall error"
   );
 
   t.end();
@@ -360,6 +362,7 @@ test("parseQuery", (t) => {
       },
     },
   });
+
   t.deepEqual(
     parseQuery(routes.blog.category.date, {
       lang: "en",
@@ -374,6 +377,7 @@ test("parseQuery", (t) => {
       month: "feb",
     }
   );
+
   t.deepEqual(
     parseQuery(
       routes.blog.category.date,
@@ -386,25 +390,29 @@ test("parseQuery", (t) => {
       month: "feb",
     }
   );
+
   t.deepEqual(
     parseQuery(routes.blog._.category.date, {
-      lang: "en", // ignores additional params
+      lang: "en", // includes all params despite relative query
       category: "drama",
       shortmovie: "true",
       month: "feb",
     }),
     {
+      lang: "en",
       category: "drama",
       shortmovie: true,
       month: "feb",
     }
   );
+
   t.deepEqual(
     parseQuery(
       routes.blog._.category.date,
-      "category=drama&shortmovie=true&month=feb"
+      "lang=en&category=drama&shortmovie=true&month=feb"
     ),
     {
+      lang: "en",
       category: "drama",
       shortmovie: true,
       month: "feb",
@@ -430,7 +438,7 @@ test("parseQuery", (t) => {
   );
   t.deepEqual(
     safeParseQuery(routes.blog._.category.date, {
-      lang: "en", // ignores additional params
+      lang: "en", // includes all params despite relative query
       category: "drama",
       shortmovie: "true",
       month: "feb",
@@ -438,6 +446,7 @@ test("parseQuery", (t) => {
     {
       success: true,
       data: {
+        lang: "en",
         category: "drama",
         shortmovie: true,
         month: "feb",
@@ -457,76 +466,78 @@ test("parseQuery", (t) => {
   t.end();
 });
 
-// test("replace", (t) => {
-//   const routes = createRoutes({
-//     home: {},
-//     blog: {
-//       path: ["blog", str("lang")],
-//       children: {
-//         category: {
-//           path: ["category", str.optional("cid")],
-//           query: [str.optional("search")],
-//           children: {
-//             date: {
-//               path: ["date", date("date")],
-//               query: [int.optional("page")],
-//             },
-//           },
-//         },
-//       },
-//     },
-//   });
+test("replace", (t) => {
+  const routes = createRoutes({
+    home: {},
+    blog: {
+      path: ["blog", str("lang")],
+      children: {
+        category: {
+          path: ["category", str.optional("cid")],
+          query: [str.optional("search")],
+          children: {
+            date: {
+              path: ["date", date("date")],
+              query: [int.optional("page")],
+            },
+          },
+        },
+      },
+    },
+  });
 
-//   t.equal(
-//     routes.blog.category.$replace(
-//       "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
-//       { path: { cid: "art" }, query: {} }
-//     ),
-//     "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
-//     "should replace path params in absolute path"
-//   );
+  t.equal(
+    replace(
+      routes.blog.category,
+      "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" } }
+    ),
+    "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
+    "should replace path params in absolute path"
+  );
 
-//   t.equal(
-//     routes.blog._.category.date.$replace(
-//       "category/movies/date/2012-12-28?search=batman&page=1",
-//       { path: { cid: "art" }, query: {} }
-//     ),
-//     "category/art/date/2012-12-28?search=batman&page=1",
-//     "should replace params in relative path"
-//   );
+  t.equal(
+    replace(
+      routes.blog._.category.date,
+      "category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" } }
+    ),
+    "category/art/date/2012-12-28?search=batman&page=1",
+    "should replace params in relative path"
+  );
 
-//   t.equal(
-//     routes.blog.$replace("/blog/en?additionalParam=value", {
-//       path: { lang: "es" },
-//     }),
-//     "/blog/es?additionalParam=value",
-//     "should keep additional params"
-//   );
+  t.equal(
+    replace(routes.blog, "/blog/en?additionalParam=value", {
+      path: { lang: "es" },
+    }),
+    "/blog/es?additionalParam=value",
+    "should keep additional params"
+  );
 
-//   t.equal(
-//     routes.blog._.category.$replace(
-//       "category/movies/date/2012-12-28?search=batman&page=1",
-//       { path: { cid: "art" }, query: { search: undefined } }
-//     ),
-//     "category/art/date/2012-12-28?page=1",
-//     "should remove param"
-//   );
+  t.equal(
+    replace(
+      routes.blog._.category,
+      "category/movies/date/2012-12-28?search=batman&page=1",
+      { path: { cid: "art" }, query: { search: undefined } }
+    ),
+    "category/art/date/2012-12-28?page=1",
+    "should remove param"
+  );
 
-//   t.throws(
-//     () =>
-//       routes.blog._.category.date.$replace("category/movies/date/2012-12-28", {
-//         path: { date: undefined },
-//         query: {},
-//       }),
-//     "throws when deleting a required parameter"
-//   );
+  t.throws(
+    () =>
+      replace(routes.blog._.category.date, "category/movies/date/2012-12-28", {
+        path: { date: undefined },
+      }),
+    "throws when deleting a required path parameter"
+  );
 
-//   t.comment("todo: should replace query params in absolute path");
-//   t.comment("todo: should replace query params in relative path");
-//   t.comment("todo: should replace path & query params in absolute path");
-//   t.comment("todo: should replace path & query params in relative path");
-//   t.end();
-// });
+  t.comment("todo: should replace query params in absolute path");
+  t.comment("todo: should replace query params in relative path");
+  t.comment("todo: should replace path & query params in absolute path");
+  t.comment("todo: should replace path & query params in relative path");
+  t.end();
+});
 
 test("params", (t) => {
   const i = int("").parser;
