@@ -1,4 +1,5 @@
-import type { A } from "ts-toolbelt";
+import { Compute } from "ts-toolbelt/out/Any/Compute";
+import { OptionalDeep } from "ts-toolbelt/out/Object/Optional";
 
 type Defined<T> = Exclude<T, undefined>;
 
@@ -42,7 +43,7 @@ export type RouteNodeMap = Record<string, RouteNode>;
  *  ...
  * }
  */
-type ComputeParamRecord<Params extends AnyParam> = A.Compute<
+type ComputeParamRecord<Params extends AnyParam> = Compute<
   {
     [K in Extract<Params, { kind: "required" }>["name"]]: ReturnType<
       Extract<Params, { name: K }>["parser"]["parse"]
@@ -57,7 +58,7 @@ type ComputeParamRecord<Params extends AnyParam> = A.Compute<
 export type InferPathParams<R extends WithContext> = ComputeParamRecord<
   Extract<
     Extract<
-      R["~context"]["routes"][number],
+      R["~context"]["relativeNodes"][number],
       Required<Pick<RouteNode, "path">> // excludes undefined paths -> allows path to be optional
     >["path"][number],
     AnyParam
@@ -67,7 +68,7 @@ export type InferPathParams<R extends WithContext> = ComputeParamRecord<
 export type InferQueryParams<R extends WithContext> = ComputeParamRecord<
   Extract<
     Extract<
-      R["~context"]["routes"][number],
+      R["~context"]["nodes"][number],
       Required<Pick<RouteNode, "query">> // excludes undefined queries -> allows query to be optional
     >["query"][number],
     AnyParam
@@ -81,22 +82,27 @@ export type InferParams<R extends WithContext> = {
 
 export type RoutesProps<
   Routes extends RouteNodeMap,
-  Path extends RouteNode[] = []
+  Nodes extends RouteNode[] = [],
+  RelativeNodes extends RouteNode[] = []
 > = {
-  "~context": Context<Path>;
+  "~context": Context<Nodes, RelativeNodes>;
   "~routes": Routes;
-  _: RoutesProps<Routes>;
+  _: RoutesProps<Routes, Nodes, []>;
 } & {
   [Segment in keyof Routes]: RoutesProps<
     Defined<Routes[Segment]["children"]>,
-    [...Path, Routes[Segment]]
+    [...Nodes, Routes[Segment]], // all nodes
+    [...RelativeNodes, Routes[Segment]] // relative nodes
   >;
 };
 
-export interface Context<Path extends RouteNode[] = RouteNode[]> {
+export interface Context<
+  Nodes extends RouteNode[] = RouteNode[],
+  RelativeNodes extends RouteNode[] = RouteNode[]
+> {
+  nodes: Nodes;
   path: string[];
-  routes: Path;
-  skippedRoutes: RouteNode[];
+  relativeNodes: RelativeNodes;
   children?: RouteNodeMap;
   isRelative: boolean;
 }
@@ -159,7 +165,7 @@ export type SafeParseLocationFn = <R extends WithContext>(
 export type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
-  params: Partial<InferParams<R>>
+  params: OptionalDeep<InferParams<R>>
 ) => string;
 
 export type SafeParseResult<T> =

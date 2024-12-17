@@ -79,5 +79,5 @@ assertEqual<
 // relative path
 assertEqual<
   InferQueryParams<typeof r.language.users._.show>,
-  { filter?: boolean }
+  { page: number; filter?: boolean }
 >(true);

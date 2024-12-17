@@ -35,8 +35,8 @@ export const createRoutes: CreateRoutes = (routeMap) => {
     isRelative: false,
     path: [],
     children: routeMap,
-    routes: [],
-    skippedRoutes: [],
+    nodes: [],
+    relativeNodes: [],
   });
 };
 
@@ -45,8 +45,8 @@ const addRoute = (routeName: string, ctx: Context): Context => {
     return {
       ...ctx,
       path: ctx.path.concat(routeName),
-      routes: [],
-      skippedRoutes: ctx.skippedRoutes.concat(ctx.routes),
+      nodes: ctx.nodes.concat(ctx.nodes),
+      relativeNodes: [],
       isRelative: true,
     };
   }
@@ -59,17 +59,18 @@ const addRoute = (routeName: string, ctx: Context): Context => {
   return {
     ...ctx,
     path: ctx.path.concat(routeName),
-    routes: ctx.routes.concat(route),
+    nodes: ctx.nodes.concat(route),
+    relativeNodes: ctx.relativeNodes.concat(route),
     children: route.children,
   };
 };
 
 export const template: TemplateFn = ({
-  "~context": { isRelative, routes },
+  "~context": { isRelative, relativeNodes: pathNodes },
 }) => {
   const prefix = isRelative ? "" : "/";
 
-  const serializedTemplate = routes
+  const serializedTemplate = pathNodes
     .flatMap((route) => route.template ?? route.path ?? [])
     .map((segment) =>
       typeof segment === "string"
@@ -83,10 +84,10 @@ export const template: TemplateFn = ({
 };
 
 export const renderPath: RenderPathFn = (
-  { "~context": { routes, isRelative } },
+  { "~context": { relativeNodes: pathNodes, isRelative } },
   params: Record<string, any>
 ) => {
-  const serializedPath = routes
+  const serializedPath = pathNodes
     .flatMap((route) => route.path ?? [])
     .map((pathSegment) =>
       typeof pathSegment === "string"
@@ -99,12 +100,12 @@ export const renderPath: RenderPathFn = (
 };
 
 export const renderQuery: RenderQueryFn = (
-  { "~context": { routes } },
+  { "~context": { nodes } },
   params: Record<string, any>
 ) => {
   const serializedQueryRecord: Record<string, string> = {};
 
-  routes
+  nodes
     .flatMap((route) => route.query ?? [])
     .forEach(({ name, parser }) => {
       if (params[name] !== undefined) {
@@ -130,7 +131,7 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
       : paramsOrPath;
   const parsedParams: Record<string, any> = {};
 
-  route["~context"].routes
+  route["~context"].relativeNodes
     .flatMap((route) => route.path ?? [])
     .forEach((segment) => {
       if (typeof segment === "string") {
@@ -156,7 +157,7 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
 
   const parsedQuery: Record<string, any> = {};
 
-  route["~context"].routes
+  route["~context"].nodes
     .flatMap((route) => route.query ?? [])
     .forEach((segment) => {
       const value = params[segment.name];
@@ -199,33 +200,54 @@ export const replace: ReplaceFn = (
   );
 
   const {
-    "~context": { isRelative, routes },
+    "~context": { isRelative, relativeNodes, nodes },
   } = route;
 
-  const pathname = routes
+  const pathname = relativeNodes
     .flatMap((route) => route.path ?? [])
-    .map((pathSegment) =>
-      typeof pathSegment === "string"
-        ? pathSegment
-        : params["path"]?.[pathSegment.name] !== undefined
-        ? pathSegment.parser.serialize(params["path"][pathSegment.name])
-        : pathParams[pathSegment.name]
-    )
+    .flatMap((pathSegment) => {
+      if (typeof pathSegment === "string") return pathSegment;
+
+      const { name, kind, parser } = pathSegment;
+
+      if (params["path"] && name in params["path"]) {
+        if (typeof params["path"][name] !== "undefined")
+          return parser.serialize(params["path"][name]);
+
+        if (kind === "required") {
+          throw Error(
+            `replace: required path param ${name} can't be set to undefined`
+          );
+        }
+        return [];
+      }
+
+      return pathParams[name] ?? [];
+    })
     .concat(remainingSegments)
     .join("/");
 
   const queryParams = paramsFromQuery(locationQuery);
 
-  routes
-    .flatMap((r) => r.query ?? [])
-    .forEach(({ name, parser }) => {
-      const value = params["query"]?.[name];
-      if (value !== "undefined") {
-        queryParams[name] = parser.serialize(value);
-      }
-    });
+  if (params["query"]) {
+    nodes
+      .flatMap((r) => r.query ?? [])
+      .forEach(({ name, parser, kind }) => {
+        if (typeof params["query"][name] !== "undefined") {
+          queryParams[name] = parser.serialize(params["query"][name]);
+        } else if (name in params["query"]) {
+          if (kind === "required") {
+            throw Error(
+              `replace: required query param ${name} can't be set to undefined`
+            );
+          } else {
+            delete queryParams[name];
+          }
+        }
+      });
+  }
 
-  const prefix = isRelative ? "/" : "";
+  const prefix = isRelative ? "" : "/";
   const searchParams = new URLSearchParams(queryParams).toString();
   const separator = searchParams ? `?` : "";
 
@@ -249,7 +271,7 @@ const paramsFromLocationPath = (
   // if a path segment doesn't match the algorithm starts backtracking in this array
   const recentOptionalParams: string[] = [];
 
-  route["~context"].routes
+  route["~context"].relativeNodes
     .flatMap((r) => r.path ?? [])
     .forEach((segment) => {
       const locationPathSegment = remainingSegments.shift();
