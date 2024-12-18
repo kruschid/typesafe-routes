@@ -13,8 +13,6 @@
   * [Composing Routes](advanced-features/composing-routes.md)
 * Customization
   * [Custom Parameter Types](customization/custom-parameter-types.md)
-  * [Custom Template Rendering](customization/custom-template-rendering.md)
-  * [Custom Path Rendering](customization/custom-path-rendering.md)
 * Tutorials
   * [Angular Router](tutorials/angular-router.md)
   * [React Router](tutorials/react-router.md)
