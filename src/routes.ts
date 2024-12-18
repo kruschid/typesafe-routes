@@ -66,11 +66,11 @@ const addRoute = (routeName: string, ctx: Context): Context => {
 };
 
 export const template: TemplateFn = ({
-  "~context": { isRelative, relativeNodes: pathNodes },
+  "~context": { isRelative, relativeNodes },
 }) => {
   const prefix = isRelative ? "" : "/";
 
-  const serializedTemplate = pathNodes
+  const serializedTemplate = relativeNodes
     .flatMap((route) => route.template ?? route.path ?? [])
     .map((segment) =>
       typeof segment === "string"
@@ -84,10 +84,10 @@ export const template: TemplateFn = ({
 };
 
 export const renderPath: RenderPathFn = (
-  { "~context": { relativeNodes: pathNodes, isRelative } },
+  { "~context": { relativeNodes, isRelative } },
   params: Record<string, any>
 ) => {
-  const serializedPath = pathNodes
+  const serializedPath = relativeNodes
     .flatMap((route) => route.path ?? [])
     .map((pathSegment) =>
       typeof pathSegment === "string"
