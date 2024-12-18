@@ -15,7 +15,7 @@ Here are more examples:
 ## **TypeScript**
 
 ``` ts
-import { createRoutes, param } from "typesafe-routes";
+import { createRoutes, param, render } from "typesafe-routes";
 
 interface Pos {
   lat: number
@@ -34,18 +34,21 @@ const routes = createRoutes({
   }
 });
 
-routes.map.$render({ query: {
-  coordinates: {
-    lat: 51.386998452,
-    lon: 30.092666296,
+render(routes.map, {
+  path: {},
+  query: {
+    coordinates: {
+      lat: 51.386998452,
+      lon: 30.092666296,
+    }
   }
-}}) // => "/map?coordinates=%7B%22lat%22:51.386998452,%22lon%22:30.092666296%7D"
+}) // ~> "/map?coordinates=%7B%22lat%22:51.386998452,%22lon%22:30.092666296%7D"
 ```
 
 ## **JavaScript**
 
 ``` js
-import { createRoutes, param } from "typesafe-routes";
+import { createRoutes, param, render } from "typesafe-routes";
 
 const pt = param({
   serialize: (value) => JSON.stringify(value),
@@ -59,18 +62,21 @@ const routes = createRoutes({
   }
 });
 
-routes.map.$render({ query: {
+render(routes.map, {
+  path: {},
+  query: {
   coordinates: {
     lat: 51.386998452,
     lon: 30.092666296,
+    }
   }
-}}) // => "/map?coordinates=%7B%22lat%22:51.386998452,%22lon%22:30.092666296%7D"
+}); // ~> "/map?coordinates=%7B%22lat%22:51.386998452,%22lon%22:30.092666296%7D"
 ```
 
 ## **Paramaterized Params**
 
 ``` ts
-import { createRoutes, param } from "typesafe-routes";
+import { createRoutes, param, render } from "typesafe-routes";
 
 const float = (fractionDigits?: number) =>
   param({
@@ -87,8 +93,9 @@ const routes = createRoutes({
   }
 });
 
-routes.video.$render({
+render(routes.video, {
+  path: {},
   query: { time: 13.3745 },
-}) // => "/video?time=13.37"
+}) // ~> "/video?time=13.37"
 ```
 <!-- tabs:end -->

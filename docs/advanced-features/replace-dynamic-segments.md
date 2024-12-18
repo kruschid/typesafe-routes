@@ -1,8 +1,6 @@
 # Replace dynamic segments
 
-Replacing dynamic segments with `$replace` is very similar to [Extending String Location](advanced-features/extend-string-location.md) with `$from`. The `$from` method returns an object that allows the addition of nodes to a path, whereas the `$replace` method immediately renders the path or subpath with modified parameter values.
-
-It is intended for use cases in which you want to partially modify a path. For example, given the location `/groups/42/users/1337`, you only want to change the first route node to create the new path `/groups/24/users/1337`.
+The `replace` function re-renders an existing string location with modified parameter values. For example, given the location `/groups/42/users/1337`, the `replace` function could be used to change the first dynamic segment from `42` to `24` to create the new path `/groups/24/users/1337`.
 
 ``` ts
 import { createRoutes, int } from "typesafe-routes";
@@ -23,39 +21,39 @@ const routes = createRoutes({
 <!-- tabs:start -->
 ## **Basic Usage**
 
-In the provided path, one dynamic segment is altered while the other trailing segments remain unchanged. One of the provided search parameters has been modified while the other one stays the same. The `$replace` method doesn't omit unknown query parameters, which is why the `offset` parameter is part of the returned string.
+In the provided path, one dynamic segment is altered while the other trailing segments remain unchanged. One of the provided search parameters has been modified while the other one stays the same. The `replace` function doesn't omit unknown query parameters, which is why the `offset` parameter is part of the returned string despite not being specified in the route tree above.
 
 ``` ts
 const locationPath = "/groups/32/extra/segments?page=2&offset=2";
 
-routes.groups.$replace(locationPath, {
+replace(routes.groups, locationPath, {
   path: { gid: 1337 },
   query: { page: 7 },
-}) // => "/groups/1337/extra/segments?page=7&offset=2"
+}) // ~> "/groups/1337/extra/segments?page=7&offset=2"
 ```
 
 ## **Nested Routes**
 
-`$replace` also allows the simultaneous replacement of multiple nested routes. Here we only change dynamic segments that belong to `group` and `users`. The trailing segments remain unchanged even though they are not present in the route tree.
+The `replace` function allows the simultaneous replacement of multiple nested routes. Here we only change dynamic segments that belong to `group` and `users`. The trailing segments remain unchanged even though they are not present in the route tree.
 
 ``` ts
 const locationPath = "/groups/32/users/33/extra/segments";
 
-routes.group.users.$replace(locationPath, {
+replace(routes.group.users, locationPath, {
   path: { gid: 1337, uid: 666 },
-}) // => "/groups/1337/users/666/extra/segments"
+}) // ~> "/groups/1337/users/666/extra/segments"
 ```
 
 ## **Relative Routes**
 
-The `$replace` method is fully compatible with the underscore `_` link for modifying a relative subpath.
+The `replace` function is fully compatible with the underscore `_` link for modifying a relative subpath.
 
 ``` ts
-const locationPath = "users/32/extra/segments";
+const locationPath = "users/32/extra/segments"; // the source is a relative path
 
-routes.groups._.users.$replace(locationPath, {
+replace(routes.groups._.users, locationPath, {
   path: { uid: 1337 },
-}) // => "users/1337/extra/segments"
+}) // ~> "users/1337/extra/segments"
 ```
 
 ## **Parameter Deletion**
@@ -63,10 +61,13 @@ routes.groups._.users.$replace(locationPath, {
 To remove an optional parameter from the resulting path, simply assign `undefined` to it.
 
 ``` ts
-const locationPath = "/groups/users/32/extra/segments";
+const locationPath = "/groups/42/users/32/extra/segments";
 
-routes.groups.users.$replace(locationPath, {
-  path: { uid: 1337 },
-}) // => "users/1337/extra/segments"
+replace(routes.groups.users, locationPath, {
+  path: { uid: undefined },
+}) // => "/groups/42/users/extra/segments"
 ```
+
+> [!WARNING]
+> Removing a required parameter value will throw an exception.
 <!-- tabs:end -->
