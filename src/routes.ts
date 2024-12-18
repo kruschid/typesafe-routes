@@ -254,10 +254,10 @@ export const replace: ReplaceFn = (
   return prefix + pathname + separator + searchParams;
 };
 
-const paramsFromQuery = (query: string) =>
+export const paramsFromQuery = (query: string) =>
   Object.fromEntries(new URLSearchParams(query));
 
-const paramsFromLocationPath = (
+export const paramsFromLocationPath = (
   route: WithContext,
   locationPath: string = ""
 ) => {
