@@ -1,59 +1,94 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
-  "cli": {
-    "analytics": "1e1de97b-a744-405a-8b5a-0397bb3d01ce"
-  },
+  "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "demo": {
+    "angular-router": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",
-          "configurations": {
-            "development": {
-              "extractLicenses": false,
-              "namedChunks": true,
-              "optimization": false,
-              "sourceMap": true
-            },
-            "production": {
-              "aot": true,
-              "extractLicenses": true,
-              "namedChunks": false,
-              "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": false
-            }
-          },
           "options": {
-            "assets": [],
+            "outputPath": "dist/angular-router",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "outputPath": "dist/demo",
-            "scripts": [],
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
             "styles": [],
-            "tsConfig": "src/tsconfig.app.json"
-          }
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "development": {
-              "buildTarget": "demo:build:development"
-            },
             "production": {
-              "buildTarget": "demo:build:production"
+              "buildTarget": "angular-router:build:production"
+            },
+            "development": {
+              "buildTarget": "angular-router:build:development"
             }
           },
           "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ],
+            "scripts": []
+          }
         }
-      },
-      "prefix": "app",
-      "projectType": "application",
-      "root": "",
-      "schematics": {},
-      "sourceRoot": "src"
+      }
     }
-  },
-  "version": 1
+  }
 }

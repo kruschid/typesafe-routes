@@ -15,6 +15,7 @@ This tutorial contains a few code examples that belong to a case study. If you p
   - luckily we can detect broken links without writing even one line of tests
   - we can achieve that with the help of typescript and the open source project that I've been maintaing in the last couple of years: typesafe-routes
   - the concept is simple, we only need to make sure that every route template and pathname is derived from a predefined route tree, a single source of truth for routes so to say
+  - CODE: simple route tree with one node
 
 ``` ts
 import { createRoutes, str } from "typesafe-routes";
@@ -26,10 +27,10 @@ export const r = createRoutes({
   },
 });
 ```
-  - in the code above a routes tree with one single node `home` is created.
+  - in the code above created a routes tree with one single node `home`.
   - the corresponding path consists of a static segment `home` and a dynamic segment `str("lang")` which defines a parameter of type string named `"lang"`.
   - parameter types are relevant since typesafe-routes needs to know how to parse and serialize parameter values
-  - typesafe-routes supports a bunch of parameter types out of the box and allows custom types as well
+  - typesafe-routes supports a bunch of parameter types out of the box and allowes custom types as well
   - we can now render the template and the path with `r.template("home")` and `t.render("home", {path: {lang: "en"}})` and get `/home/:lang` and `/home/en`
   - if we now change the parameter name in the route tree to `str("language")` typescript immediately reports the non-conforming render calls without adding one single test
   - however the experienced angular reader notices immediately a problem here
@@ -37,7 +38,7 @@ export const r = createRoutes({
   - typesafe-routes is compatible with angular router if we use the right configuration
   - the next section provides the necessary details 
 
-## Typesafe Routes with Angular Router in Three Steps 
+## Typesafe Routes with Angular Router in 3 Steps 
 
 - in this section we examine a nested route tree with a couple of node, use a new parameter type `int` and, define an optional search parameter 
 - the route tree below defines three routes: 

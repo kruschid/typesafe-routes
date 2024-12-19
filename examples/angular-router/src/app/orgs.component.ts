@@ -1,6 +1,8 @@
 import { Component } from "@angular/core";
 import { ActivatedRoute, RouterLink, RouterOutlet } from "@angular/router";
-import { r } from "../routes";
+import { parseLocation } from "typesafe-routes";
+import { render } from "typesafe-routes/angular-router";
+import { r } from "./app.routes";
 
 @Component({
   standalone: true,
@@ -15,15 +17,17 @@ import { r } from "../routes";
     <router-outlet></router-outlet>
   `,
 })
-export class SecondComponent {
-  name = "Second Component";
-  relativeLink = r.secondComponent._.nestedComponent.$render({
-    path: { paramB: 456 },
+export class OrgsComponent {
+  name = "Orgs Component";
+  relativeLink = render(r.orgs._.locations, {
+    path: { locationId: 456 },
     query: { page: 24 },
   });
-  params = JSON.stringify(
-    r.secondComponent.$parseParams(this.route.snapshot.params)
-  );
+  params = "";
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute) {
+    this.params = JSON.stringify(
+      parseLocation(r.orgs, this.route.snapshot.params)
+    );
+  }
 }

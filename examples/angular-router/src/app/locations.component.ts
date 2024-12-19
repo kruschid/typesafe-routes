@@ -1,7 +1,8 @@
 import { Component } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { merge } from "rxjs";
-import { r } from "../routes";
+import { parsePath, parseQuery } from "typesafe-routes";
+import { r } from "./app.routes";
 
 @Component({
   standalone: true,
@@ -13,21 +14,17 @@ import { r } from "../routes";
     <pre>{{ query }}</pre>
   `,
 })
-export class NestedComponent {
-  name = "Nested Component";
+export class LocationsComponent {
+  name = "Locations Component";
   params = "";
   query = "";
 
   syncParams() {
     this.query = JSON.stringify(
-      r.secondComponent._.nestedComponent.$parseQuery(
-        this.route.snapshot.queryParams
-      )
+      parseQuery(r.orgs.locations, this.route.snapshot.queryParams)
     );
     this.params = JSON.stringify(
-      r.secondComponent._.nestedComponent.$parseParams(
-        this.route.snapshot.params
-      )
+      parsePath(r.orgs._.locations, this.route.snapshot.params)
     );
   }
 
