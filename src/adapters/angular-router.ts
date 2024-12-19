@@ -30,7 +30,7 @@ type ReplaceFn = <R extends WithContext>(
 
 export const renderPath: RenderPathFn = (
   { "~context": { relativeNodes, isRelative } },
-  pathParams
+  pathParams: Record<string, any>
 ) => {
   const path = relativeNodes
     .flatMap((node) => node.path ?? [])
@@ -48,7 +48,7 @@ export const renderPath: RenderPathFn = (
 
 export const renderQuery: RenderQueryFn = (
   { "~context": { nodes } },
-  queryParams
+  queryParams: Record<string, any>
 ) => {
   const serializedQueryRecord: Record<string, string> = {};
 
