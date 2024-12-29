@@ -1,263 +1,139 @@
-# Typesafe Routes in Angular
+# Type-safe Routes in Angular
 
-This tutorial contains a few code examples that belong to a case study. If you prefer to explore everything by yourself just scroll down to the end of the article where a stackblitz project with the code is embedded.
+Refactoring an Angular application can be a double-edged sword. On one hand, it allows you to improve the maintainability and scalability of your codebase. On the other hand, it can lead to broken routes if you haven't taken the necessary precautions to protect your features against unintended changes. Writing extensive tests or implementing a solid typing concept for routes can help mitigate this risk, but these approaches can be time-consuming and may not always be feasible. In this article, we'll explore a more efficient solution that automatically detects broken routes in compile-time, without requiring manual test efforts or the need to write custom type annotations. We'll demonstrate this approach by implementing a sample Angular application with nested components and using the `typesafe-routes` library to improve developer experience and facilitate parameter parsing.
 
-## The problem
+To illustrate the benefits of automatically detecting broken routes in compile-time, we'll implement a sample Angular application with three nested components: `DashboardComponent` (`/dashboard`), `OrgsComponent` (`/orgs/:orgId`), and `LocationsComponent` (`/orgs/:orgId/locations/:locationId`). To set up this example, we'll need to install the `typesafe-routes` library and use its `createRoutes` function to define our route tree, as shown in the following code fragment.
 
-  - traditionally routing libraries are based on string templates such as `/segment/:parameter` and expect pathnames to match these templates e.g. `/segment/value`
-  - however links can break easily without noticing when the template is changed without updating every single pathname that corresponds to that route
-  - on the one hand this can be mitigated with automated testing but this creates new problems
-  - not only might it be unpractical to achieve full path coverage to cover every possible link path with tests
-  - also tests are usually tightly coupled to the implementation, thus creating more tests increases the effort for maintenance
-
-## The Solution
-
-  - luckily we can detect broken links without writing even one line of tests
-  - we can achieve that with the help of typescript and the open source project that I've been maintaing in the last couple of years: typesafe-routes
-  - the concept is simple, we only need to make sure that every route template and pathname is derived from a predefined route tree, a single source of truth for routes so to say
-  - CODE: simple route tree with one node
-
-``` ts
-import { createRoutes, str } from "typesafe-routes";
-import { renderer } from "./renderer";
+```ts
+// app.routes.ts
+import { createRoutes, int } from "typesafe-routes";
 
 export const r = createRoutes({
-  home: {
-    path: ["home", str("lang")],
+  dashboard: {
+    path: ["dashboard"], // ~> "/dashboard"
   },
-});
-```
-  - in the code above created a routes tree with one single node `home`.
-  - the corresponding path consists of a static segment `home` and a dynamic segment `str("lang")` which defines a parameter of type string named `"lang"`.
-  - parameter types are relevant since typesafe-routes needs to know how to parse and serialize parameter values
-  - typesafe-routes supports a bunch of parameter types out of the box and allowes custom types as well
-  - we can now render the template and the path with `r.template("home")` and `t.render("home", {path: {lang: "en"}})` and get `/home/:lang` and `/home/en`
-  - if we now change the parameter name in the route tree to `str("language")` typescript immediately reports the non-conforming render calls without adding one single test
-  - however the experienced angular reader notices immediately a problem here
-  - the template has a `/` prefix and thus is not compatible with Angular Router
-  - typesafe-routes is compatible with angular router if we use the right configuration
-  - the next section provides the necessary details 
-
-## Typesafe Routes with Angular Router in 3 Steps 
-
-- in this section we examine a nested route tree with a couple of node, use a new parameter type `int` and, define an optional search parameter 
-- the route tree below defines three routes: 
-  - firstComponent,
-  - secondComponent and,
-  - nestedComponent
-
-``` ts
-// routes.ts
-import { createRoutes, int, angularRouter } from "typesafe-routes";
-
-export const r = createRoutes(
-  {
-    firstComponent: {
-      path: ["first-component"],
-    },
-    secondComponent: {
-      path: ["second-component", int("aparam")],
-      children: {
-        nestedComponent: {
-          path: ["nested-component", int("bparam")],
-          query: [int("page").optional],
-        },
+  orgs: {
+    path: ["orgs", int("orgId")], // ~> "/orgs/:orgId"
+    children: {
+      locations: {
+        path: ["locations", int("locationId")], // ~> "locations/:locationId"
+        query: [int.optional("page")], // ~> "?page=[number]"
       },
     },
   },
-  angularRouter,
-);
+});
 ```
-- This time we provided the `angularRouter` preset as the second argument of `createRoutes` and get templates without a leading forward slash.
-- If we call `r.template("secondComponent")`, we get `second-component/:aparam`.
-- The `angularRouter` preset also changed the path rendering.
-- With the default preset `render` returns string that include the query string like for example `second-component/123/nested-component/321?page=2`.
-- In this case however `render` returns an object containing the path and query string separately to make the usage of `routerLink` and `navigate` more convenient
-- we will see an example shortly but first let's assign our route templates to their components
-- 
-``` ts
-// app.config.ts
+
+Let's take a closer look at the code fragment. We import `createRoutes` from `typesafe-routes` and pass on our routes as its first argument. These routes are defined as a nested object with two properties at the root level: `dashboard` and `orgs`. Each of these properties is assigned a `path`, specifying the segments in the form of an array. For example, the `["dashboard"]` array corresponds to the path `/dashboard`. The `orgs` path is more complex, as it contains a parameter named `orgId` of type `integer`. Note that `integer` is not a native JavaScript type, but rather a custom type defined using the `int` function, which mimics the characteristics of an integer using a `number` in the background. The `orgs` route has a `children` property, which specifies one child route called `locations`. The `locations` route is similar to the `orgs` route, but it specifies an additional optional [search parameter](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams) `page` of type `int`.
+
+
+`createRoutes` uses the information about the routes to create a context wrapped in a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) object. You don't need to know the details about that proxy object, but it's essential to understand that thanks to that object, you can access all routes specifications anywhere in your application to render and parse routes and parameters.
+
+We assigned the Proxy object returned by `createRoutes` to `r`. This means you can access the `dashboard` path with `r.dashboard`, `locations` path with `r.orgs.locations`, and so on.
+
+With our routes defined, we can now move on to the next step: registering them with `angular-router`.
+
+```ts
+// app.routes.ts
+import { Routes } from "@angular/router";
+import { template } from "typesafe-routes/angular-router";
+
 export const routes: Routes = [
   {
-    path: r.template("firstComponent"),
-    component: FirstComponent
-  }, {
-    path: r.template("secondComponent"),
-    component: SecondComponent,
-    children: [{
-      path: r.template("secondComponent/_nestedComponent"),
-      component: NestedComponent,
-    }],
+    path: template(r.dashboard), // ~> "dashboard"
+    component: DashboardComponent,
+  },
+  {
+    path: template(r.orgs), // ~> "orgs/:orgId"
+    component: OrgsComponent,
+    children: [
+      {
+        path: template(r.orgs._.locations), // ~> "locations/:locationId"
+        component: LocationsComponent,
+      },
+    ],
   },
 ];
 ```
 
-- In the code above you can see a couple of `r.template` that return the templates for their component counterparts
-- however the route for `NestedComponent` is using a special feature that we haven't introduced yet
-- angular router doesn't work with absolute paths in templates so we need to inline the path with the `_` prefix to omit the segments that belong to the parent nodes of `nestedComponent`
-- `r.template("secondComponent/_nestedComponent")` returns `nested-component/:bparam` while `r.template("secondComponent/nestedComponent")` would return the absolute path `second-component/:aparam/nested-component/:bparam`.
+The code fragment shows a common setup with nested routes for Angular Router that mirrors the route tree we defined earlier. However, instead of using typical plain strings to specify the `path` templates (for instance `orgs/:orgId`), we import the `template` function from `typesafe-routes/angular-router` and use it to generate the path templates. For the `DashboardComponent` and `OrgsComponent`, we can simply call `template` with their corresponding paths `r.dashboard` and `r.orgs` to get the templates. However, the remaining component `LocationsComponent` is a child of `OrgsComponent` and thus requires a relative path, which cannot be generated by using `r.orgs.locations` as this would result in an absolute path `orgs/:orgId/locations/:locationId`, whereas Angular Router expects a relative path when nesting route templates.
 
-- the following code shows the entry component that generates paths and search strings based on some random parameter values
+To generate a relative path, we can use the `_` link, which effectively omits everything that precedes the underscore character. In this case, we can use `template(r.orgs._.locations)` to generate the relative path. This is a handy feature, as it allows us to reuse the same route tree in scenarios where we need to render absolute paths but also in situations that require a relative path.
 
-``` ts
-// main.ts
+At this point we already took advantage of autocompletion and typo prevention in our favourite IDE (such as [Visual Studio Code](https://code.visualstudio.com/)). And future changes will alert us to any misspelling or typos in our route paths because all types can be traced back to the initial routes definition with `createRoutes`.
+
+## Link Rendering
+
+Now that we have specified our route templates, we want to move on to link rendering. For that, we want to create a simple component that utilizes render functions to render those links, including type serialization and type checks. The next example shows a component that renders a list of anchor elements referencing other components in our application.
+
+```ts
+// app.component.ts
+import { render, renderPath } from "typesafe-routes/angular-router";
+import { r } from "./app.routes";
 
 @Component({
   selector: "app-root",
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink],
   template: `
     <h1>Absolute Links</h1>
     <ul>
-      <li><a [routerLink]="firstComponentLink.path">First Component</a></li>
-      <li><a [routerLink]="secondComponentLink.path">Second Component</a></li>
+      <li><a [routerLink]="dashboardLink">Dashboard</a></li>
+      <li><a [routerLink]="orgsLink">Org</a></li>
       <li>
-        <a
-          [routerLink]="nestedComponentLink.path"
-          [queryParams]="nestedComponentLink.query"
-        >
-          Nested Component
+        <a [routerLink]="locationLink.path" [queryParams]="locationLink.query">
+          Location
         </a>
       </li>
     </ul>
     <router-outlet></router-outlet>
   `,
 })
-export class App {
-  firstComponentLink = r.render("firstComponent", {});
-  secondComponentLink = r.render("secondComponent", {
-    path: { aparam: 123 },
-  });
-  nestedComponentLink = r.render("secondComponent/nestedComponent", {
-    path: { aparam: 321, bparam: 654 },
+export class AppComponent {
+  dashboardLink = renderPath(r.dashboard, {}); // ~> dashboard
+  orgsLink = renderPath(r.orgs, { orgId: 123 }); // ~> orgs/123
+
+  locationLink = render(r.orgs.locations, {
+    path: { orgId: 321, locationId: 654 },
     query: { page: 42 },
-  });
+  }); // ~> { path: "orgs/321/location/654", query: { page: "42" }}
 }
+// ...
 ```
 
-- with the `angularRouter` preset the `render` method returns an object with `path` and `query`
-- you can pass their values to `[routerLink]`, `[queryParams]` or, `this.router.navigate`.
+The code example imports `render` and `renderPath` from `typesafe-routes/angular-router`. `renderPath` renders a path, whereas `render` additionally serializes the query parameters for our link list. We also import `r`, the proxy object that allows us to access the information about the previously defined routes and to define the desired route to be rendered.
+
+First, we create `dashboardLink` and `orgsLink` using the `renderPath` function. As the first parameter, it takes the aforementioned proxy object representing the path of the route to be rendered. The second parameter is a record with parameter values matching the name and type of the parameter previously defined with `createRoutes` in `app.routes.ts`. The return value is a string containing the path belonging to the corresponding component.
+
+The `render` function in the third example renders both path and search parameters, and thus requires a `path` and a `query` property in the parameter definitions. The return value here is an object with the two properties `path` and `query`. We set the two properties as the values of the `[routerLink]` and `[queryParams]` attributes.
 
 ## Parameter Parsing
 
-- in Angular the path and query parameters can be retreived with `this.route.snapshot.params` and `this.route.snapshot.queryParams`
-- however parameters are string values by default, which is also the case with other router libraries such as react-router
-- given the location path `/second-component/321/nested-component/654?page=42` from our example above, to compute the next page number `43` based on the current page a parsing step is necessary to turn the string param into an integer number
-- there are also other scenarios that require parsing parameters and converting them one by one to their corresponding type
-- luckily we already specified the parameter types in our routes tree before so a simple `parseParams` call suffice:
+Here is the text equivalent of the bulletpoints:
+
+Parameter parsing is an essential part of `typesafe-routes`. During route definition above, we defined a couple of parameters and gave them an integer-like type. However, since the parameter values come from the location path or from search parameters, they are string-based. Conveniently, `typesafe-routes` offers helper functions that parse these strings and cast them to the desired integer-like type. Parsing is based on our proxy object `r`, meaning we have to tell the library what route the params belong to. The next example demonstrates two common parsing scenarios.
 
 ``` ts
-r.parseParams(
-  "secondComponent/_nestedComponent",
-  this.route.snapshot.params
-) // => { bparam: 654 }
-```
-- since path inlining via `_` is supported as well we can parse params that belog to the `nestedComponent` route selectively.
-- by the way it's also possible to pass the location path as the parameter source
-
-``` ts
-r.parseParams(
-  "secondComponent/nestedComponent",
-  location.pathname, // `/second-component/321/nested-component/654`
-) // => { aparam: 321, bparam: 654 }
-```
-
-- when using relative routes the location path should also be relative and match the route:
-
-``` ts
-r.parseParams(
-  "secondComponent/_nestedComponent",
-  "nested-component/654"
-) // => { bparam: 654 }
-```
-
-- to parse query parameters the `parseQuery` method can be called with either `this.route.snapshot.queryParams` or a query string.
-
-``` ts
-r.parseQuery(
-  "secondComponent/_nestedComponent",
-  this.route.snapshot.queryParams, // or location.search
-) // => { page: 42 }
-```
-
-
-## But wait, there is more
-
-- typesafe-routes offers some additional util methods that can help with the development of web applications
-
-### `replace` 
-- the `replace` method modifies parameters of an existing path in one single step eliminating additional effort of parsing and re-compositioning the path
-
-``` ts
-r.replace(
-  "secondComponent",
-  "/second-component/321/nested-component/654?page=42",
-  { path: { aparam: 123 } }
-); // => /second-component/123/nested-component/654?page=42
-```
-
-- the return value only changes the second path segment from `321` to `123`. all the other segments and the q uery string remain unchanged
-- inlining with the `_` prefix in the first argument is supported as well if a relative path is provided as the second argument
-- in the example only one segment was modified but this is only coincidental, it's absolutely possible to modify multiple segments in one single call
-- query parameters can be modified as well
-
-### `from`
-
-- the `from` method allows building new paths based on an existing location path
-
-``` ts
-r.from(
-  "secondComponent",
-  location.pathname, // "/second-component/321"
-  { path: { aparam: 123 }}
-)
-.render(
-  "nestedComponent",
-  { path: { bparam: 1337 }}
-) // => "/second-component/123/nested-component/1337"
-```
-
-- `from` takes the location path as the second parameter, the first parameter specifies the corresponding route path
-- the third parameter is used to override one parameter but that's optional
-- `from` create a new context where methods like `render` can be applied on the child routes such as `nestedComponent`
-
-### `bind`
-
-- the `bind` method assigns parameter values to a route without creating a string path.
-- it can be passed down to other components to be assigned with even more parameter values or rendered to a later point in the code execution
-
-``` ts
-const route = r.bind(
-  "secondComponent",
-  { path: { aparam: 41 }}
-);
+import { r } from "./app.routes";
+import { parsePath, parseQuery } from "typesafe-routes";
 
 // ...
-
-// could be rendered in a different component
-route.render(
-  "nestedComponent",
-  { path: { bparam: 42 }}
-) // => "/second-component/41/nested-component/42"
+parsePath(r.orgs._.locations, this.route.snapshot.params)
+parseQuery(r.orgs.locations, this.route.snapshot.queryParams)
 ```
 
-## Conclusion and Contribution Guide
+## customization
 
-- in this tutorial we explored ways to manage routes in a typesafe way with typesafe-routes and angular router
-- typesafe-routes has many features and can also be used with other frontend ecosystems like React
-- if you like to learn more about the othe typesafe-routes feature you can visit the documentation or the github repository
+- add params with custom parser and serializer
+- specify custom templates, for wildcards or other use cases
+- create your own utilty functions that interact with the proxy object
+  - like a function that converts the `r` proxy to a `Routes` array to eliminate the manual sync step
+- reuse typescript definitions to infer parameter types 
 
-- if you've read this far it might mean that you find typesafety interesting
-- typesafe-routes is published under the MIT open source license and you are very welcome to contribute.
-- anyone is welcome to help and these are a few possible ways I would appreaciate
-  - leave us star in github
-  - report bugs 
-  - create a patch
-  - help others
-  - buy me a coffee
+## call to action
 
-- the markdown file with this tutorial can also be found in the github repository, so don't hesitate to fight typos with pull requests
-
-## Appendix
-
-<!-- stackblitz -->
+- directive for link rendering
+- eliminate manual sync by automatically converting `r` to `Routes`
+- report a bug
+- open PR
+- buy me a coffee
+- leave some feedback on discord
