@@ -1,0 +1,38 @@
+name: Build & Test & Maybe Publish
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+  release:
+    types: [ published ]
+jobs:
+  build_and_maybe_publish:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cache Node.js modules
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        registry-url: "https://registry.npmjs.org"
+    - name: Build & Test
+      run: | 
+        yarn install --frozen-lockfile
+        yarn build
+    - name: prerelease
+      if: github.event_name == 'release' && github.event.release.prerelease
+      run: npm publish --tag dev
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - name: publish
+      if: github.event_name == 'release' && !github.event.release.prerelease
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    
