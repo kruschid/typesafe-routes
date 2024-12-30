@@ -108,32 +108,57 @@ The `render` function in the third example renders both path and search paramete
 
 ## Parameter Parsing
 
-Here is the text equivalent of the bulletpoints:
-
-Parameter parsing is an essential part of `typesafe-routes`. During route definition above, we defined a couple of parameters and gave them an integer-like type. However, since the parameter values come from the location path or from search parameters, they are string-based. Conveniently, `typesafe-routes` offers helper functions that parse these strings and cast them to the desired integer-like type. Parsing is based on our proxy object `r`, meaning we have to tell the library what route the params belong to. The next example demonstrates two common parsing scenarios.
+Parameter parsing is an essential part of `typesafe-routes`. During route definition above, we defined a couple of parameters and gave them an integer-like type `int`. However, since the parameter values come from various sources such as the [Location](https://developer.mozilla.org/en-US/docs/Web/API/Location) object, they are `string`-based. Conveniently, `typesafe-routes` exports helper functions that parse these strings and cast them to the desired type. Parsing is based on our proxy object `r` we created earlier, meaning we have to tell the library what route the params belong to. The next example demonstrates that by showing two common parsing scenarios.
 
 ``` ts
 import { r } from "./app.routes";
 import { parsePath, parseQuery } from "typesafe-routes";
 
-// ...
-parsePath(r.orgs._.locations, this.route.snapshot.params)
-parseQuery(r.orgs.locations, this.route.snapshot.queryParams)
+parseQuery(
+  r.orgs.locations, // absolute path
+  this.route.snapshot.queryParams // { page: "5" } // string value 
+); // ~> { page: 5 }
+
+parsePath(
+  r.orgs._.locations, // relative path
+  this.route.snapshot.params, // { orgId: "1", locationId: "2" } // string value
+); // ~> { locationId: 2  } // number value
 ```
 
-## customization
+Given the `location.href` `orgs/1/location/2?page=5`, in Angular, we can access string-based query params using `this.route.snapshot.queryParams` and string-based path parameters are provided via `this.route.snapshot.params`. Using `parseQuery` with `r.orgs.locations` and `this.route.snapshot.queryParams`, we can retrieve an object with the `page` parameter as a `number`. Using `parsePath` with `r.orgs._.locations` and `this.route.snapshot.params`, we get the parsed `locationId`. In this case, `r.orgs._.locations` is a relative path, and all the segments before the `_` link are omitted, causing `orgId` not to be present in the resulting object.
 
-- add params with custom parser and serializer
-- specify custom templates, for wildcards or other use cases
-- create your own utilty functions that interact with the proxy object
-  - like a function that converts the `r` proxy to a `Routes` array to eliminate the manual sync step
-- reuse typescript definitions to infer parameter types 
+The parsing functions in `typesafe-routes` are versatile, and we can also extract all the parameters directly from the `location.href` string at once using `parse`.
 
-## call to action
+``` ts
+import { parse } from "typesafe-routes";
 
-- directive for link rendering
-- eliminate manual sync by automatically converting `r` to `Routes`
-- report a bug
-- open PR
-- buy me a coffee
-- leave some feedback on discord
+parse(
+  r.orgs.locations,
+  location.href, // orgs/1/location/2?page=5
+); // ~> { query: { orgId: 1, locationId: 2 }, query: { page: 5 }}
+```
+
+Extracting type information about parameters is possible via `InferQueryParams`, `InferPathParams`, or `InferParams`. Here is a demonstration of the `InferQueryParams` utility type.
+
+``` ts
+import { InferQueryParams } from "typesafe-routes";
+
+type QueryParams = InferQueryParams<typeof r.orgs.locations>; // { page: number }
+
+const queryParams: QueryParams = { page: 123 }; // ✅
+const queryParams: QueryParams = { page: "123" }; // ❌ string can't be assigned to a number prop
+```
+
+## Wrapping Up
+
+To conclude this tutorial, we have created a single routes tree `r` that is the single source of truth for our routes. Based on that, we rendered templates that we used to register our components with Angular Router. We rendered paths with dynamic path segments and query parameters. We parsed parameters to convert them from string values to their corresponding types. We did everything in a type-safe manner without writing even one single type definition. We have established a robust routes tree that easily prevents bugs while developing new features and furthermore facilitates future refactorings.
+
+However, `typesafe-routes` has many more features, such as many different built-in parameter types, easy integration of custom parameter types, manipulation of subpaths, define custom template strings, and many more. Unfortunately, we can't cover them all in this tutorial, but you can read more by visiting the official documentation.
+
+## Support the Project
+
+Of course, there are also many potential improvements that can be implemented to the examples shown in this tutorial. For example, a custom directive for link rendering that takes on a path definition based on our proxy object, such as `r.orgs.locations`. Another example is a function that automatically generates a [`Routes` array for Angular Router](https://angular.dev/guide/routing/router-reference#configuration), effectively eliminating duplicated code and the need to keep the routes in sync with our route tree created with `createRoutes` in the very first code block.
+
+However, these are just a few ways among many to contribute. The most common way is, of course, reporting bugs or opening PRs in our GitHub repository. If you use this library and think it improves your development experience, you could also [buy me a coffee](https://buymeacoffee.com/kruschid). We also have a [Discord channel](https://discord.com/invite/BCGmvSSJBk) where you can leave feedback or ask questions.
+
+Thank you for reading, and goodbye!
