@@ -88,7 +88,7 @@ npm i typesafe-routes # or any npm alternative
 ## Roadmap
   
 - v10-v12 migration guide
-- v12beta-v12 migration guide
+- v12beta-v12.1 migration guide
 - check for duplicate param names in the route tree
 - customizable parsing of search params (for example with qs)
 - demos & utils
