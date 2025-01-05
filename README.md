@@ -70,10 +70,8 @@ The complete [documentation can be found here](https://kruschid.github.io/typesa
   
 ## Installation
 
-> Version 12 is currently under development. Please don't use it in production yet. The official release will happen soon. [The v10 documentation can be found here](https://github.com/kruschid/typesafe-routes/tree/v10.0.6).
-
 ``` sh
-npm i typesafe-routes@next # or any npm alternative
+npm i typesafe-routes # or any npm alternative
 ```
 
 ## How to Contribute
@@ -81,6 +79,7 @@ npm i typesafe-routes@next # or any npm alternative
 - leave a star ⭐
 - report a bug 🐞
 - open a pull request 🏗️
+  - please discuss your idea on github or discord **before you start working on your PR**
 - help others ❤️
 - [buy me a coffee ☕](https://www.buymeacoffee.com/kruschid)
   
@@ -88,7 +87,8 @@ npm i typesafe-routes@next # or any npm alternative
 
 ## Roadmap
   
-- v12 migration guide
+- v10-v12 migration guide
+- v12beta-v12 migration guide
 - check for duplicate param names in the route tree
 - customizable parsing of search params (for example with qs)
 - demos & utils
@@ -116,7 +116,7 @@ npm i typesafe-routes@next # or any npm alternative
 - customization
   - [x] custom-parameter-types
 - tutorials
-  - [ ] angular router
+  - [x] angular router
   - [ ] react router
   - [ ] wouter
   - [ ] vue router
