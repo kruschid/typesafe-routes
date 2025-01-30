@@ -1,4 +1,4 @@
-# Type-safe Routes in Angular
+# Eliminate Runtime Errors with Type-safe Routes in Angular
 
 Refactoring an Angular application can be a double-edged sword. On one hand, it allows you to improve the maintainability and scalability of your codebase. On the other hand, it can lead to broken routes if you haven't taken the necessary precautions to protect your features against unintended changes. Writing extensive tests or implementing a solid typing concept for routes can help mitigate this risk, but these approaches can be time-consuming and may not always be feasible. In this article, we'll explore a more efficient solution that automatically detects broken routes in compile-time, without requiring manual test efforts or the need to write custom type annotations. We'll demonstrate this approach by implementing a sample Angular application with nested components and using the `typesafe-routes` library to improve developer experience and facilitate parameter parsing.
 
@@ -31,6 +31,8 @@ Let's take a closer look at the code fragment. We import `createRoutes` from `ty
 
 We assigned the Proxy object returned by `createRoutes` to `r`. This means you can access the `dashboard` path with `r.dashboard`, `locations` path with `r.orgs.locations`, and so on.
 
+## Rendering Templates
+
 With our routes defined, we can now move on to the next step: registering them with `angular-router`.
 
 ```ts
@@ -62,7 +64,7 @@ To generate a relative path, we can use the `_` link, which effectively omits ev
 
 At this point we already took advantage of autocompletion and typo prevention in our favourite IDE (such as [Visual Studio Code](https://code.visualstudio.com/)). And future changes will alert us to any misspelling or typos in our route paths because all types can be traced back to the initial routes definition with `createRoutes`.
 
-## Link Rendering
+## Rendering Links
 
 Now that we have specified our route templates, we want to move on to link rendering. For that, we want to create a simple component that utilizes render functions to render those links, including type serialization and type checks. The next example shows a component that renders a list of anchor elements referencing other components in our application.
 
@@ -106,7 +108,7 @@ First, we create `dashboardLink` and `orgsLink` using the `renderPath` function.
 
 The `render` function in the third example renders both path and search parameters, and thus requires a `path` and a `query` property in the parameter definitions. The return value here is an object with the two properties `path` and `query`. We set the two properties as the values of the `[routerLink]` and `[queryParams]` attributes.
 
-## Parameter Parsing
+## Parsing Parameters
 
 Parameter parsing is an essential part of `typesafe-routes`. During route definition above, we defined a couple of parameters and gave them an integer-like type `int`. However, since the parameter values come from various sources such as the [Location](https://developer.mozilla.org/en-US/docs/Web/API/Location) object, they are `string`-based. Conveniently, `typesafe-routes` exports helper functions that parse these strings and cast them to the desired type. Parsing is based on our proxy object `r` we created earlier, meaning we have to tell the library what route the params belong to. The next example demonstrates that by showing two common parsing scenarios.
 
@@ -159,6 +161,4 @@ However, `typesafe-routes` has many more features, such as many different built-
 
 Of course, there are also many potential improvements that can be implemented to the examples shown in this tutorial. For example, a custom directive for link rendering that takes on a path definition based on our proxy object, such as `r.orgs.locations`. Another example is a function that automatically generates a [`Routes` array for Angular Router](https://angular.dev/guide/routing/router-reference#configuration), effectively eliminating duplicated code and the need to keep the routes in sync with our route tree created with `createRoutes` in the very first code block.
 
-However, these are just a few ways among many to contribute. The most common way is, of course, reporting bugs or opening PRs in our GitHub repository. If you use this library and think it improves your development experience, you could also [buy me a coffee](https://buymeacoffee.com/kruschid). We also have a [Discord channel](https://discord.com/invite/BCGmvSSJBk) where you can leave feedback or ask questions.
-
-Thank you for reading, and goodbye!
+However, these are just a few ways among many to contribute. The most common way is, of course, sharing, reporting bugs, or opening PRs in our GitHub repository. If you use this library and think it improves your development experience, you could also [buy me a coffee](https://buymeacoffee.com/kruschid). We also have a [Discord channel](https://discord.com/invite/BCGmvSSJBk) where you can leave feedback or ask questions.
