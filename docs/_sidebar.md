@@ -11,6 +11,7 @@
   * [Replace Dynamic Segments](advanced-features/replace-dynamic-segments.md)
   * [Global Query Parameters](advanced-features/global-query-parameters.md)
   * [Composing Routes](advanced-features/composing-routes.md)
+  * [Links With Base URL](advanced-features/with-base-url.md)
 * Customization
   * [Custom Parameter Types](customization/custom-parameter-types.md)
 * Tutorials
