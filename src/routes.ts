@@ -89,14 +89,19 @@ export const renderPath: RenderPathFn = (
 ) => {
   const serializedPath = relativeNodes
     .flatMap((route) => route.path ?? [])
-    .map((pathSegment) =>
+    .flatMap((pathSegment) =>
       typeof pathSegment === "string"
         ? pathSegment
-        : pathSegment.parser.serialize(params[pathSegment.name])
+        : params[pathSegment.name] !== undefined
+        ? pathSegment.parser.serialize(params[pathSegment.name])
+        : []
     )
     .join("/");
 
-  return (isRelative ? "" : "/") + serializedPath;
+  return (
+    (isRelative || serializedPath.match(/^(http|https):\/\//) ? "" : "/") +
+    serializedPath
+  );
 };
 
 export const renderQuery: RenderQueryFn = (

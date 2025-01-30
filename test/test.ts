@@ -81,7 +81,7 @@ test("renderPath", (t) => {
       path: ["blog", str("lang")],
       children: {
         category: {
-          path: ["category", str("cid")],
+          path: ["category", str("cid"), int.optional("extra")],
           query: [str.optional("search")],
           children: {
             date: {
@@ -99,7 +99,8 @@ test("renderPath", (t) => {
   t.equal(renderPath(routes.blog, { lang: "en" }), "/blog/en");
   t.equal(
     renderPath(routes.blog.category, { lang: "en", cid: "movies" }),
-    "/blog/en/category/movies"
+    "/blog/en/category/movies",
+    "with one optional path param omitted"
   );
   t.end();
 });
@@ -618,6 +619,36 @@ test("route composition", (t) => {
   t.equals(renderPath(routes.user.list, {}), "/user/list");
   t.equals(renderPath(routes.user.detail, { uid: 123 }), "/user/detail/123");
   t.equals(renderPath(routes.cart.detail, {}), "/cart/detail");
+
+  t.end();
+});
+
+test("render baseUrl", (t) => {
+  const internalRoutes = createRoutes({
+    list: {
+      path: ["list"],
+    },
+    detail: {
+      path: ["detail", int("uid")],
+    },
+  });
+
+  const externalRoutes = createRoutes({
+    baseUrl: {
+      path: ["https://typesafe.routes"],
+      children: internalRoutes["~routes"],
+    },
+  });
+
+  t.equals(
+    renderPath(externalRoutes.baseUrl.list, {}),
+    "https://typesafe.routes/list"
+  );
+
+  t.equals(
+    renderPath(externalRoutes.baseUrl.detail, { uid: 123 }),
+    "https://typesafe.routes/detail/123"
+  );
 
   t.end();
 });

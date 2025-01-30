@@ -32,7 +32,7 @@ export const renderPath: RenderPathFn = (
   { "~context": { relativeNodes, isRelative } },
   pathParams: Record<string, any>
 ) => {
-  const path = relativeNodes
+  const serializedPath = relativeNodes
     .flatMap((node) => node.path ?? [])
     .flatMap((pathSegment) =>
       // prettier-ignore
@@ -41,9 +41,13 @@ export const renderPath: RenderPathFn = (
       ) :  pathParams[pathSegment.name] !== undefined ? (
         pathSegment.parser.serialize(pathParams[pathSegment.name])
       ) : []
-    );
+    )
+    .join("/");
 
-  return (isRelative ? "" : "/") + path.join("/");
+  return (
+    (isRelative || serializedPath.match(/^(http|https):\/\//) ? "" : "/") +
+    serializedPath
+  );
 };
 
 export const renderQuery: RenderQueryFn = (
