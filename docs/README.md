@@ -4,8 +4,6 @@
 
 ### 1. Installation
 
-> This package is currently under development. Please don't use it in production yet. The official release will happen soon.
-
 ``` bash
 npm install typesafe-routes # or any npm alternative
 ```
