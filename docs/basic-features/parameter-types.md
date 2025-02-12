@@ -9,7 +9,7 @@ import { createRoutes, str, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
-    ["path", str("lang")]
+    path: ["path", str("lang")]
   }
 });
 
@@ -24,7 +24,7 @@ import { createRoutes, int, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
-    ["path", int("id")]
+    path: ["path", int("id")]
   }
 });
 
@@ -41,7 +41,7 @@ const f2 = float(2); // renders 2 fraction digits
 
 const routes = createRoutes({
   myRoute: {
-    ["path", f2("x")]
+    path: ["path", f2("x")]
   }
 });
 
@@ -56,7 +56,7 @@ import { createRoutes, isoDate, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
-    ["path", isoDate("date")]
+    path: ["path", isoDate("date")]
   }
 });
 
@@ -71,7 +71,7 @@ import { createRoutes, date, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
-    ["path", date("date")]
+    path: ["path", date("date")]
   }
 });
 
@@ -86,7 +86,7 @@ import { createRoutes, bool, renderPath, parsePath } from "typesafe-routes";
 
 const routes = createRoutes({
   myRoute: {
-    ["path", bool("isVisible")]
+    path: ["path", bool("isVisible")]
   }
 });
 
@@ -103,7 +103,7 @@ const options = oneOf("movies", "music", "art")
 
 const routes = createRoutes({
   myRoute: {
-    ["path", options("category")]
+    path: ["path", options("category")]
   }
 });
 
@@ -120,7 +120,7 @@ const options = list(["movies", "music", "art"], ","); // second argument is opt
 
 const routes = createRoutes({
   myRoute: {
-    ["path", options("categories")]
+    path: ["path", options("categories")]
   }
 });
 
