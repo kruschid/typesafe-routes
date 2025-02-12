@@ -5,7 +5,7 @@
 
 # Typesafe Routes
 
-`typesafe-routes` helps you to accelerate your app development and reduce your test efforts by incorporating the TypeScript compiler for advanced type checking. Don't look for broken router paths manually; instead, let TypeScript notify you about inconsistencies in your routes.
+`typesafe-routes` speeds up app development and cuts down on testing efforts by letting TypeScript catch route and parameter type inconsistencies. Your code will be more robust, making broken links a thing of the past.
 
 `typesafe-routes` features include:
 
@@ -17,7 +17,9 @@
 - Compatible with JavaScript (apart from type safety)
 - Small bundle size starting at less than 1kb
 
-## Example (Default Renderer)
+## Example
+
+[typescript playground](https://www.typescriptlang.org/play/?#code/JYWwDg9gTgLgBAbzgYygUwIYzQJQgV2wGcAaOYAOxjPQoBM0oAFLACzLAyiLRZnbjZwAGyxo4AXzgAzKBBBwARDACeYNEQzS0AWjmENigNwBYAFDmA9Jbj7sg9OIbTKwGMAgVzyT0Xh2NOABeFHQxPAMiAAoEczg4fB5uAC5EOPi4Tn5UgG1FRMYiRTJKGCj84DpFAEoAXTIM6zhLAu5LZPxK9PjkVmBhOlpU2LMMjLQ6N2HMtlzFCbdFWskGxpsWpKJ2zrpLBZhujIZhNGxprNY549O0JZXm9datjsrLa+xDiXSvswlq0wsZiaGAARkQIMIDDN+ERzLQGMw2FEAkQAHRPMhIHapACMACYAMySf4POAAPwAfEoNoVLPiCYpzFYbBQNNg6NDWLCzPDGHxWMiCMR0ZtUftMQlKrjCcSjKTKdSnnTCXtJjBGTy0PQ+UiUSLCqj3mgJdi4PTZfKqYoaW16W80CdsBrmbYHVhgAA3cQXIhwcoAfUU5HowGQYl9-HEfi47goAHM4Dw4yAtTBqnCtQj+YLIqj-fruCapWaZX85U0FflNsqGRntYj+DnhU882K1Ziy5alPtnUCbJxuN62DMoBgQNyBzxs3qW+LEJK6KlFAAWPFBzsVqlY4uryTmSe8XVCjQFtFz61KgCcl9VixJm-npuve8BTSEYFExDg5nfn7QTZPWc1XvGxKxtZ4dlvdUfzQEQxAAtF8yAtwQPJK0lReXYexguDsAQ09W32VDKx7IA)
 
 ``` ts
 import { createRoutes, int, renderPath, parsePath, template } from "typesafe-routes";
@@ -41,7 +43,7 @@ renderPath(routes.users.edit, { uid: 123 }); // ~> "/users/123/edit"
 renderPath(routes.users.delete, { uid: 123 }); // ~> "/users/123/delete"
 
 // relative paths ("_" indicates the starting segment)
-renderPath(routes._.users.$render, { uid: 123 }); // ~> "users/123"
+renderPath(routes._.users, { uid: 123 }); // ~> "users/123"
 renderPath(routes.users._.edit, {}); // ~> "edit"
 
 // parse path params
