@@ -29,7 +29,7 @@ type ReplaceFn = <R extends WithContext>(
 ) => ReturnType<RenderFn>;
 
 export const renderPath: RenderPathFn = (
-  { "~context": { relativeNodes, isRelative } },
+  { "~context": { relativeNodes, isRelative, baseUrl } },
   pathParams: Record<string, any>
 ) => {
   const serializedPath = relativeNodes
@@ -44,10 +44,9 @@ export const renderPath: RenderPathFn = (
     )
     .join("/");
 
-  return (
-    (isRelative || serializedPath.match(/^(http|https):\/\//) ? "" : "/") +
-    serializedPath
-  );
+  const prefix = isRelative ? "" : `${baseUrl ?? ""}/`;
+
+  return prefix + serializedPath;
 };
 
 export const renderQuery: RenderQueryFn = (

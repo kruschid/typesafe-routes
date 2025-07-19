@@ -105,10 +105,12 @@ export interface Context<
   relativeNodes: RelativeNodes;
   children?: RouteNodeMap;
   isRelative: boolean;
+  baseUrl?: string;
 }
 
 export type CreateRoutes = <Routes extends RouteNodeMap>(
-  routes: Routes
+  routes: Routes,
+  options?: { baseUrl: string }
 ) => RoutesProps<Routes>;
 
 export interface WithContext {

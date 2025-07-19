@@ -16,12 +16,12 @@ import type {
   WithContext,
 } from "./types";
 
-export const createRoutes: CreateRoutes = (routeMap) => {
+export const createRoutes: CreateRoutes = (routeMap, options) => {
   const proxy = (ctx: Context): any =>
     new Proxy(
       {
-        ["~context"]: ctx,
-        ["~routes"]: routeMap,
+        "~context": ctx,
+        "~routes": routeMap,
       },
       {
         get: (target, maybeRouteName, receiver) =>
@@ -37,6 +37,7 @@ export const createRoutes: CreateRoutes = (routeMap) => {
     children: routeMap,
     nodes: [],
     relativeNodes: [],
+    baseUrl: options?.baseUrl,
   });
 };
 
@@ -84,7 +85,7 @@ export const template: TemplateFn = ({
 };
 
 export const renderPath: RenderPathFn = (
-  { "~context": { relativeNodes, isRelative } },
+  { "~context": { relativeNodes, isRelative, baseUrl } },
   params: Record<string, any>
 ) => {
   const serializedPath = relativeNodes
@@ -98,10 +99,9 @@ export const renderPath: RenderPathFn = (
     )
     .join("/");
 
-  return (
-    (isRelative || serializedPath.match(/^(http|https):\/\//) ? "" : "/") +
-    serializedPath
-  );
+  const prefix = isRelative ? "" : `${baseUrl ?? ""}/`;
+
+  return prefix + serializedPath;
 };
 
 export const renderQuery: RenderQueryFn = (
