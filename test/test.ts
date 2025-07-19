@@ -19,6 +19,7 @@ import {
   str,
   template,
 } from "../src";
+import * as angular from "../src/adapters/angular-router";
 
 test("template", (t) => {
   const routes = createRoutes({
@@ -624,71 +625,92 @@ test("route composition", (t) => {
 });
 
 test("render baseUrl", (t) => {
-  const internalRoutes = createRoutes({
+  const routes = createRoutes({
     list: {
       path: ["list"],
     },
     detail: {
       path: ["detail", int("uid")],
     },
-  });
-
-  const externalRoutes = createRoutes({
-    baseUrl: {
-      path: ["https://typesafe.routes"],
-      children: internalRoutes["~routes"],
-    },
+  }, {
+    baseUrl: "https://typesafe.routes",
   });
 
   t.equals(
-    renderPath(externalRoutes.baseUrl.list, {}),
+    renderPath(routes.list, {}),
     "https://typesafe.routes/list"
   );
 
   t.equals(
-    renderPath(externalRoutes.baseUrl.detail, { uid: 123 }),
+    renderPath(routes.detail, { uid: 123 }),
     "https://typesafe.routes/detail/123"
   );
 
   t.end();
 });
 
-// test("angular routes", (t) => {
-//   const createRoute: CreateAngularRoutes<{ component: string }> =
-//     createAngularRoutes;
+test("angular router", (t) => {
+  const routes = createRoutes({
+    list: {
+      path: ["list"],
+    },
+    detail: {
+      path: ["detail", int("uid")],
+      query: [int("page")],
+    },
+  }, {
+    baseUrl: "https://typesafe.routes",
+  });
 
-//   const r = createRoute({
-//     a: {
-//       path: ["string", int("parm")],
-//       meta: { component: "A" },
-//       children: {
-//         b: {
-//           meta: { component: "B" },
-//         },
-//       },
-//     },
-//     c: {
-//       path: ["string", int("lala")],
-//     },
-//   });
+  t.equals(
+    angular.renderPath(routes.detail, { uid: 123 }),
+    "https://typesafe.routes/detail/123",
+    "renders absolute path with baseUrl in angular",
+  );
 
-//   t.deepEquals(r.$routes.a.meta, { component: "A" });
-//   t.deepEquals(r.$provider, [
-//     {
-//       path: "string/:parm",
-//       component: "A",
-//       children: [
-//         {
-//           path: "string/:parm",
-//           children: undefined,
-//           component: "B",
-//         },
-//       ],
-//     },
-//     {
-//       path: "string/:lala",
-//       children: undefined,
-//     },
-//   ]);
-//   t.end();
-// });
+  t.equals(
+    angular.renderPath(routes._.detail, { uid: 123 }),
+    "detail/123",
+    "renders relative path in angular",
+  );
+
+  t.equals(
+    angular.template(routes._.detail),
+    "detail/:uid",
+    "renders template in angular",
+  );
+
+  t.deepEquals(
+    angular.renderQuery(routes.detail, {
+      page: 123
+    }),
+    { page: "123" },
+    "renders query in angular",
+  );
+
+  t.deepEqual(
+    angular.render(routes.detail, {
+      path: { uid: 321 },
+      query: { page: 9 },
+    }),
+    {
+      path: "https://typesafe.routes/detail/321",
+      query: { page: "9" },
+    },
+    "renders path + query in angular",
+  );
+
+  t.deepEquals(
+    angular.replace(routes._.detail, "detail/321?page=56&search=666", {
+      path: { uid: 1 },
+      query: { page:42 },
+    }),
+    {
+      path: "detail/1",
+      query: { page: "42", search: "666" },
+    },
+    "replaces segments in angular",
+  );
+
+  t.end();
+});
