@@ -1,17 +1,17 @@
-import { OptionalDeep } from "ts-toolbelt/out/Object/Optional";
+import type { OptionalDeep } from "ts-toolbelt/out/Object/Optional";
 import {
-  InferParams,
-  InferQueryParams,
+  type InferParams,
+  type InferQueryParams,
   paramsFromLocationPath,
   paramsFromQuery,
-  RenderPathFn,
-  TemplateFn,
-  WithContext,
+  type RenderPathFn,
+  type TemplateFn,
+  type WithContext,
 } from "../";
 
 type RenderFn = <R extends WithContext>(
   route: R,
-  params: InferParams<R>
+  params: InferParams<R>,
 ) => {
   path: string;
   query: Record<string, string>;
@@ -19,28 +19,28 @@ type RenderFn = <R extends WithContext>(
 
 type RenderQueryFn = <R extends WithContext>(
   route: R,
-  queryParams: InferQueryParams<R>
+  queryParams: InferQueryParams<R>,
 ) => Record<string, string>;
 
 type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
-  params: OptionalDeep<InferParams<R>>
+  params: OptionalDeep<InferParams<R>>,
 ) => ReturnType<RenderFn>;
 
 export const renderPath: RenderPathFn = (
   { "~context": { relativeNodes, isRelative, baseUrl } },
-  pathParams: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+  pathParams: Record<string, any>,
 ) => {
   const serializedPath = relativeNodes
     .flatMap((node) => node.path ?? [])
     .flatMap((pathSegment) =>
-      // prettier-ignore
-      typeof pathSegment === "string" ? (
-        pathSegment
-      ) :  pathParams[pathSegment.name] !== undefined ? (
-        pathSegment.parser.serialize(pathParams[pathSegment.name])
-      ) : []
+      typeof pathSegment === "string"
+        ? pathSegment
+        : pathParams[pathSegment.name] !== undefined
+          ? pathSegment.parser.serialize(pathParams[pathSegment.name])
+          : [],
     )
     .join("/");
 
@@ -51,7 +51,8 @@ export const renderPath: RenderPathFn = (
 
 export const renderQuery: RenderQueryFn = (
   { "~context": { nodes } },
-  queryParams: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+  queryParams: Record<string, any>,
 ) => {
   const serializedQueryRecord: Record<string, string> = {};
 
@@ -67,7 +68,7 @@ export const renderQuery: RenderQueryFn = (
 
 export const render: RenderFn = (
   route,
-  { path: pathParams, query: queryParams }
+  { path: pathParams, query: queryParams },
 ) => {
   return {
     path: renderPath(route, pathParams),
@@ -79,7 +80,7 @@ export const template: TemplateFn = ({ "~context": { relativeNodes } }) => {
   const template = relativeNodes
     .flatMap((node) => node.path ?? [])
     .map((pathSegment) =>
-      typeof pathSegment === "string" ? pathSegment : `:${pathSegment.name}`
+      typeof pathSegment === "string" ? pathSegment : `:${pathSegment.name}`,
     )
     .join("/");
 
@@ -89,13 +90,14 @@ export const template: TemplateFn = ({ "~context": { relativeNodes } }) => {
 export const replace: ReplaceFn = (
   route,
   location,
-  params: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+  params: Record<string, any>,
 ) => {
   const [locationPath, locationQuery] = location.split("?");
 
   const { pathParams, remainingSegments } = paramsFromLocationPath(
     route,
-    locationPath
+    locationPath,
   );
 
   const {
@@ -109,15 +111,15 @@ export const replace: ReplaceFn = (
 
       const { name, kind, parser } = pathSegment;
 
-      if (params["path"] && name in params["path"]) {
-        if (typeof params["path"][name] !== "undefined")
-          return parser.serialize(params["path"][name]);
+      if (params.path && name in params.path) {
+        if (typeof params.path[name] !== "undefined")
+          return parser.serialize(params.path[name]);
 
         if (kind === "required") {
           throw Error(
             `replace: required path param ${name} can't be set to undefined in ${template(
-              route
-            )}`
+              route,
+            )}`,
           );
         }
         return [];
@@ -130,18 +132,18 @@ export const replace: ReplaceFn = (
 
   const queryParams = paramsFromQuery(locationQuery);
 
-  if (params["query"]) {
+  if (params.query) {
     nodes
       .flatMap((node) => node.query ?? [])
       .forEach(({ name, parser, kind }) => {
-        if (typeof params["query"][name] !== "undefined") {
-          queryParams[name] = parser.serialize(params["query"][name]);
-        } else if (name in params["query"]) {
+        if (typeof params.query[name] !== "undefined") {
+          queryParams[name] = parser.serialize(params.query[name]);
+        } else if (name in params.query) {
           if (kind === "required") {
             throw Error(
               `replace: required query param ${name} can't be set to undefined in ${template(
-                route
-              )}`
+                route,
+              )}`,
             );
           } else {
             delete queryParams[name];

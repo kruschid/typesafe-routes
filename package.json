@@ -42,15 +42,20 @@
   "scripts": {
     "docs": "docsify serve ./docs",
     "build": "yarn test && yarn tsup && yarn pack && yarn attw --pack .",
-    "test": "yarn tape -r ts-node/register test/*.ts"
+    "test": "yarn tape -r ts-node/register test/*.ts",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "postinstall": "husky"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.16.1",
+    "@biomejs/biome": "2.1.2",
     "@types/node": "20.11.4",
     "@types/tape": "^5.6.4",
+    "husky": "^9.1.7",
     "tape": "^5.7.3",
     "ts-node": "^10.9.2",
     "tsup": "^8.2.4",

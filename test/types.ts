@@ -1,8 +1,8 @@
 import {
   bool,
   createRoutes,
-  InferPathParams,
-  InferQueryParams,
+  type InferPathParams,
+  type InferQueryParams,
   int,
   str,
 } from "../src";
@@ -13,9 +13,9 @@ type AssertEqual<T, U> = T extends U
     : "Types are not equal"
   : "Types are not equal";
 
-const assertEqual = <T, U>(value: AssertEqual<T, U>): void => {};
+type EMPTY_OBJECT = Record<never, never>;
 
-const expectType = <T>(_: T) => {};
+const assertEqual = <T, U>(_: AssertEqual<T, U>): void => {};
 
 const r = createRoutes({
   home: {},
@@ -55,7 +55,8 @@ assertEqual<keyof typeof r, "a">(true);
 //
 // PathParamsRecord
 //
-assertEqual<InferPathParams<typeof r.home>, {}>(true);
+
+assertEqual<InferPathParams<typeof r.home>, EMPTY_OBJECT>(true);
 assertEqual<InferPathParams<typeof r.language>, { lang: string }>(true);
 assertEqual<
   InferPathParams<typeof r.language.users.show>,
@@ -70,7 +71,7 @@ assertEqual<
 // QueryParamsRecord
 //
 // undefined queries in path
-assertEqual<InferQueryParams<typeof r.language>, {}>(true);
+assertEqual<InferQueryParams<typeof r.language>, EMPTY_OBJECT>(true);
 // defined queries in path
 assertEqual<
   InferQueryParams<typeof r.language.users.show>,

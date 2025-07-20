@@ -17,6 +17,7 @@ import type {
 } from "./types";
 
 export const createRoutes: CreateRoutes = (routeMap, options) => {
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   const proxy = (ctx: Context): any =>
     new Proxy(
       {
@@ -28,7 +29,7 @@ export const createRoutes: CreateRoutes = (routeMap, options) => {
           typeof maybeRouteName === "string" && maybeRouteName[0] !== "~"
             ? proxy(addRoute(maybeRouteName, ctx))
             : Reflect.get(target, maybeRouteName, receiver),
-      }
+      },
     );
 
   return proxy({
@@ -54,7 +55,7 @@ const addRoute = (routeName: string, ctx: Context): Context => {
   const route = ctx.children?.[routeName];
   if (!route) {
     throw Error(
-      `unknown segment ${routeName} in ${ctx.path.concat(routeName)}`
+      `unknown segment ${routeName} in ${ctx.path.concat(routeName)}`,
     );
   }
   return {
@@ -76,8 +77,8 @@ export const template: TemplateFn = ({
     .map((segment) =>
       typeof segment === "string"
         ? segment
-        : segment.options?.template ??
-          `:${segment.name}${segment.kind === "optional" ? "?" : ""}`
+        : (segment.options?.template ??
+          `:${segment.name}${segment.kind === "optional" ? "?" : ""}`),
     )
     .join("/");
 
@@ -86,7 +87,8 @@ export const template: TemplateFn = ({
 
 export const renderPath: RenderPathFn = (
   { "~context": { relativeNodes, isRelative, baseUrl } },
-  params: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: t
+  params: Record<string, any>,
 ) => {
   const serializedPath = relativeNodes
     .flatMap((route) => route.path ?? [])
@@ -94,8 +96,8 @@ export const renderPath: RenderPathFn = (
       typeof pathSegment === "string"
         ? pathSegment
         : params[pathSegment.name] !== undefined
-        ? pathSegment.parser.serialize(params[pathSegment.name])
-        : []
+          ? pathSegment.parser.serialize(params[pathSegment.name])
+          : [],
     )
     .join("/");
 
@@ -106,7 +108,8 @@ export const renderPath: RenderPathFn = (
 
 export const renderQuery: RenderQueryFn = (
   { "~context": { nodes } },
-  params: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+  params: Record<string, any>,
 ) => {
   const serializedQueryRecord: Record<string, string> = {};
 
@@ -122,8 +125,8 @@ export const renderQuery: RenderQueryFn = (
 };
 
 export const render: RenderFn = (route, params) => {
-  const pathname = renderPath(route, params["path"]);
-  const searchParams = renderQuery(route, params["query"]);
+  const pathname = renderPath(route, params.path);
+  const searchParams = renderQuery(route, params.query);
   const separator = searchParams ? `?` : "";
 
   return pathname + separator + searchParams;
@@ -134,6 +137,7 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
     typeof paramsOrPath === "string"
       ? paramsFromLocationPath(route, paramsOrPath).pathParams
       : paramsOrPath;
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   const parsedParams: Record<string, any> = {};
 
   route["~context"].relativeNodes
@@ -146,11 +150,12 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
         throw Error(
           `parsePath: required path parameter "${
             segment.name
-          }" was not provided in "${template(route)}"`
+          }" was not provided in "${template(route)}"`,
         );
       }
     });
 
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   return parsedParams as any;
 };
 
@@ -160,6 +165,7 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
       ? paramsFromQuery(paramsOrQuery)
       : paramsOrQuery;
 
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   const parsedQuery: Record<string, any> = {};
 
   route["~context"].nodes
@@ -172,11 +178,12 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
         throw Error(
           `parseQuery: required query parameter "${
             segment.name
-          }" was not provided in "${template(route)}"`
+          }" was not provided in "${template(route)}"`,
         );
       }
     });
 
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   return parsedQuery as any;
 };
 
@@ -195,13 +202,14 @@ export const parseLocation: ParseLocationFn = (route, paramsOrLocation) => {
 export const replace: ReplaceFn = (
   route,
   location,
-  params: Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+  params: Record<string, any>,
 ) => {
   const [locationPath, locationQuery] = location.split("?");
 
   const { pathParams, remainingSegments } = paramsFromLocationPath(
     route,
-    locationPath
+    locationPath,
   );
 
   const {
@@ -215,13 +223,13 @@ export const replace: ReplaceFn = (
 
       const { name, kind, parser } = pathSegment;
 
-      if (params["path"] && name in params["path"]) {
-        if (typeof params["path"][name] !== "undefined")
-          return parser.serialize(params["path"][name]);
+      if (params.path && name in params.path) {
+        if (typeof params.path[name] !== "undefined")
+          return parser.serialize(params.path[name]);
 
         if (kind === "required") {
           throw Error(
-            `replace: required path param ${name} can't be set to undefined`
+            `replace: required path param ${name} can't be set to undefined`,
           );
         }
         return [];
@@ -234,16 +242,16 @@ export const replace: ReplaceFn = (
 
   const queryParams = paramsFromQuery(locationQuery);
 
-  if (params["query"]) {
+  if (params.query) {
     nodes
       .flatMap((r) => r.query ?? [])
       .forEach(({ name, parser, kind }) => {
-        if (typeof params["query"][name] !== "undefined") {
-          queryParams[name] = parser.serialize(params["query"][name]);
-        } else if (name in params["query"]) {
+        if (typeof params.query[name] !== "undefined") {
+          queryParams[name] = parser.serialize(params.query[name]);
+        } else if (name in params.query) {
           if (kind === "required") {
             throw Error(
-              `replace: required query param ${name} can't be set to undefined`
+              `replace: required query param ${name} can't be set to undefined`,
             );
           } else {
             delete queryParams[name];
@@ -264,7 +272,7 @@ export const paramsFromQuery = (query: string) =>
 
 export const paramsFromLocationPath = (
   route: WithContext,
-  locationPath: string = ""
+  locationPath: string = "",
 ) => {
   const remainingSegments = locationPath
     .slice(locationPath[0] === "/" ? 1 : 0)
@@ -288,6 +296,7 @@ export const paramsFromLocationPath = (
           // segment might have been swallowed by an optional param
           let recentParam: string | undefined;
           let foundMatch = false;
+          // biome-ignore lint/suspicious/noAssignInExpressions: no this is not confusing
           while ((recentParam = recentOptionalParams.shift())) {
             if (pathParams[recentParam] === segment) {
               delete pathParams[recentParam];
@@ -300,8 +309,8 @@ export const paramsFromLocationPath = (
           if (!foundMatch) {
             throw new Error(
               `"${locationPath}" doesn't match "${template(
-                route
-              )}", missing segment "${segment}"`
+                route,
+              )}", missing segment "${segment}"`,
             );
           }
         }
@@ -316,8 +325,8 @@ export const paramsFromLocationPath = (
         } else if (segment.kind === "required") {
           throw new Error(
             `"${locationPath}" doesn't match "${template(
-              route
-            )}", missing parameter "${segment.name}"`
+              route,
+            )}", missing parameter "${segment.name}"`,
           );
         }
       }
@@ -330,24 +339,26 @@ export const paramsFromLocationPath = (
 };
 
 export const safeCall =
-  <T extends (...args: any[]) => any>(fn: T) =>
-  (...params: any[]): SafeParseResult<any> => {
-    try {
-      const result = fn(...params);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error:
-          err instanceof Error
-            ? err
-            : new Error(err === "string" ? err : `unknown error: ${err}`),
-      };
-    }
-  };
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
+    <T extends (...args: any[]) => any>(fn: T) =>
+    // biome-ignore lint/suspicious/noExplicitAny: that's fine
+    (...params: any[]): SafeParseResult<any> => {
+      try {
+        const result = fn(...params);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (err: unknown) {
+        return {
+          success: false,
+          error:
+            err instanceof Error
+              ? err
+              : new Error(err === "string" ? err : `unknown error: ${err}`),
+        };
+      }
+    };
 
 export const safeParsePath: SafeParsePathFn = safeCall(parsePath);
 export const safeParseQuery: SafeParseQueryFn = safeCall(parseQuery);

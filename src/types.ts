@@ -1,16 +1,18 @@
-import { Compute } from "ts-toolbelt/out/Any/Compute";
-import { OptionalDeep } from "ts-toolbelt/out/Object/Optional";
+import type { Compute } from "ts-toolbelt/out/Any/Compute";
+import type { OptionalDeep } from "ts-toolbelt/out/Object/Optional";
 
 type Defined<T> = Exclude<T, undefined>;
 
 export type ParamKind = "optional" | "required";
 
+// biome-ignore lint/suspicious/noExplicitAny: that's fine
 export type AnyParam = Param<string, any, any>;
 
 export interface ParamOptions {
   template?: string;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: that's fine
 export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;
   options?: ParamOptions;
@@ -28,6 +30,7 @@ export type RouteNode = {
   template?: string;
   query?: AnyParam[];
   children?: RouteNodeMap;
+  // biome-ignore lint/suspicious/noExplicitAny: that's fine
   meta?: any;
 };
 export type RouteNodeMap = Record<string, RouteNode>;
@@ -83,7 +86,7 @@ export type InferParams<R extends WithContext> = {
 export type RoutesProps<
   Routes extends RouteNodeMap,
   Nodes extends RouteNode[] = [],
-  RelativeNodes extends RouteNode[] = []
+  RelativeNodes extends RouteNode[] = [],
 > = {
   "~context": Context<Nodes, RelativeNodes>;
   "~routes": Routes;
@@ -98,7 +101,7 @@ export type RoutesProps<
 
 export interface Context<
   Nodes extends RouteNode[] = RouteNode[],
-  RelativeNodes extends RouteNode[] = RouteNode[]
+  RelativeNodes extends RouteNode[] = RouteNode[],
 > {
   nodes: Nodes;
   path: string[];
@@ -110,7 +113,7 @@ export interface Context<
 
 export type CreateRoutes = <Routes extends RouteNodeMap>(
   routes: Routes,
-  options?: { baseUrl: string }
+  options?: { baseUrl: string },
 ) => RoutesProps<Routes>;
 
 export interface WithContext {
@@ -121,53 +124,53 @@ export type TemplateFn = <R extends WithContext>(route: R) => string;
 
 export type RenderPathFn = <R extends WithContext>(
   route: R,
-  params: InferPathParams<R>
+  params: InferPathParams<R>,
 ) => string;
 
 export type RenderQueryFn = <R extends WithContext>(
   route: R,
-  params: InferQueryParams<R>
+  params: InferQueryParams<R>,
 ) => string;
 
 export type RenderFn = <R extends WithContext>(
   route: R,
-  params: InferParams<R>
+  params: InferParams<R>,
 ) => string;
 
 export type ParsePathFn = <R extends WithContext>(
   route: R,
-  paramsOrPath: Record<string, string> | string
+  paramsOrPath: Record<string, string> | string,
 ) => InferPathParams<R>;
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
-  paramsOrQuery: Record<string, string> | string
+  paramsOrQuery: Record<string, string> | string,
 ) => InferQueryParams<R>;
 
 export type ParseLocationFn = <R extends WithContext>(
   route: R,
-  paramsOrLocation: Record<string, string> | string
+  paramsOrLocation: Record<string, string> | string,
 ) => InferParams<R>;
 
 export type SafeParsePathFn = <R extends WithContext>(
   route: R,
-  paramsOrPath: Record<string, string> | string
+  paramsOrPath: Record<string, string> | string,
 ) => SafeParseResult<InferPathParams<R>>;
 
 export type SafeParseQueryFn = <R extends WithContext>(
   route: R,
-  paramsOrQuery: Record<string, string> | string
+  paramsOrQuery: Record<string, string> | string,
 ) => SafeParseResult<InferQueryParams<R>>;
 
 export type SafeParseLocationFn = <R extends WithContext>(
   route: R,
-  paramsOrLocation: Record<string, string> | string
+  paramsOrLocation: Record<string, string> | string,
 ) => SafeParseResult<InferParams<R>>;
 
 export type ReplaceFn = <R extends WithContext>(
   route: R,
   location: string,
-  params: OptionalDeep<InferParams<R>>
+  params: OptionalDeep<InferParams<R>>,
 ) => string;
 
 export type SafeParseResult<T> =

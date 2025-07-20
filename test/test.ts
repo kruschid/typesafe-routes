@@ -46,11 +46,11 @@ test("template", (t) => {
   t.equal(template(routes.blog.$wildcard), "/blog/:lang/**");
   t.equal(
     template(routes.blog.category.date),
-    "/blog/:lang/category/:cid/:date"
+    "/blog/:lang/category/:cid/:date",
   );
   t.equal(
     template(routes.blog.category.$wildcard),
-    "/blog/:lang/category/:cid/**"
+    "/blog/:lang/category/:cid/**",
   );
   t.equal(template(routes.blog._.category.$wildcard), "category/:cid/**");
   t.equal(template(routes.blog._.category.date), "category/:cid/:date");
@@ -101,7 +101,7 @@ test("renderPath", (t) => {
   t.equal(
     renderPath(routes.blog.category, { lang: "en", cid: "movies" }),
     "/blog/en/category/movies",
-    "with one optional path param omitted"
+    "with one optional path param omitted",
   );
   t.end();
 });
@@ -130,18 +130,18 @@ test("renderQuery ", (t) => {
   t.equal(renderQuery(routes.blog.category, {}), "");
   t.equal(
     renderQuery(routes.blog.category, { search: "robocop" }),
-    "search=robocop"
+    "search=robocop",
   );
   t.equal(renderQuery(routes.blog.category.date, { page: 1 }), "page=1");
   t.equal(
     renderQuery(routes.blog.category.date, { search: "robocop", page: 1 }),
-    "search=robocop&page=1"
+    "search=robocop&page=1",
   );
   t.equal(renderQuery(routes.blog.category._.date, { page: 2 }), "page=2");
   t.equal(
     renderQuery(routes.blog.category._.date, { search: "robocop", page: 2 }),
     "search=robocop&page=2",
-    "should include complete query in relative paths"
+    "should include complete query in relative paths",
   );
   t.end();
 });
@@ -174,21 +174,21 @@ test("render", (t) => {
       path: { lang: "en", cid: "movies" },
       query: {},
     }),
-    "/blog/en/category/movies"
+    "/blog/en/category/movies",
   );
   t.equal(
     render(routes.blog.category, {
       path: { lang: "en", cid: "movies" },
       query: { search: "robocop" },
     }),
-    "/blog/en/category/movies?search=robocop"
+    "/blog/en/category/movies?search=robocop",
   );
   t.equal(
     render(routes.blog.category.date, {
       path: { lang: "en", cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 42 },
     }),
-    "/blog/en/category/movies/2023-12-28?search=robocop&page=42"
+    "/blog/en/category/movies/2023-12-28?search=robocop&page=42",
   );
   t.equal(
     render(routes.blog.category.date, {
@@ -196,21 +196,21 @@ test("render", (t) => {
       query: { search: "robocop", page: 0 },
     }),
     "/blog/en/category/movies/2023-12-28?search=robocop&page=0",
-    "falsy parameters should be rendered"
+    "falsy parameters should be rendered",
   );
   t.equal(
     render(routes.blog._.category.date, {
       path: { cid: "movies", date: new Date(1703798091000) },
       query: { search: "robocop", page: 42 },
     }),
-    "category/movies/2023-12-28?search=robocop&page=42"
+    "category/movies/2023-12-28?search=robocop&page=42",
   );
   t.equal(
     render(routes.blog._.category.date, {
       path: { cid: "movies", date: new Date(1703798091000) },
       query: { page: 42 },
     }),
-    "category/movies/2023-12-28?page=42"
+    "category/movies/2023-12-28?page=42",
   );
 
   t.end();
@@ -244,19 +244,19 @@ test("parsePath", (t) => {
       lang: true,
       cid: 42,
       date: new Date("2023-12-28T00:00:00.000Z"),
-    }
+    },
   );
 
   t.deepEqual(
     parsePath(
       routes.blog.category.date,
-      "blog/false/category/24/date/2024-11-29"
+      "blog/false/category/24/date/2024-11-29",
     ),
     {
       lang: false,
       cid: 24,
       date: new Date("2024-11-29T00:00:00.000Z"),
-    }
+    },
   );
 
   t.deepEqual(
@@ -269,19 +269,19 @@ test("parsePath", (t) => {
       lang: true,
       cid: 0,
       date: new Date("2023-12-28T00:00:00.000Z"),
-    }
+    },
   );
 
   t.deepEqual(
     parsePath(
       routes.blog.category.date,
-      "blog/true/category/0/date/2024-11-29"
+      "blog/true/category/0/date/2024-11-29",
     ),
     {
       lang: true,
       cid: 0,
       date: new Date("2024-11-29T00:00:00.000Z"),
-    }
+    },
   );
 
   t.deepEqual(
@@ -289,7 +289,7 @@ test("parsePath", (t) => {
       cid: "42",
     }),
     { cid: 42 },
-    "relative path with optional params"
+    "relative path with optional params",
   );
 
   t.deepEqual(
@@ -297,7 +297,7 @@ test("parsePath", (t) => {
     {
       cid: 42,
     },
-    "relative path with omitted optional params in string path"
+    "relative path with omitted optional params in string path",
   );
 
   t.deepEqual(
@@ -306,19 +306,19 @@ test("parsePath", (t) => {
       cid: 244,
       date: new Date("2024-10-29T00:00:00.000Z"),
     },
-    "relative path with all optional params in string path"
+    "relative path with all optional params in string path",
   );
 
   t.throws(
     () =>
       parsePath(routes.blog.category._.date, "category/244/date/2024-10-29"),
-    "string path mismatch"
+    "string path mismatch",
   );
 
   t.deepEqual(
     safeParsePath(
       routes.blog.category.date,
-      "blog/true/category/0/date/2024-11-29"
+      "blog/true/category/0/date/2024-11-29",
     ),
     {
       success: true,
@@ -328,17 +328,17 @@ test("parsePath", (t) => {
         date: new Date("2024-11-29T00:00:00.000Z"),
       },
     },
-    "safeCall success"
+    "safeCall success",
   );
   t.deepEqual(
     safeParsePath(routes.blog.category._.date, "category/244/date/2024-10-29"),
     {
       success: false,
       error: Error(
-        `"category/244/date/2024-10-29" doesn't match "date/:date?", missing segment "date"`
+        `"category/244/date/2024-10-29" doesn't match "date/:date?", missing segment "date"`,
       ),
     },
-    "safeCall error"
+    "safeCall error",
   );
 
   t.end();
@@ -377,20 +377,20 @@ test("parseQuery", (t) => {
       category: "drama",
       shortmovie: true,
       month: "feb",
-    }
+    },
   );
 
   t.deepEqual(
     parseQuery(
       routes.blog.category.date,
-      "lang=en&category=drama&shortmovie=true&month=feb"
+      "lang=en&category=drama&shortmovie=true&month=feb",
     ),
     {
       lang: "en",
       category: "drama",
       shortmovie: true,
       month: "feb",
-    }
+    },
   );
 
   t.deepEqual(
@@ -405,20 +405,20 @@ test("parseQuery", (t) => {
       category: "drama",
       shortmovie: true,
       month: "feb",
-    }
+    },
   );
 
   t.deepEqual(
     parseQuery(
       routes.blog._.category.date,
-      "lang=en&category=drama&shortmovie=true&month=feb"
+      "lang=en&category=drama&shortmovie=true&month=feb",
     ),
     {
       lang: "en",
       category: "drama",
       shortmovie: true,
       month: "feb",
-    }
+    },
   );
   t.throws(() => parseQuery(routes.blog.category._.date, {}));
   t.throws(() => parseQuery(routes.blog.category._.date, { month: "jun" }));
@@ -426,7 +426,7 @@ test("parseQuery", (t) => {
   t.deepEqual(
     safeParseQuery(
       routes.blog.category.date,
-      "lang=en&category=drama&shortmovie=true&month=feb"
+      "lang=en&category=drama&shortmovie=true&month=feb",
     ),
     {
       success: true,
@@ -436,7 +436,7 @@ test("parseQuery", (t) => {
         shortmovie: true,
         month: "feb",
       },
-    }
+    },
   );
   t.deepEqual(
     safeParseQuery(routes.blog._.category.date, {
@@ -453,17 +453,17 @@ test("parseQuery", (t) => {
         shortmovie: true,
         month: "feb",
       },
-    }
+    },
   );
   t.deepEqual(
     safeParseQuery(routes.blog.category.date, ""),
     {
       success: false,
       error: Error(
-        'parseQuery: required query parameter "lang" was not provided in "/blog/movies/2023"'
+        'parseQuery: required query parameter "lang" was not provided in "/blog/movies/2023"',
       ),
     },
-    "safeCall failed"
+    "safeCall failed",
   );
   t.end();
 });
@@ -492,20 +492,20 @@ test("replace", (t) => {
     replace(
       routes.blog.category,
       "/blog/en/category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" } }
+      { path: { cid: "art" } },
     ),
     "/blog/en/category/art/date/2012-12-28?search=batman&page=1",
-    "should replace path params in absolute path"
+    "should replace path params in absolute path",
   );
 
   t.equal(
     replace(
       routes.blog._.category.date,
       "category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" } }
+      { path: { cid: "art" } },
     ),
     "category/art/date/2012-12-28?search=batman&page=1",
-    "should replace params in relative path"
+    "should replace params in relative path",
   );
 
   t.equal(
@@ -513,17 +513,17 @@ test("replace", (t) => {
       path: { lang: "es" },
     }),
     "/blog/es?additionalParam=value",
-    "should keep additional params"
+    "should keep additional params",
   );
 
   t.equal(
     replace(
       routes.blog._.category,
       "category/movies/date/2012-12-28?search=batman&page=1",
-      { path: { cid: "art" }, query: { search: undefined } }
+      { path: { cid: "art" }, query: { search: undefined } },
     ),
     "category/art/date/2012-12-28?page=1",
-    "should remove param"
+    "should remove param",
   );
 
   t.throws(
@@ -531,7 +531,7 @@ test("replace", (t) => {
       replace(routes.blog._.category.date, "category/movies/date/2012-12-28", {
         path: { date: undefined },
       }),
-    "throws when deleting a required path parameter"
+    "throws when deleting a required path parameter",
   );
 
   t.comment("todo: should replace query params in absolute path");
@@ -556,12 +556,12 @@ test("params", (t) => {
   t.deepEqual(
     d.parse("2024-01-29T17:27:22.302Z"),
     new Date("2024-01-29T17:27:22.302Z"),
-    "isoDate should parse"
+    "isoDate should parse",
   );
   t.equal(
     d.serialize(new Date("2024-01-29T17:27:22.302Z")),
     "2024-01-29T17:27:22.302Z",
-    "isoDate should serialize"
+    "isoDate should serialize",
   );
   t.throws(() => d.parse("abc"), "isoDate should validate");
 
@@ -625,42 +625,45 @@ test("route composition", (t) => {
 });
 
 test("render baseUrl", (t) => {
-  const routes = createRoutes({
-    list: {
-      path: ["list"],
+  const routes = createRoutes(
+    {
+      list: {
+        path: ["list"],
+      },
+      detail: {
+        path: ["detail", int("uid")],
+      },
     },
-    detail: {
-      path: ["detail", int("uid")],
+    {
+      baseUrl: "https://typesafe.routes",
     },
-  }, {
-    baseUrl: "https://typesafe.routes",
-  });
-
-  t.equals(
-    renderPath(routes.list, {}),
-    "https://typesafe.routes/list"
   );
+
+  t.equals(renderPath(routes.list, {}), "https://typesafe.routes/list");
 
   t.equals(
     renderPath(routes.detail, { uid: 123 }),
-    "https://typesafe.routes/detail/123"
+    "https://typesafe.routes/detail/123",
   );
 
   t.end();
 });
 
 test("angular router", (t) => {
-  const routes = createRoutes({
-    list: {
-      path: ["list"],
+  const routes = createRoutes(
+    {
+      list: {
+        path: ["list"],
+      },
+      detail: {
+        path: ["detail", int("uid")],
+        query: [int("page")],
+      },
     },
-    detail: {
-      path: ["detail", int("uid")],
-      query: [int("page")],
+    {
+      baseUrl: "https://typesafe.routes",
     },
-  }, {
-    baseUrl: "https://typesafe.routes",
-  });
+  );
 
   t.equals(
     angular.renderPath(routes.detail, { uid: 123 }),
@@ -682,7 +685,7 @@ test("angular router", (t) => {
 
   t.deepEquals(
     angular.renderQuery(routes.detail, {
-      page: 123
+      page: 123,
     }),
     { page: "123" },
     "renders query in angular",
@@ -703,7 +706,7 @@ test("angular router", (t) => {
   t.deepEquals(
     angular.replace(routes._.detail, "detail/321?page=56&search=666", {
       path: { uid: 1 },
-      query: { page:42 },
+      query: { page: 42 },
     }),
     {
       path: "detail/1",

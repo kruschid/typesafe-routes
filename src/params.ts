@@ -3,7 +3,7 @@ import type { Param, ParamOptions, Parser } from "./types";
 export const param = <T>(parser: Parser<T>) => {
   const fn = <N extends string>(
     name: N,
-    options?: ParamOptions
+    options?: ParamOptions,
   ): Param<N, T, "required"> => ({
     name,
     parser,
@@ -13,7 +13,7 @@ export const param = <T>(parser: Parser<T>) => {
 
   fn.optional = <N extends string>(
     name: N,
-    options?: ParamOptions
+    options?: ParamOptions,
   ): Param<N, T, "optional"> => ({
     name,
     parser,
@@ -31,7 +31,7 @@ export const str = param({
 export const int = param({
   parse: (value: string) => {
     const result = parseInt(value, 10);
-    if (isNaN(result)) {
+    if (Number.isNaN(result)) {
       throw new Error(`parameter value is invalid: "${value}"`);
     }
     return result;
@@ -43,7 +43,7 @@ export const float = (fractionDigits?: number) =>
   param({
     parse: (value: string) => {
       const result = parseFloat(value);
-      if (isNaN(result)) {
+      if (Number.isNaN(result)) {
         throw new Error(`parameter value is invalid: "${value}"`);
       }
       return result;
@@ -54,7 +54,7 @@ export const float = (fractionDigits?: number) =>
 export const isoDate = param({
   parse: (value: string) => {
     const timestamp = Date.parse(value);
-    if (isNaN(timestamp)) {
+    if (Number.isNaN(timestamp)) {
       throw new Error(`parameter value is invalid: "${value}"`);
     }
     return new Date(timestamp);
@@ -65,7 +65,7 @@ export const isoDate = param({
 export const date = param({
   parse: (value: string) => {
     const timestamp = Date.parse(value);
-    if (isNaN(timestamp)) {
+    if (Number.isNaN(timestamp)) {
       throw new Error(`parameter value is invalid: "${value}"`);
     }
     return new Date(timestamp);
@@ -97,8 +97,8 @@ export const list = (allowedItems: string[], separator = ";") =>
         if (!allowedItems.includes(item)) {
           throw new Error(
             `"${item}" in ${value} is unknown. The allowed items are ${allowedItems.join(
-              ","
-            )}`
+              ",",
+            )}`,
           );
         }
       });
