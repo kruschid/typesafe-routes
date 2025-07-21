@@ -139,32 +139,32 @@ export type RenderFn = <R extends WithContext>(
 
 export type ParsePathFn = <R extends WithContext>(
   route: R,
-  paramsOrPath: Record<string, string> | string,
+  paramsOrPath: Record<string, string | undefined> | string,
 ) => InferPathParams<R>;
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
-  paramsOrQuery: Record<string, string> | string,
+  paramsOrQuery: Record<string, string | undefined> | string,
 ) => InferQueryParams<R>;
 
 export type ParseLocationFn = <R extends WithContext>(
   route: R,
-  paramsOrLocation: Record<string, string> | string,
+  paramsOrLocation: Record<string, string | undefined> | string,
 ) => InferParams<R>;
 
 export type SafeParsePathFn = <R extends WithContext>(
   route: R,
-  paramsOrPath: Record<string, string> | string,
+  paramsOrPath: Record<string, string | undefined> | string,
 ) => SafeParseResult<InferPathParams<R>>;
 
 export type SafeParseQueryFn = <R extends WithContext>(
   route: R,
-  paramsOrQuery: Record<string, string> | string,
+  paramsOrQuery: Record<string, string | undefined> | string,
 ) => SafeParseResult<InferQueryParams<R>>;
 
 export type SafeParseLocationFn = <R extends WithContext>(
   route: R,
-  paramsOrLocation: Record<string, string> | string,
+  paramsOrLocation: Record<string, string | undefined> | string,
 ) => SafeParseResult<InferParams<R>>;
 
 export type ReplaceFn = <R extends WithContext>(

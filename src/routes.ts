@@ -137,21 +137,24 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
     typeof paramsOrPath === "string"
       ? paramsFromLocationPath(route, paramsOrPath).pathParams
       : paramsOrPath;
-  // biome-ignore lint/suspicious/noExplicitAny: that's fine
-  const parsedParams: Record<string, any> = {};
+
+  const parsedParams: Record<string, unknown> = {};
 
   route["~context"].relativeNodes
     .flatMap((route) => route.path ?? [])
     .forEach((segment) => {
-      if (typeof segment === "string") {
-      } else if (params[segment.name] !== undefined) {
-        parsedParams[segment.name] = segment.parser.parse(params[segment.name]);
-      } else if (segment.kind === "required") {
-        throw Error(
-          `parsePath: required path parameter "${
-            segment.name
-          }" was not provided in "${template(route)}"`,
-        );
+      if (typeof segment !== "string") {
+        const value = params[segment.name];
+
+        if (value !== undefined) {
+          parsedParams[segment.name] = segment.parser.parse(value);
+        } else if (segment.kind === "required") {
+          throw Error(
+            `parsePath: required path parameter "${
+              segment.name
+            }" was not provided in "${template(route)}"`,
+          );
+        }
       }
     });
 
@@ -165,8 +168,7 @@ export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
       ? paramsFromQuery(paramsOrQuery)
       : paramsOrQuery;
 
-  // biome-ignore lint/suspicious/noExplicitAny: that's fine
-  const parsedQuery: Record<string, any> = {};
+  const parsedQuery: Record<string, unknown> = {};
 
   route["~context"].nodes
     .flatMap((route) => route.query ?? [])
