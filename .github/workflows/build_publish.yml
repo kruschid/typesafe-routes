@@ -1,4 +1,5 @@
 name: Build & Test & Maybe Publish
+
 on:
   push:
     branches: [ master, dev ]
@@ -6,6 +7,7 @@ on:
     branches: [ master, dev ]
   release:
     types: [ published ]
+
 jobs:
   build_and_maybe_publish:
     timeout-minutes: 60
@@ -16,23 +18,41 @@ jobs:
       with:
         path: ~/.npm
         key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
         registry-url: "https://registry.npmjs.org"
+
     - name: Build & Test
       run: | 
         npm ci
         npm run build
+
+    - name: Validate and set version from Git tag
+      if: github.event_name == 'release'
+      run: |
+        TAG_VERSION="${GITHUB_REF#refs/tags/}"
+
+        # Validate version matches x.x.x or x.x.x-dev.x
+        if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]]; then
+          echo "Invalid version format in tag: $TAG_VERSION"
+          exit 1
+        fi
+
+        echo "Setting version to $TAG_VERSION"
+        npm version "$TAG_VERSION" --no-git-tag-version
+
     - name: prerelease
       if: github.event_name == 'release' && github.event.release.prerelease
       run: npm publish --tag dev
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
     - name: publish
       if: github.event_name == 'release' && !github.event.release.prerelease
       run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    
