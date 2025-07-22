@@ -23,8 +23,8 @@ jobs:
         registry-url: "https://registry.npmjs.org"
     - name: Build & Test
       run: | 
-        yarn install --frozen-lockfile
-        yarn build
+        npm ci
+        npm run build
     - name: prerelease
       if: github.event_name == 'release' && github.event.release.prerelease
       run: npm publish --tag dev
