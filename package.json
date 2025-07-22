@@ -1,6 +1,6 @@
 {
   "name": "typesafe-routes",
-  "version": "12.2.0",
+  "version": "12.2.1",
   "repository": "git@github.com:kruschid/typesafe-routes.git",
   "author": "Denis Kruschinski <denis.kruschinski@gmail.com>",
   "license": "MIT",
