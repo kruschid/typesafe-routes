@@ -35,14 +35,25 @@ jobs:
       if: github.event_name == 'release'
       run: |
         TAG_VERSION="${GITHUB_REF#refs/tags/}"
+        IS_PRERELEASE="${{ github.event.release.prerelease }}"
 
-        # Validate version matches x.x.x or x.x.x-dev.x
-        if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-dev\.[0-9]+)?$ ]]; then
-          echo "Invalid version format in tag: $TAG_VERSION"
-          exit 1
+        echo "Git tag version: $TAG_VERSION"
+        echo "Is prerelease: $IS_PRERELEASE"
+
+        # Validate version formats
+        if [[ "$IS_PRERELEASE" == "true" ]]; then
+          if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$ ]]; then
+            echo "❌ Prerelease must use format x.x.x-dev.x"
+            exit 1
+          fi
+        else
+          if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Full release must use format x.x.x"
+            exit 1
+          fi
         fi
 
-        echo "Setting version to $TAG_VERSION"
+        echo "✅ Version format is valid: $TAG_VERSION"
         npm version "$TAG_VERSION" --no-git-tag-version
 
     - name: prerelease
