@@ -78,15 +78,15 @@ export const bool = param({
   serialize: (value: boolean) => value.toString(),
 });
 
-export const oneOf = (...list: string[]) =>
-  param({
-    parse: (value: string) => {
-      if (!list.includes(value)) {
+export const oneOf = <T extends string>(...list: readonly T[]) =>
+  param<T>({
+    parse: (value: string): T => {
+      if (!list.includes(value as T)) {
         throw new Error(`"${value}" is none of ${list.join(",")}`);
       }
-      return value;
+      return value as T;
     },
-    serialize: (value: string) => value,
+    serialize: (value: T) => value,
   });
 
 export const list = (allowedItems: string[], separator = ";") =>
