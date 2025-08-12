@@ -15,6 +15,10 @@
     "./angular-router": {
       "import": "./dist/adapters/angular-router.mjs",
       "require": "./dist/adapters/angular-router.js"
+    },
+    "./vue-router": {
+      "import": "./dist/adapters/vue-router.mjs",
+      "require": "./dist/adapters/vue-router.js"
     }
   },
   "typesVersions": {
@@ -22,13 +26,18 @@
       "angular-router": [
         "dist/adapters/angular-router.d.mts",
         "dist/adapters/angular-router.d.ts"
+      ],
+      "vue-router": [
+        "dist/adapters/vue-router.d.mts",
+        "dist/adapters/vue-router.d.ts"
       ]
     }
   },
   "tsup": {
     "entry": [
       "src/index.ts",
-      "src/adapters/angular-router.ts"
+      "src/adapters/angular-router.ts",
+      "src/adapters/vue-router.ts"
     ],
     "splitting": false,
     "sourcemap": true,
