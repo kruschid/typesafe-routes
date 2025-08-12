@@ -25,7 +25,7 @@ test("template", (t) => {
   const routes = createRoutes({
     home: {},
     blog: {
-      path: ["blog", str("lang")],
+      path: ["blog", str("lang", { validate: (c) => true })],
       children: {
         $wildcard: { template: "**" },
         category: {
@@ -33,7 +33,7 @@ test("template", (t) => {
           children: {
             $wildcard: { template: "**" },
             date: {
-              path: [isoDate("date")],
+              path: [isoDate("date", { validate: (d) => true })],
             },
           },
         },

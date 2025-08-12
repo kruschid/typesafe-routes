@@ -8,14 +8,15 @@ export type ParamKind = "optional" | "required";
 // biome-ignore lint/suspicious/noExplicitAny: that's fine
 export type AnyParam = Param<string, any, any>;
 
-export interface ParamOptions {
+export interface ParamOptions<T = unknown> {
   template?: string;
+  validate?: (value: T) => boolean;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: that's fine
 export type Param<N = string, T = any, K extends ParamKind = "required"> = {
   name: N;
-  options?: ParamOptions;
+  options?: ParamOptions<T>;
   kind: K;
   parser: Parser<T>;
 };

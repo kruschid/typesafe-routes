@@ -3,7 +3,7 @@ import type { Param, ParamOptions, Parser } from "./types";
 export const param = <T>(parser: Parser<T>) => {
   const fn = <N extends string>(
     name: N,
-    options?: ParamOptions,
+    options?: ParamOptions<T>,
   ): Param<N, T, "required"> => ({
     name,
     parser,
@@ -13,7 +13,7 @@ export const param = <T>(parser: Parser<T>) => {
 
   fn.optional = <N extends string>(
     name: N,
-    options?: ParamOptions,
+    options?: ParamOptions<T>,
   ): Param<N, T, "optional"> => ({
     name,
     parser,
