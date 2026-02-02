@@ -144,7 +144,7 @@ export type ParsePathFn = <R extends WithContext>(
 
 export type ParseQueryFn = <R extends WithContext>(
   route: R,
-  paramsOrQuery: Record<string, string | undefined> | string,
+  paramsOrQuery: Record<string, string | undefined> | string | URLSearchParams,
 ) => InferQueryParams<R>;
 
 export type ParseLocationFn = <R extends WithContext>(

@@ -163,17 +163,16 @@ export const parsePath: ParsePathFn = (route, paramsOrPath) => {
 };
 
 export const parseQuery: ParseQueryFn = (route, paramsOrQuery) => {
-  const params =
-    typeof paramsOrQuery === "string"
-      ? paramsFromQuery(paramsOrQuery)
-      : paramsOrQuery;
+  const params = isURLSearchParams(paramsOrQuery)
+    ? paramsOrQuery
+    : new URLSearchParams(paramsOrQuery as Record<string, string>);
 
   const parsedQuery: Record<string, unknown> = {};
 
   route["~context"].nodes
     .flatMap((route) => route.query ?? [])
     .forEach((segment) => {
-      const value = params[segment.name];
+      const value = params.get(segment.name);
       if (value != null) {
         parsedQuery[segment.name] = segment.parser.parse(value);
       } else if (segment.kind === "required") {
@@ -365,3 +364,9 @@ export const safeCall =
 export const safeParsePath: SafeParsePathFn = safeCall(parsePath);
 export const safeParseQuery: SafeParseQueryFn = safeCall(parseQuery);
 export const safeParseLocation: SafeParseLocationFn = safeCall(parseLocation);
+
+const isURLSearchParams = (value: unknown): value is URLSearchParams =>
+  value != null &&
+  typeof value === "object" &&
+  Object.prototype.toString.call(value) === "[object URLSearchParams]" &&
+  typeof (value as URLSearchParams)[Symbol.iterator] === "function";
