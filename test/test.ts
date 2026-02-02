@@ -383,6 +383,25 @@ test("parseQuery", (t) => {
   t.deepEqual(
     parseQuery(
       routes.blog.category.date,
+      new URLSearchParams({
+        lang: "en",
+        category: "drama",
+        shortmovie: "true",
+        month: "feb",
+      }),
+    ),
+    {
+      lang: "en",
+      category: "drama",
+      shortmovie: true,
+      month: "feb",
+    },
+    "parseQuery using URLSearchParams",
+  );
+
+  t.deepEqual(
+    parseQuery(
+      routes.blog.category.date,
       "lang=en&category=drama&shortmovie=true&month=feb",
     ),
     {
